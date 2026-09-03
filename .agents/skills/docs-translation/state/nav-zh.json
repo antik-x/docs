@@ -38,6 +38,10 @@
     "(use-cases)/getting-started-agents": "AI 智能体",
     "(use-cases)/getting-started-chatbots": "聊天机器人",
     "(use-cases)/getting-started-rag": "RAG",
-    "(use-cases)/getting-started-mcp": "MCP"
+    "(use-cases)/getting-started-mcp": "MCP",
+    "evaluation-introduction": "LLM 评估简介",
+    "(concepts)/(test-cases)/evaluation-test-cases": "测试用例",
+    "(concepts)/evaluation-datasets": "数据集",
+    "(concepts)/evaluation-prompts": "提示词"
   }
 }

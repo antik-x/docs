@@ -100,7 +100,7 @@
       },
       {
         "page": "docs/evaluation-introduction",
-        "title": "Introduction"
+        "title": "LLM 评估简介"
       },
       {
         "group": "核心概念",
@@ -110,7 +110,7 @@
             "pages": [
               {
                 "page": "docs/(concepts)/(test-cases)/evaluation-test-cases",
-                "title": "Single-Turn"
+                "title": "测试用例"
               },
               {
                 "page": "docs/(concepts)/(test-cases)/evaluation-multiturn-test-cases",
@@ -124,7 +124,7 @@
           },
           {
             "page": "docs/(concepts)/evaluation-datasets",
-            "title": "Datasets"
+            "title": "数据集"
           },
           {
             "page": "docs/(concepts)/evaluation-llm-tracing",
@@ -136,7 +136,7 @@
           },
           {
             "page": "docs/(concepts)/evaluation-prompts",
-            "title": "Prompts"
+            "title": "提示词"
           },
           {
             "page": "docs/(concepts)/evaluation-mcp",

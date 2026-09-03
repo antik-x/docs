@@ -1,0 +1,456 @@
+---
+title: 提示词
+---
+
+`deepeval` 让你通过把提示词关联到测试运行来评估提示词。`deepeval` 中的 `Prompt` 包含提示词模板与用于生成的模型参数。把 `Prompt` 关联到测试运行后，你可以把指标分数归因到特定提示词，为你的 LLM 应用实现指标驱动的提示词选择与优化。
+
+## Quick summary
+
+`deepeval` 中有两类评估：
+
+- 端到端测试
+- 组件级测试
+
+也就是说，你可以**端到端**评估提示词，也可以在**组件级**评估提示词。
+
+当你想评估提示词对整个 LLM 应用的影响时，[端到端测试](#end-to-end)很有用，因为端到端测试的指标分数是在最终输出上计算的。当你想评估特定 LLM 生成过程中的提示词时，[组件级测试](#component-level)很有用，因为组件级测试的指标分数是在组件级计算的。
+
+## 评估提示词
+
+### 端到端
+
+你可以在 Python 中运行 `evaluate` 函数、或在 CI/CD 流水线中运行 `assert_test` 来端到端评估提示词。
+
+<Tabs>
+<Tab title="在 Python 中">
+
+要在端到端评估中评估提示词，把你的测试用例与指标传给 `evaluate` 函数，并用任意字符串键把提示词对象放进 `hyperparameters` 字典。
+
+```python title="main.py" showLineNumbers={true} {18}
+from somewhere import your_llm_app
+from deepeval.metrics import AnswerRelevancyMetric
+from deepeval.prompt import Prompt, PromptMessage
+from deepeval.test_case import LLMTestCase
+from deepeval import evaluate
+
+prompt = Prompt(
+    alias="First Prompt",
+    messages_template=[PromptMessage(role="system", content="You are a helpful assistant.")]
+)
+
+input = "What is the capital of France?"
+actual_output = your_llm_app(input, prompt.messages_template)
+
+evaluate(
+    test_cases=[LLMTestCase(input=input, actual_output=actual_output)],
+    metrics=[AnswerRelevancyMetric()],
+    hyperparameters={"prompt": prompt}
+)
+```
+
+<Tip>
+如果你的 LLM 应用使用多个提示词，你可以在 `hyperparameters` 字典中记录多个提示词。
+
+```python
+evaluate(..., hyperparameters={"prompt_1": prompt_1, "prompt_2": prompt_2})
+```
+
+</Tip>
+
+</Tab>
+<Tab title="在 CI/CD 中">
+
+要在 CI/CD 流水线中端到端评估提示词，使用带你的测试用例与指标的 `assert_test` 函数，并把提示词对象放进超参数字典。
+
+```python title="main.py" showLineNumbers={true} {21}
+import pytest
+
+from somewhere import your_llm_app
+from deepeval.metrics import AnswerRelevancyMetric
+from deepeval.prompt import Prompt, PromptMessage
+from deepeval.test_case import LLMTestCase
+from deepeval import assert_test
+
+prompt = Prompt(
+    alias="First Prompt",
+    messages_template=[PromptMessage(role="system", content="You are a helpful assistant.")]
+)
+
+def test_llm_app():
+    input = "What is the capital of France?"
+    actual_output = your_llm_app(input, prompt.messages_template)
+    test_case = LLMTestCase(input=input, actual_output=actual_output)
+    assert_test(test_case=test_case, metrics=[AnswerRelevancyMetric()])
+
+@deepeval.log_hyperparameters()
+def hyperparameters():
+    return {"prompt": prompt}
+```
+
+<Tip>
+如果你的 LLM 应用使用多个提示词，你可以在 `hyperparameters` 字典中记录多个提示词。
+
+```python
+@deepeval.log_hyperparameters()
+def hyperparameters():
+    return {"prompt_1": prompt_1, "prompt_2": prompt_2}
+```
+
+</Tip>
+
+</Tab>
+</Tabs>
+
+<details>
+<summary>✅ If successful, you should see a confirmation log like the one below in your CLI.</summary>
+
+```bash
+✓ Prompts Logged
+
+╭─ Message Prompt (v00.00.20) ──────────────────────────────╮
+│                                                           │
+│  type: messages                                           │
+│  output_type: OutputType.SCHEMA                           │
+│  interpolation_type: PromptInterpolationType.FSTRING      │
+│                                                           │
+│  Model Settings:                                          │
+│    – provider: OPEN_AI                                    │
+│    – name: gpt-4o                                         │
+│    – temperature: 0.7                                     │
+│    – max_tokens: None                                     │
+│    – top_p: None                                          │
+│    – frequency_penalty: None                              │
+│    – presence_penalty: None                               │
+│    – stop_sequence: None                                  │
+│    – reasoning_effort: None                               │
+│    – verbosity: LOW                                       │
+│                                                           │
+╰───────────────────────────────────────────────────────────╯
+```
+
+</details>
+
+基于指标分数，你可以迭代不同的提示词，找出表现最好的版本，并据此优化你的 LLM 应用。
+
+### 组件级
+
+`deepeval` 也支持组件级提示词评估，以评估应用内特定的 LLM 生成过程。为此，先[设置追踪](/docs/evaluation-llm-tracing)，然后为每个 LLM span 调用 `update_llm_span` 并传入你想评估的提示词。另外，在 `@observe` 装饰器中为每个 span 提供你想使用的指标。
+
+```python title="main.py" showLineNumbers={true} {13,20}
+from openai import OpenAI
+from deepeval.tracing import observe, update_llm_span
+from deepeval.metrics import AnswerRelevancyMetric
+from deepeval.prompt import Prompt, PromptMessage
+
+prompt_1 = Prompt(alias="First",  messages_template=[PromptMessage(role="system", content="You are a helpful assistant.")])
+
+@observe(type="llm", metrics=[AnswerRelevancyMetric()])
+def gen1(input: str):
+    prompt_template = [{"role": msg.role, "content": msg.content} for msg in prompt_1.messages_template]
+    res = OpenAI().chat.completions.create(model="gpt-4o", messages=prompt_template+[{"role":"user","content":input}])
+    update_llm_span(prompt=prompt_1)
+    return res.choices[0].message.content
+
+@observe()
+def your_llm_app(input: str):
+    return gen1(input)
+```
+
+<Note>
+由于 `update_llm_span` 只能在 LLM span 内调用，提示词评估仅限于 LLM span。
+</Note>
+
+然后运行 `evals_iterator`，评估为每个 LLM span 配置的提示词。
+
+```python title="main.py" showLineNumbers={true} {17,25}
+from deepeval.dataset import EvaluationDataset, Golden
+...
+
+dataset = EvaluationDataset([Golden(input="Hello")])
+for golden in dataset.evals_iterator():
+    your_llm_app(golden.input)
+```
+
+<details>
+<summary>✅ If successful, you should see a confirmation log like the one above in your CLI.</summary>
+
+```bash
+✓ Prompts Logged
+
+╭─ Message Prompt (v00.00.20) ──────────────────────────────╮
+│                                                           │
+│  type: messages                                           │
+│  output_type: OutputType.SCHEMA                           │
+│  interpolation_type: PromptInterpolationType.FSTRING      │
+│                                                           │
+│  Model Settings:                                          │
+│    – provider: OPEN_AI                                    │
+│    – name: gpt-4o                                         │
+│    – temperature: 0.7                                     │
+│    – max_tokens: None                                     │
+│    – top_p: None                                          │
+│    – frequency_penalty: None                              │
+│    – presence_penalty: None                               │
+│    – stop_sequence: None                                  │
+│    – reasoning_effort: None                               │
+│    – verbosity: LOW                                       │
+│                                                           │
+╰───────────────────────────────────────────────────────────╯
+```
+
+</details>
+
+### 竞技场
+
+你还可以使用 `ArenaGEval` 并排评估提示词，为给定标准挑选表现最好的提示词。只需把提示词放进每个 `Contestant` 的 `hyperparameters` 字段。
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.test_case import ArenaTestCase, LLMTestCase, SingleTurnParams, Contestant
+from deepeval.metrics import ArenaGEval
+from deepeval.prompt import Prompt
+from deepeval import compare
+
+prompt_1 = Prompt(alias="First Prompt", text_template="You are a helpful assistant.")
+prompt_2 = Prompt(alias="Second Prompt", text_template="You are a helpful assistant.")
+
+test_case = ArenaTestCase(
+    contestants=[
+        Contestant(
+            name="Version 1",
+            hyperparameters={"prompt": prompt_1},
+            test_case=LLMTestCase(input='Who wrote the novel "1984"?', actual_output="George Orwell"),
+        ),
+        Contestant(
+            name="Version 2",
+            hyperparameters={"prompt": prompt_2},
+            test_case=LLMTestCase(input='Who wrote the novel "1984"?', actual_output='"1984" was written by George Orwell.'),
+        ),
+    ]
+)
+
+arena_geval = ArenaGEval(
+    name="Friendly",
+    criteria="Choose the winner of the more friendly contestant based on the input and actual output",
+    evaluation_params=[
+        SingleTurnParams.INPUT,
+        SingleTurnParams.ACTUAL_OUTPUT,
+    ]
+)
+
+compare(test_cases=[test_case], metric=arena_geval)
+```
+
+## 创建提示词
+
+### 加载提示词
+
+<Tabs>
+<Tab title="Confident AI">
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.prompt import Prompt
+
+prompt = Prompt(alias="First Prompt")
+prompt.pull(version="00.00.01")
+```
+
+</Tab>
+<Tab title="从 JSON">
+
+从 `.json` 文件加载提示词时，如果未指定别名，文件名会自动作为别名。
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.prompt import Prompt
+
+prompt = Prompt()
+prompt.load(file_path="example.json")
+```
+
+<details>
+  <summary>点击查看 `example.json`</summary>
+
+```json title="example.json"
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    }
+  ]
+}
+```
+
+</details>
+
+</Tab>
+<Tab title="从 TXT">
+
+从 `.txt` 文件加载提示词时，如果未指定别名，文件名会自动作为别名。
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.prompt import Prompt
+
+prompt = Prompt()
+prompt.load(file_path="example.txt")
+```
+
+<details>
+  <summary>点击查看 `example.txt`</summary>
+
+```txt title="example.txt"
+You are a helpful assistant.
+```
+
+</details>
+
+</Tab>
+</Tabs>
+
+<Warning>
+评估提示词时，必须在把提示词传入 `hyperparameters` 字典（端到端评估）之前、以及调用 `update_llm_span`（组件级评估）之前，先调用 `load` 或 `pull`。
+</Warning>
+
+### 从零创建
+
+你可以在代码中通过实例化带 `alias` 的 `Prompt` 对象来创建提示词。基于消息的提示词提供消息列表，基于文本的提示词提供文本字符串。
+
+<Tabs>
+<Tab title="消息式">
+
+```python title="main.py" showLineNumbers={true} {5}
+from deepeval.prompt import Prompt, PromptMessage
+
+prompt = Prompt(
+    alias="First Prompt",
+    messages_template=[PromptMessage(role="system", content="You are helpful assistant.")]
+)
+```
+
+</Tab>
+<Tab title="文本式">
+
+```python title="main.py" showLineNumbers={true} {5}
+from deepeval.prompt import Prompt
+
+prompt = Prompt(
+    alias="First Prompt",
+    text_template="You are helpful assistant."
+)
+```
+
+</Tab>
+</Tabs>
+
+## 附加属性
+
+除了提示词模板，你还可以把模型与输出设置关联到一个 `Prompt`。
+
+### 模型设置
+
+模型设置包括模型提供商与名称，以及 temperature 等生成参数：
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.prompt import Prompt, ModelSettings, ModelProvider
+
+model_settings=ModelSettings(
+    provider=ModelProvider.OPEN_AI,
+    name="gpt-3.5-turbo",
+    max_tokens=100,
+    temperature=0.7
+)
+prompt = Prompt(..., model_settings=model_settings)
+```
+
+你可以为提示词配置以下**九**项模型设置：
+
+- `provider`：`ModelProvider` 枚举，指定用于生成的模型提供商。
+- `name`：字符串，指定用于生成的模型名称。
+- `temperature`：0.0 到 2.0 之间的浮点数，指定生成响应的随机性。
+- `top_p`：0.0 到 1.0 之间的浮点数，指定核采样（nucleus sampling）参数。
+- `frequency_penalty`：-2.0 到 2.0 之间的浮点数，指定频率惩罚。
+- `presence_penalty`：-2.0 到 2.0 之间的浮点数，指定存在惩罚。
+- `max_tokens`：整数，指定要生成的最大 token 数。
+- `verbosity`：`Verbosity` 枚举，指定响应的详细程度。
+- `reasoning_effort`：`ReasoningEffort` 枚举，指定推理模型的思考深度。
+- `stop_sequences`：字符串列表，指定自定义停止 token。
+
+### 输出设置
+
+输出设置包括输出类型，以及（当输出类型为 `OutputType.SCHEMA` 时的）输出 schema。
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.prompt import OutputType
+from pydantic import BaseModel
+...
+
+class Output(BaseModel):
+    name: str
+    age: int
+    city: str
+
+prompt = Prompt(..., output_type=OutputType.SCHEMA, output_schema=Output)
+```
+
+你可以为提示词关联**两**项输出设置：
+
+- `output_type`：字符串，指定用于生成的模型。
+- `output_schema`：类型为 `BaseModel` 的输出 schema（当 `output_type` 为 `OutputType.SCHEMA` 时）。
+
+### 工具
+
+提示词中的工具用于指定你的智能体可以访问的工具；所有工具都以名称标识，因此必须唯一。
+
+```python
+from deepeval.prompt import Prompt, Tool
+from deepeval.prompt.api import ToolMode
+from pydantic import BaseModel
+
+class ToolInputSchema(BaseModel):
+    result: str
+    confidence: float
+
+prompt = Prompt(alias="YOUR-PROMPT-ALIAS")
+tool = Tool(
+    name="ExploreTool",
+    description="Tool used for browsing the internet",
+    mode=ToolMode.STRICT,
+    structured_schema=ToolInputSchema,
+)
+
+prompt.push(
+    text="This is a prompt with a tool",
+    tools=[tool]
+)
+
+# You can also update an existing tool by using the new tool in the push / update method:
+tool2 = Tool(
+    name="ExploreTool", # Must have the same name to update a tool
+    description="Tool used for browsing the internet",
+    mode=ToolMode.ALLOW_ADDITIONAL,
+    structured_schema=ToolInputSchema,
+)
+
+prompt.update(
+    tools=[tool2]
+)
+```
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="How do I attribute metric scores to a specific prompt?">
+把你的 `Prompt` 对象传入 `evaluate()` 的 `hyperparameters` 字典（端到端评估），或通过 `update_llm_span` 传入（组件级评估）。`deepeval` 随后会把每次测试运行的分数与该提示词绑定，方便你挑选最好的一个。
+</Accordion>
+<Accordion title="Can I evaluate multiple prompts at once?">
+可以。你可以用不同的键记录多个提示词，例如 `hyperparameters=&#123;"prompt_1": prompt_1, "prompt_2": prompt_2&#125;`，这在你的应用串联多个提示词时很常见。
+</Accordion>
+<Accordion title="Where can prompts be loaded from?">
+你可以在代码中从零构建 `Prompt`、从本地 `.json` 或 `.txt` 文件加载，或从 Confident AI `pull()` 特定版本。在评估中使用提示词之前必须先调用 `load()` 或 `pull()`。
+</Accordion>
+<Accordion title="Can a prompt store more than just the template text?">
+可以。`Prompt` 可以携带模型设置（如 temperature 与模型名称）、输出设置，以及你的智能体可访问的 `Tool` 列表，让完整的生成配置与模板一起被版本化管理。
+</Accordion>
+<Accordion title="Can my team manage and version prompts on the cloud with a UI instead of in code?">
+提示词完全可以只在本地以文件或代码的形式使用。如果你的团队更想要共享的、带版本管理的提示词仓库，[Confident AI](https://www.confident-ai.com)（`deepeval` 团队的平台）让你在界面中编辑提示词并做版本管理，然后按别名 `pull()` 特定版本进入你的评估——非工程师也能迭代提示词，而代码只需引用一个版本。它是可选的；基于文件/代码的提示词行为完全一致。
+</Accordion>
+</AccordionGroup>

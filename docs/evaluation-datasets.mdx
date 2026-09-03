@@ -1,0 +1,1446 @@
+---
+title: 数据集
+---
+
+在 `deepeval` 中，评估数据集（或简称数据集）是金标（golden）的集合。金标是测试用例的前身。在评估时，你会先把数据集中的所有金标转换为测试用例，再对这些测试用例运行评估。
+
+## Quick Summary
+
+在 `deepeval` 中使用数据集运行评估有两种方式：
+
+1. 使用 `deepeval test run`
+2. 使用 `evaluate`
+
+根据你提供的金标类型，数据集分为**单轮**或多轮。评估一个数据集与评估你的 LLM 系统含义完全相同，因为按定义，数据集包含了评估所需的、由你的 LLM 产出的全部信息。
+
+<details>
+
+<summary>
+  评估数据集的整理有哪些最佳实践？
+</summary>
+
+- **确保有说服力的测试覆盖：**纳入多样的真实输入、不同的复杂度级别与边界场景，真正难住 LLM。
+- **聚焦、可量化的测试用例：**设计上范围清晰，既能产生有意义的性能指标，又不过宽或过窄。
+- **定义清晰的目标：**让数据集与特定评估目标对齐，同时避免不必要的碎片化。
+
+</details>
+
+<Info>
+
+如果你还没有 `EvaluationDataset`，一个很好的起点是把你目前用来人工检查 LLM 输出的提示词写下来。你也可以在 Confident AI 上这样做，它与 `deepeval` 100% 集成：
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/datasets:create-4k.mp4"></video>
+  <figcaption>在数据集编辑器中创建、编辑金标并与团队协作。</figcaption>
+</figure>
+
+数据集的完整文档见 [Confident AI
+这里](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens)。
+
+</Info>
+
+## 创建数据集
+
+`deepeval` 中的 `EvaluationDataset` 就是金标的集合。你可以先初始化一个空数据集：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+```
+
+</Tab>
+
+</Tabs>
+
+数据集要么是单轮的，**要么**是多轮的（不能兼有）。初始化时，给数据集提供 `Golden` 列表会使其成为单轮数据集，提供 `ConversationalGolden` 则会使其成为多轮数据集：
+
+<Tabs>
+<Tab title="单轮">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset, Golden
+
+dataset = EvaluationDataset(goldens=[Golden(input="What is your name?")])
+print(dataset._multi_turn) # prints False
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({ goldens: [new Golden({ input: "What is your name?" })] });
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="多轮">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset, ConversationalGolden
+
+dataset = EvaluationDataset(
+    goldens=[
+        ConversationalGolden(
+            scenario="Frustrated user asking for a refund.",
+            expected_outcome="Redirected to a human agent."
+        )
+    ]
+)
+print(dataset._multi_turn) # prints True
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, ConversationalGolden } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({
+  goldens: [
+    new ConversationalGolden({
+      scenario: "Frustrated user asking for a refund.",
+      expectedOutcome: "Redirected to a human agent.",
+    }),
+  ],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+To ensure best practices, datasets in `deepeval` are stateful and opinionated. This means you cannot change the value of `_multi_turn`（TypeScript 中为 `_multiTurn`） once its value has been set. However, you can always add new goldens after initialization using the `add_golden` method:
+
+<Tabs>
+<Tab title="单轮">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+dataset.add_golden(Golden(input="Nice."))
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+dataset.addGolden(new Golden({ input: "Nice." }));
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="多轮">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+dataset.add_golden(
+    ConversationalGolden(
+        scenario="User expressing gratitude for redirecting to human.",
+        expected_outcome="Appreciates the gratitude."
+    )
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+dataset.addGolden(
+  new ConversationalGolden({
+    scenario: "User expressing gratitude for redirecting to human.",
+    expectedOutcome: "Appreciates the gratitude.",
+  })
+);
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+## 在数据集上运行评估
+
+你在数据集中的测试用例上运行评估，这些测试用例会在评估时用同一数据集中的金标创建。
+
+![评估数据集](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:evaluation-dataset.png)
+
+第一步是把金标加载到你的数据集。本例从 Confident AI 加载数据集，你也可以探索[下方的其他选项](#load-dataset)。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.pull(alias="My Dataset") # replace with your alias
+print(dataset.goldens) # print to sanity check yourself
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="index.ts"
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.pull({ alias: "My Dataset" }); // replace with your alias
+console.log(dataset.goldens); // print to sanity check yourself
+```
+
+</Tab>
+
+</Tabs>
+
+<Tip>
+你拉取数据集的那一刻，它就已经是单轮或多轮的了。
+</Tip>
+
+拿到数据集并看到非空的金标列表后，你就可以开始生成输出，并通过 `add_test_case()` 方法**把它们作为测试用例加回你的数据集**：
+
+<Tabs>
+<Tab title="单轮">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" {9}
+from deepeval.test_case import LLMTestCase
+...
+
+for golden in dataset.goldens:
+    test_case = LLMTestCase(
+        input=golden.input,
+        actual_output=your_llm_app(golden.input) # replace with your LLM app
+    )
+    dataset.add_test_case(test_case)
+
+print(dataset.test_cases) # print to santiy check yourself
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="index.ts" {9}
+import { LLMTestCase } from "deepeval/test-case";
+// ...
+
+for (const golden of dataset.goldens) {
+  const testCase = new LLMTestCase({
+    input: golden.input,
+    actualOutput: await yourLlmApp(golden.input), // replace with your LLM app
+  });
+  dataset.addTestCase(testCase);
+}
+
+console.log(dataset.testCases); // print to santiy check yourself
+```
+
+</Tab>
+
+</Tabs>
+
+最后，你可以在数据集中的测试用例列表上运行评估：
+
+<Tabs>
+<Tab title="Unit-Testing In CI/CD">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_llm_app.py" {5}
+import pytest
+
+from deepeval.metrics import AnswerRelevancyMetric
+...
+
+@pytest.mark.parametrize("test_case", dataset.test_cases)
+def test_llm_app(test_case: LLMTestCase):
+    assert_test(test_case=test_case, metrics=[AnswerRelevancyMetric()])
+```
+
+然后执行该测试文件：
+
+```bash
+deepeval test run test_llm_app.py
+```
+
+关于 `assert_test` 的更多内容见[这一节](/docs/evaluation-end-to-end-llm-evals#use-deepeval-test-run-in-cicd-pipelines)。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="llm_app.test.ts" {6}
+import { it, expect } from "vitest";
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+// ...
+
+it.each(dataset.testCases)("llm app stays relevant #%$", async (testCase) => {
+  await expect(testCase).toPass([new AnswerRelevancyMetric()]);
+});
+```
+
+然后执行该测试文件：
+
+```bash
+npx deepeval test run llm_app.test.ts
+```
+
+关于 `toPass()` 的更多内容见[这一节](/docs/evaluation-end-to-end-llm-evals#use-deepeval-test-run-in-cicd-pipelines)。
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="In Scripts">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" {5}
+from deepeval.metrics import AnswerRelevancyMetric
+from deepeval import evaluate
+...
+
+evaluate(test_cases=dataset.test_cases, metrics=[AnswerRelevancyMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="index.ts" {4}
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+// ...
+
+await evaluate(dataset.testCases, [new AnswerRelevancyMetric()]);
+```
+
+</Tab>
+
+</Tabs>
+
+And run `main.py`（TypeScript 中为 `index.ts`）:
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+python main.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx tsx index.ts
+```
+
+</Tab>
+
+</Tabs>
+
+关于 `evaluate` 的更多内容见[这一节](/docs/evaluation-end-to-end-llm-evals#use-evaluate-in-python-scripts)。
+
+</Tab>
+</Tabs>
+
+</Tab>
+<Tab title="多轮">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" {9}
+from deepeval.test_case import ConversationalTestCase
+...
+
+for golden in dataset.goldens:
+    test_case = ConversationalTestCase(
+        scenario=golden.scenario,
+        turns=generate_turns(golden.scenario) # replace with your method to simulate conversations
+    )
+    dataset.add_test_case(test_case)
+
+print(dataset.test_cases) # print to santiy check yourself
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="index.ts" {9}
+import { ConversationalTestCase } from "deepeval/test-case";
+// ...
+
+for (const golden of dataset.goldens) {
+  const testCase = new ConversationalTestCase({
+    scenario: golden.scenario,
+    turns: await generateTurns(golden.scenario), // replace with your method to simulate conversations
+  });
+  dataset.addTestCase(testCase);
+}
+
+console.log(dataset.testCases); // print to santiy check yourself
+```
+
+</Tab>
+
+</Tabs>
+
+最后，你可以在数据集中的测试用例列表上运行评估：
+
+<Tabs>
+<Tab title="Unit-Testing In CI/CD">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_llm_app.py" {5}
+import pytest
+
+from deepeval.metrics import ConversationalRelevancyMetric
+...
+
+@pytest.mark.parametrize("test_case", dataset.test_cases)
+def test_llm_app(test_case: ConversationalTestCase):
+    assert_test(test_case=test_case, metrics=[ConversationalRelevancyMetric()])
+```
+
+然后执行该测试文件：
+
+```bash
+deepeval test run test_llm_app.py
+```
+
+关于 `assert_test` 的更多内容见[这一节](/docs/evaluation-end-to-end-llm-evals#use-deepeval-test-run-in-cicd-pipelines)。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="llm_app.test.ts" {6}
+import { it, expect } from "vitest";
+import { TurnRelevancyMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+// ...
+
+it.each(dataset.testCases)(
+  "llm app stays relevant across the conversation #%$",
+  async (testCase) => {
+    await expect(testCase).toPass([new TurnRelevancyMetric()]);
+  },
+);
+```
+
+然后执行该测试文件：
+
+```bash
+npx deepeval test run llm_app.test.ts
+```
+
+关于 `toPass()` 的更多内容见[这一节](/docs/evaluation-end-to-end-llm-evals#use-deepeval-test-run-in-cicd-pipelines)。
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="In Scripts">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" {5}
+from deepeval.metrics import ConversationalRelevancyMetric
+from deepeval import evaluate
+...
+
+evaluate(test_cases=dataset.test_cases, metrics=[ConversationalRelevancyMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="index.ts" {4}
+import { TurnRelevancyMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+// ...
+
+await evaluate(dataset.testCases, [new TurnRelevancyMetric()]);
+```
+
+</Tab>
+
+</Tabs>
+
+And run `main.py`（TypeScript 中为 `index.ts`）:
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+python main.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx tsx index.ts
+```
+
+</Tab>
+
+</Tabs>
+
+关于 `evaluate` 的更多内容见[这一节](/docs/evaluation-end-to-end-llm-evals#use-evaluate-in-python-scripts)。
+
+</Tab>
+</Tabs>
+
+</Tab>
+</Tabs>
+
+## 管理你的数据集
+
+数据集管理是评估生命周期的重要一环。我们推荐把 Confident AI 作为你的数据集管理工作流之选，它开箱即带数十项协作功能；不过你也完全可以在本地管理。
+
+### 保存数据集
+
+`deepeval` 既可以存储单轮数据集，也可以存储多轮数据集。单轮数据集包含 `Golden` 列表，多轮数据集则包含 `ConversationalGolden`。
+
+<Tabs>
+<Tab title="Confident AI">
+
+你可以使用 `push` 方法把数据集保存到云端：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset(goldens)
+dataset.push(alias="My dataset")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({ goldens });
+await dataset.push({ alias: "My dataset" });
+```
+
+</Tab>
+
+</Tabs>
+
+这会把评估数据集中的所有金标推送到 Confident AI。如果你不确定金标是否已可评估，应把 `finalized` 设为 `False`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+dataset.push(alias="My dataset", finalized=False)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await dataset.push({ alias: "My dataset", finalized: false });
+```
+
+</Tab>
+
+</Tabs>
+
+这意味着在你于平台上手动把它们标记为已定稿之前，它们不会被拉取。更多内容见 Confident AI 的文档[这里](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens)。
+
+<Tip>
+你也可以用完全相同的方式推送多轮数据集。
+</Tip>
+
+</Tab>
+<Tab title="Locally as JSON">
+
+<Tabs>
+
+<Tab title="Python">
+
+你可以使用 `save_as()` 方法把数据集在本地保存为 JSON 文件：
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset(goldens)
+dataset.save_as(
+    file_type="json",
+    directory="./deepeval-test-dataset",
+)
+```
+
+调用 `save_as()` 方法时有**两个**必填参数和**两个**可选参数：
+
+- `file_type`：字符串，取值为 `"csv"`、`"json"` 或 `"jsonl"`，指定保存 `Golden` 的文件格式。
+- `directory`：字符串，指定希望保存 `Golden` 的目录路径。
+- `file_name`：字符串，指定数据集文件的自定义文件名。默认为当前的 "YYYYMMDD_HHMMSS" 时间格式。
+- `include_test_cases`：布尔值，设为 `True` 时会一并保存数据集中的测试用例。默认为 `False`。
+
+<Note>
+默认情况下，`save_as()` 方法只把 `EvaluationDataset` 中的 `Golden` 保存到文件。如果你还想保存测试用例，把 `include_test_cases` 设为 `True`。
+</Note>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+你可以使用 `saveAs()` 方法把数据集在本地保存为 JSON 文件：
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({ goldens });
+await dataset.saveAs({
+  fileType: "json",
+  directory: "./deepeval-test-dataset",
+});
+```
+
+调用 `saveAs()` 方法时有**两个**必填参数和**两个**可选参数：
+
+- `fileType`：字符串，取值为 `"csv"`、`"json"` 或 `"jsonl"`，指定保存 `Golden` 的文件格式。
+- `directory`：字符串，指定希望保存 `Golden` 的目录路径。目录不存在时会自动创建。
+- `fileName`：字符串，指定数据集文件的自定义文件名。默认为当前的 "YYYYMMDD_HHMMSS" 时间格式。
+- `includeTestCases`：布尔值，设为 `true` 时会一并保存数据集中的测试用例。默认为 `false`。
+
+`saveAs()` 返回它写入的完整路径。
+
+<Note>
+默认情况下，`saveAs()` 方法只把 `EvaluationDataset` 中的 `Golden` 保存到文件。如果你还想保存测试用例，把 `includeTestCases` 设为 `true`。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="Locally as CSV">
+
+<Tabs>
+
+<Tab title="Python">
+
+你可以使用 `save_as()` 方法把数据集在本地保存为 CSV 文件：
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset(goldens)
+dataset.save_as(
+    file_type="csv",
+    directory="./deepeval-test-dataset",
+)
+```
+
+调用 `save_as()` 方法时有**两个**必填参数和**两个**可选参数：
+
+- `file_type`：字符串，取值为 `"csv"`、`"json"` 或 `"jsonl"`，指定保存 `Golden` 的文件格式。
+- `directory`：字符串，指定希望保存 `Golden` 的目录路径。
+- `file_name`：字符串，指定数据集文件的自定义文件名。默认为当前的 "YYYYMMDD_HHMMSS" 时间格式。
+- `include_test_cases`：布尔值，设为 `True` 时会一并保存数据集中的测试用例。默认为 `False`。
+
+<Note>
+默认情况下，`save_as()` 方法只把 `EvaluationDataset` 中的 `Golden` 保存到文件。如果你还想保存测试用例，把 `include_test_cases` 设为 `True`。
+</Note>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+你可以使用 `saveAs()` 方法把数据集在本地保存为 CSV 文件：
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({ goldens });
+await dataset.saveAs({
+  fileType: "csv",
+  directory: "./deepeval-test-dataset",
+});
+```
+
+调用 `saveAs()` 方法时有**两个**必填参数和**两个**可选参数：
+
+- `fileType`：字符串，取值为 `"csv"`、`"json"` 或 `"jsonl"`，指定保存 `Golden` 的文件格式。
+- `directory`：字符串，指定希望保存 `Golden` 的目录路径。目录不存在时会自动创建。
+- `fileName`：字符串，指定数据集文件的自定义文件名。默认为当前的 "YYYYMMDD_HHMMSS" 时间格式。
+- `includeTestCases`：布尔值，设为 `true` 时会一并保存数据集中的测试用例。默认为 `false`。
+
+CSV 为金标的每个字段保存一列，`context` 这类列表以 `|` 连接，`tools_called` 这类对象以 JSON 写入。
+
+<Note>
+默认情况下，`saveAs()` 方法只把 `EvaluationDataset` 中的 `Golden` 保存到文件。如果你还想保存测试用例，把 `includeTestCases` 设为 `true`。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="Locally as JSONL">
+
+<Tabs>
+
+<Tab title="Python">
+
+你可以使用 `save_as()` 方法把数据集在本地保存为 JSONL 文件：
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset(goldens)
+dataset.save_as(
+    file_type="jsonl",
+    directory="./deepeval-test-dataset",
+)
+```
+
+每行保存一个金标，这让文件易于追加，也便于用 [`add_goldens_from_jsonl_file()`](#load-dataset) 流式读回。
+
+<Note>
+默认情况下，`save_as()` 方法只把 `EvaluationDataset` 中的 `Golden` 保存到文件。如果你还想保存测试用例，把 `include_test_cases` 设为 `True`。
+</Note>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+你可以使用 `saveAs()` 方法把数据集在本地保存为 JSONL 文件：
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({ goldens });
+await dataset.saveAs({
+  fileType: "jsonl",
+  directory: "./deepeval-test-dataset",
+});
+```
+
+每行保存一个金标，这让文件易于追加，也便于用 [`addGoldensFromJSONL()`](#load-dataset) 流式读回。
+
+<Note>
+默认情况下，`saveAs()` 方法只把 `EvaluationDataset` 中的 `Golden` 保存到文件。如果你还想保存测试用例，把 `includeTestCases` 设为 `true`。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+### 加载数据集
+
+<Tabs>
+
+<Tab title="Python">
+
+`deepeval` 支持把存储在 JSON、JSONL、CSV 以及 Hugging Face 数据集中的数据加载进 `EvaluationDataset`，可作为测试用例或金标。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+`deepeval` 支持把存储在 Confident AI、JSON、JSONL 和 CSV 文件中的数据加载进 `EvaluationDataset`，可作为测试用例或金标。
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+<Tab title="Confident AI">
+
+你可以用一行代码把整个数据集从 Confident AI 的云端加载。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.pull(alias="My Evals Dataset")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.pull({ alias: "My Evals Dataset" });
+```
+
+</Tab>
+
+</Tabs>
+
+非技术的领域专家可以在 Confident AI 上**创建、标注与评论**数据集。你还可以用 CSV 格式上传数据集，或用一行代码把在 `deepeval` 中创建的合成数据集推送到 Confident AI。
+
+更多信息请访问 [Confident AI 数据集板块](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens)。
+
+</Tab>
+<Tab title="From JSON">
+
+<Tabs>
+
+<Tab title="Python">
+
+通过提供 `.json` 文件的 `file_path`，你可以加载可能在别处生成的现成 `EvaluationDataset`，**既可以作为测试用例，也可以作为金标**。你的 `.json` 文件应包含对象数组（即字典列表）。
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+
+# Add goldens from a JSON file
+dataset.add_goldens_from_json_file(
+    file_path="example.json",
+) # file_path is the absolute path to your .json file
+```
+
+如果你的 JSON 文件的键与 `deepeval` 约定的 `Golden` 或 `ConversationalGolden` 参数不同，可以在[函数参数](https://github.com/confident-ai/deepeval/blob/main/deepeval/dataset/dataset.py#L584)中提供自定义键名。
+
+你也可以从 JSON 文件向数据集添加单轮 `LLMTestCase`。
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+
+# Add as test cases
+dataset.add_test_cases_from_json_file(
+    # file_path is the absolute path to you .json file
+    file_path="example.json",
+    input_key_name="query",
+    actual_output_key_name="actual_output",
+    expected_output_key_name="expected_output",
+    context_key_name="context",
+    retrieval_context_key_name="retrieval_context",
+)
+```
+
+<Info>
+以金标形式加载数据集尤其有用，当你打算在评估时生成 LLM 的 `actual_output` 时。如果你在为测试生成数据，或在使用来自生产环境的历史数据，你可能会遇到这种情况。
+</Info>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+通过提供 `.json` 文件的 `filePath`，你可以加载可能在别处生成的现成 `EvaluationDataset`，**既可以作为测试用例，也可以作为金标**。你的 `.json` 文件应包含对象数组。
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+
+// Add goldens from a JSON file
+await dataset.addGoldensFromJSON({
+  filePath: "example.json", // filePath is the absolute path to your .json file
+});
+```
+
+带 `scenario` 的对象会成为 `ConversationalGolden`，其余成为 `Golden`，因此单个文件不能混用两者。键默认采用 `deepeval` 写文件时使用的 snake_case 命名，同时接受各自的 camelCase 拼写作为回退——任一 SDK 保存的数据集都无需配置即可加载。如果你的文件使用了不同的名称，只需覆盖不同的那些键：
+
+```typescript
+await dataset.addGoldensFromJSON({
+  filePath: "example.json",
+  keys: { input: "query", expectedOutput: "gold_answer" },
+});
+```
+
+你也可以从 JSON 文件向数据集添加单轮 `LLMTestCase`。每个对象必须有输入与实际输出，因为测试用例缺少其一便无法评估。
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+
+// Add as test cases
+await dataset.addTestCasesFromJSON({
+  // filePath is the absolute path to your .json file
+  filePath: "example.json",
+  keys: { input: "query", actualOutput: "response" },
+});
+```
+
+<Info>
+以金标形式加载数据集尤其有用，当你打算在评估时生成 LLM 的 `actualOutput` 时。如果你在为测试生成数据，或在使用来自生产环境的历史数据，你可能会遇到这种情况。
+</Info>
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="From JSONL">
+
+<Tabs>
+
+<Tab title="Python">
+
+通过提供 `file_path`，你可以从 `.jsonl` 文件加载现成的 `Golden` 或 `ConversationalGolden`。每行应包含一个 JSON 对象，对应一个 `Golden` 或 `ConversationalGolden`。
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+
+# Add goldens from a JSONL file
+dataset.add_goldens_from_jsonl_file(
+    file_path="example.jsonl",
+) # file_path is the absolute path to your .jsonl file
+```
+
+对于单轮金标，每行可以形如：
+
+```json
+{"input": "What is DeepEval?", "expected_output": "An LLM evaluation framework.", "context": ["DeepEval helps evaluate LLM apps."]}
+```
+
+对于多轮金标，每行可以形如：
+
+```json
+{"scenario": "A user asks for help evaluating an LLM app.", "expected_outcome": "The user understands how to create an evaluation dataset.", "context": ["DeepEval supports evaluation datasets."]}
+```
+
+<Note>
+一个 `EvaluationDataset` 只能包含单轮或多轮金标中的一种，不能混用。如果 JSONL 文件混有 `Golden` 与 `ConversationalGolden` 行，`deepeval` 会抛出错误。
+</Note>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+通过提供 `filePath`，你可以从 `.jsonl` 文件加载现成的 `Golden` 或 `ConversationalGolden`。每行应包含一个 JSON 对象，对应一个 `Golden` 或 `ConversationalGolden`。
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+
+// Add goldens from a JSONL file
+await dataset.addGoldensFromJSONL({
+  filePath: "example.jsonl", // filePath is the absolute path to your .jsonl file
+});
+```
+
+对于单轮金标，每行可以形如：
+
+```json
+{"input": "What is DeepEval?", "expected_output": "An LLM evaluation framework.", "context": ["DeepEval helps evaluate LLM apps."]}
+```
+
+对于多轮金标，每行可以形如：
+
+```json
+{"scenario": "A user asks for help evaluating an LLM app.", "expected_outcome": "The user understands how to create an evaluation dataset.", "context": ["DeepEval supports evaluation datasets."]}
+```
+
+空行会被跳过；无法解析的行会带行号报错。`context` 若写成一个带分隔符的字符串而非数组，会按 `contextDelimiter` 拆分，默认为 `|`。
+
+<Note>
+一个 `EvaluationDataset` 只能包含单轮或多轮金标中的一种，不能混用。如果 JSONL 文件混有 `Golden` 与 `ConversationalGolden` 行，`deepeval` 会抛出错误。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="From CSV">
+
+<Tabs>
+
+<Tab title="Python">
+
+通过提供 `.csv` 文件的 `file_path`，你可以向 `EvaluationDataset` 添加测试用例或金标。你的 `.csv` 文件应包含能通过列名映射为 `Golden` 或 `ConversationalGolden` 的行。
+
+请记住，`context` 等参数应为字符串列表；在 CSV 文件中，这意味着持有列表的单元格会按 `context_col_delimiter` 拆分，默认为 `|`——与 [`save_as()`](#save-dataset) 连接时使用的分隔符相同，因此保存过的数据集无需任何配置即可重新加载。只有当你的文件使用其他分隔符时才需要提供它。
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+
+# Add goldens
+dataset.add_goldens_from_csv_file(
+    file_path="example.csv",
+) # file_path is the absolute path to you .csv file
+```
+
+如果你的 CSV 文件的列名与 `deepeval` 约定的 `Golden` 或 `ConversationalGolden` 参数不同，可以在[函数参数](https://github.com/confident-ai/deepeval/blob/main/deepeval/dataset/dataset.py#L433)中提供自定义列名。
+
+你也可以从 CSV 文件向数据集添加单轮 `LLMTestCase`。
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+
+# Add as test cases
+dataset.add_test_cases_from_csv_file(
+    # file_path is the absolute path to you .csv file
+    file_path="example.csv",
+    input_col_name="query",
+    actual_output_col_name="actual_output",
+    expected_output_col_name="expected_output",
+    context_col_name="context",
+    context_col_delimiter="|",
+    retrieval_context_col_name="retrieval_context",
+    retrieval_context_col_delimiter="|"
+)
+```
+
+<Note>
+由于 `expected_output`、`context`、`retrieval_context`、`tools_called` 与 `expected_tools` 是 `LLMTestCase` 的可选参数，从现有数据集添加测试用例时这些字段同样是**可选**的。文件中缺少的列会让对应字段保持 `None` 而非空值，需要它的指标仍会报告其缺失。
+</Note>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+通过提供 `.csv` 文件的 `filePath`，你可以向 `EvaluationDataset` 添加测试用例或金标。你的 `.csv` 文件应包含能通过列名映射为 `Golden` 或 `ConversationalGolden` 的行。
+
+请记住，`context` 等参数持有字符串列表，因此持有列表的单元格会按 `contextDelimiter` 拆分，默认为 `|`——与 [`saveAs()`](#save-dataset) 连接时使用的分隔符相同，因此保存过的数据集无需任何配置即可重新加载。只有当你的文件使用其他分隔符时才需要传入它。
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+
+// Add goldens
+await dataset.addGoldensFromCSV({
+  filePath: "example.csv", // filePath is the absolute path to your .csv file
+});
+```
+
+列名默认采用 `deepeval` 自己的命名，因此已使用这些命名的文件无需任何配置。如果列名不同，通过 `keys` 只需列出不同的那些：
+
+```typescript
+await dataset.addGoldensFromCSV({
+  filePath: "example.csv",
+  keys: { input: "query", actualOutput: "response" },
+});
+```
+
+带 `scenario` 的行会成为 `ConversationalGolden`，其 `turns` 单元格按 JSON 读取。`toolsCalled`、`additionalMetadata`、`customColumnKeyValues` 等单元格也按 JSON 读取，这正是 [`saveAs()`](#save-dataset) 写出的形状。
+
+你也可以从 CSV 文件向数据集添加单轮 `LLMTestCase`。
+
+```typescript
+// Add as test cases
+await dataset.addTestCasesFromCSV({
+  filePath: "example.csv",
+  inputCol: "query",
+  actualOutputCol: "response",
+  contextCol: "context",
+  contextDelimiter: "|",
+  retrievalContextCol: "retrieval_context",
+  retrievalContextDelimiter: "|",
+});
+```
+
+<Note>
+由于 `expectedOutput`、`context`、`retrievalContext`、`toolsCalled` 与 `expectedTools` 是 `LLMTestCase` 的可选参数，从现有数据集添加测试用例时这些列同样是**可选**的。文件中缺少的列会让对应字段保持未设置而非空值，需要它的指标仍会报告其缺失。
+</Note>
+
+<Note>
+一个 `EvaluationDataset` 只能包含单轮或多轮金标中的一种，不能混用。如果 CSV 文件混有 `Golden` 与 `ConversationalGolden` 行，`deepeval` 会抛出错误。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+## 生成数据集
+
+有时你可能没有现成可用的数据集，这没关系。针对单轮与多轮场景，`deepeval` 提供两个选择：
+
+- `Synthesizer` 用于生成单轮金标
+- `ConversationSimulator` 用于在 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases#conversational-test-case) 中生成 `turn`
+
+### 合成器
+
+<Tabs>
+
+<Tab title="Python">
+
+`deepeval` 让任何人都能轻松在你本地机器上从文档生成合成数据集。如果你事先没有准备评估数据集，这尤其有帮助。
+
+```python
+from deepeval.synthesizer import Synthesizer
+
+goldens = Synthesizer().generate_goldens_from_docs(
+    document_paths=['example.txt', 'example.docx', 'example.pdf']
+)
+
+dataset = EvaluationDataset(goldens=goldens)
+```
+
+本例使用了 `generate_goldens_from_docs` 方法，它是 `deepeval` 的 `Synthesizer` 提供的四种生成方法之一。这四种方法包括：
+
+- [`generate_goldens_from_docs()`](/docs/synthesizer-generate-from-docs)：适合基于从知识库中以文档形式提取的上下文，生成评估你的 LLM 应用的金标。
+- [`generate_goldens_from_contexts()`](/docs/synthesizer-generate-from-contexts)：适合基于一组准备好的上下文，生成评估你的 LLM 应用的金标。
+- [`generate_goldens_from_scratch()`](/docs/synthesizer-generate-from-scratch)：适合不依赖知识库上下文，生成评估你的 LLM 应用的金标。
+- [`generate_goldens_from_goldens()`](/docs/synthesizer-generate-from-goldens)：适合通过扩增一组已知金标来生成金标。
+
+`deepeval` 的 `Synthesizer` 使用一系列演化技术，让生成的金标更复杂、更接近人工准备的数据。
+
+<Info>
+关于 `deepeval` 的 `Synthesizer` 如何工作的更多信息，访问[金标合成器板块](/docs/golden-synthesizer#how-does-it-work)。
+</Info>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+<Note>
+**501 · TypeScript 暂未实现**
+
+`Synthesizer` 尚未在 TypeScript SDK 中提供，目前可在 Python 中使用，本节内容以 Python 为准。
+
+它可以从你的文档、上下文或从零生成合成金标——这正是你事先没有准备数据集时的选择。在该功能落地之前，请手工编写金标，或[从 Confident AI 拉取数据集](#load-dataset)，在别处生成的合成金标也可以存储和分享在那里。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+### Conversation Simulator
+
+`Synthesizer` 生成金标，而 `ConversationSimulator` 略有不同——它生成的是 `ConversationalTestCase` 中的 `turns`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.simulator import ConversationSimulator
+
+# Define simulator
+simulator = ConversationSimulator(
+    user_intentions={"Opening a bank account": 1},
+    user_profile_items=[
+        "full name",
+        "current address",
+        "bank account number",
+        "date of birth",
+        "mother's maiden name",
+        "phone number",
+        "country code",
+    ],
+)
+
+# Define model callback
+async def model_callback(input: str, conversation_history: List[Dict[str, str]]) -> str:
+    return f"I don't know how to answer this: {input}"
+
+# Start simluation
+convo_test_cases = simulator.simulate(
+  model_callback=model_callback,
+  stopping_criteria="Stop when the user's banking request has been fully resolved.",
+)
+print(convo_test_cases)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { ConversationSimulator, ConversationalGolden, Turn } from "deepeval";
+
+// Define simulator
+const simulator = new ConversationSimulator({
+  modelCallback: async ({ input }) =>
+    new Turn({
+      role: "assistant",
+      content: `I don't know how to answer this: ${input}`,
+    }),
+});
+
+// Start simulation
+const convoTestCases = await simulator.simulate({
+  conversationalGoldens: [
+    new ConversationalGolden({
+      scenario: "A user opening a bank account",
+      expectedOutcome: "The user's banking request is fully resolved.",
+    }),
+  ],
+  maxUserSimulations: 10,
+});
+console.log(convoTestCases);
+```
+
+</Tab>
+
+</Tabs>
+
+更多内容见[对话模拟器页面](/docs/conversation-simulator)。
+
+## 什么是金标？
+
+在 `deepeval` 中，金标是测试用例更灵活的替代形式，**是初始化数据集的首选方式**。与测试用例不同，金标：
+
+- 只需要 `input`/`scenario` 即可初始化
+- 存储预期结果，如 `expected_output`/`expected_outcome`
+- 作为模板存在，在成为完整的测试用例之前
+
+金标擅长以下开发工作流：
+
+- 评估 LLM 应用不同迭代之间的变更
+- 比较不同模型版本之间的表现
+- 用尚未被你的 LLM 处理过的 `input` 进行测试
+
+把金标想成「待处理的测试用例」——它们包含全部输入数据与预期结果，只缺那些在你的 LLM 处理它们时才会生成的动态元素（`actual_output`、`retrieval_context`、`tools_called`）。
+
+### 数据模型
+
+金标的数据模型与其单轮/多轮测试用例对应物（即 `LLMTestCase` 与 `ConversationalTestCase`）几乎一致。
+
+对于单轮 `Golden`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from pydantic import BaseModel
+
+class Golden(BaseModel):
+    input: str
+    expected_output: Optional[str] = None
+    context: Optional[List[str]] = None
+    expected_tools: Optional[List[ToolCall]] = None
+
+    # Useful metadata for generating test cases
+    additional_metadata: Optional[Dict] = None
+    comments: Optional[str] = None
+    custom_column_key_values: Optional[Dict[str, str]] = None
+
+    # Fields that you should ideally not populate
+    actual_output: Optional[str] = None
+    retrieval_context: Optional[List[str]] = None
+    tools_called: Optional[List[ToolCall]] = None
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+class Golden {
+  input: string;
+  expectedOutput?: string;
+  context?: string[];
+  expectedTools?: ToolCall[];
+
+  // Useful metadata for generating test cases
+  additionalMetadata?: Record<string, any>;
+  comments?: string;
+  customColumnKeyValues?: Record<string, string>;
+
+  // Fields that you should ideally not populate
+  actualOutput?: string;
+  retrievalContext?: string[];
+  toolsCalled?: ToolCall[];
+}
+```
+
+</Tab>
+
+</Tabs>
+
+<Info>
+`actual_output`、`retrieval_context` 与 `tools_called` 应当在评估时动态填充，而不是从金标直接传给测试用例。
+</Info>
+
+对于多轮 `ConversationalGolden`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from pydantic import BaseModel
+
+class ConversationalGolden(BaseModel):
+    scenario: str
+    expected_outcome: Optional[str] = None
+    persona: Optional[Persona] = None
+    context: Optional[List[str]] = None
+
+    # Useful metadata for generating test cases
+    additional_metadata: Optional[Dict] = None
+    comments: Optional[str] = None
+    custom_column_key_values: Optional[Dict[str, str]] = None
+
+    # Fields that you should ideally not populate
+    turns: Optional[Turn] = None
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+class ConversationalGolden {
+  scenario: string;
+  expectedOutcome?: string;
+  persona?: Persona;
+  context?: string[];
+
+  // Useful metadata for generating test cases
+  additionalMetadata?: Record<string, any>;
+  comments?: string;
+  customColumnKeyValues?: Record<string, string>;
+
+  // Fields that you should ideally not populate
+  turns?: Turn[];
+}
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+`user_description` 已被弃用，改用 [`persona`](/docs/conversation-simulator-voice-personas)。仍携带该字段的金标与数据集文件可以继续加载——字符串会被提升为由这些特征构建的一个人设，两者保持同步——但该参数将在未来版本中移除。
+</Warning>
+
+你可以在 [Confident AI](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens#custom-dataset-columns) 上轻松添加和编辑自定义列。
+
+<Tip>
+
+`turns` 参数**绝对应该**在评估时在你的 `ConversationalTestCase` 中生成。不过 `turns` 参数的存在是为了让用户可以：
+
+- 从先前对话的某个中断点开始[模拟轮次](/docs/conversation-simulator)
+- 当测试用例通常在最后一轮（智能体连续调用多个工具时）失败的情况下，从特定轮次继续
+
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What's the difference between a golden and a test case?">
+金标只需要 `input`（或 `scenario`）加上预期结果，扮演「待处理的测试用例」。一旦你的 LLM 应用在评估时生成了 `actual_output`、`retrieval_context`、`tools_called` 等动态字段，它就成为完整的测试用例。
+</Accordion>
+<Accordion title="Why initialize a dataset with goldens instead of test cases?">
+用金标构建数据集是首选，因为它们与任何单次运行解耦。你可以在不同模型版本和应用迭代之间重跑同一批金标，每次生成全新输出，让回归测试与对比干净利落。
+</Accordion>
+<Accordion title="Do I need production data to create a dataset?">
+**Python**：不需要。你可以用[合成器](/docs/golden-synthesizer)从文档或从零生成合成金标，或用[对话模拟器](/docs/conversation-simulator)模拟多轮对话。**TypeScript**：不需要。你可以用[对话模拟器](/docs/conversation-simulator)模拟多轮对话，或手工编写金标并逐步扩充数据集。为你生成单轮金标的 `Synthesizer` 尚未在 TypeScript 中提供。
+</Accordion>
+<Accordion title="Can I load datasets from local files?">
+**Python**：可以。你可以在本地保存和加载数据集，包括从 JSON 与 JSONL 文件导入金标，并在运行评估时把它们转换为测试用例。**TypeScript**：可以。你可以用 `addGoldensFromJSON()`、`addGoldensFromJSONL()` 和 `addGoldensFromCSV()` 加载金标，用 `addTestCasesFromJSON()` 和 `addTestCasesFromCSV()` 加载测试用例，并用 `saveAs()` 把数据集写回磁盘。
+</Accordion>
+<Accordion title="Can I add custom columns to a golden?">
+可以。金标支持 `additional_metadata`、`comments` 与 `custom_column_key_values`，可携带你想在评估中保留的任意元数据。
+</Accordion>
+<Accordion title="Can my team store, edit, and version datasets on the cloud with a UI?">
+数据集在本地完全可用。对于想要共享唯一事实源的团队，[Confident AI](https://www.confident-ai.com)（`deepeval` 团队的平台）让你把数据集存到云端、在界面中编辑金标与自定义列、让非工程师参与贡献——再把同一数据集拉回代码。它是可选的；本地数据集的行为完全一致。
+</Accordion>
+</AccordionGroup>
