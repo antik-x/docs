@@ -1,0 +1,193 @@
+1	---
+2	title: Multi-Turn End-to-End Evaluation
+3	---
+5	Multi-turn end-to-end evaluation grades **whole conversations**, not single exchanges. Each test case is a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) and each golden is a [`ConversationalGolden`](/docs/evaluation-datasets#what-are-goldens) describing a _scenario_, an _expected outcome_, and _who the user is_.
+7	If you haven't already, read the [end-to-end overview](/docs/evaluation-end-to-end-llm-evals) for the concepts and how multi-turn compares to single-turn.
+9	<Note>
+10	Unlike [single-turn end-to-end evaluation](/docs/evaluation-end-to-end-single-turn), multi-turn doesn't support tracing yet.
+11	</Note>
+13	## How Multi-Turn E2E Eval Works
+15	A multi-turn test run is built in two phases: **simulation** (synthetic user vs. your chatbot) and **evaluation** (metrics applied to the resulting conversations).
+17	1. You wrap your chatbot in a `model_callback` that returns the next assistant `Turn`.
+18	2. You build a dataset of `ConversationalGolden`s — each describes the scenario, expected outcome, and persona of the simulated user.
+19	3. You hand the goldens + callback to a [`ConversationSimulator`](/docs/conversation-simulator). It plays a synthetic user against your chatbot until the scenario plays out, producing one `ConversationalTestCase` per golden.
+20	4. You pass the test cases + multi-turn metrics to `evaluate()`, which scores them and rolls the results into a test run.
+50	<Steps>
+51	<Step>
+53	### Wrap your chatbot in a callback
+55	The `ConversationSimulator` needs a way to ask your chatbot for its next reply, given the conversation so far. You provide that as a `model_callback`.
+57	It can be either a regular function or an `async` one; the simulator detects which and dispatches accordingly. The examples below use `async def` because most modern chat clients are async, but plain `def` works just as well:
+59	<Tabs>
+61	<Tab title="Python">
+63	<Tabs>
+64	<Tab title="Python">
+75	</Tab>
+76	<Tab title="OpenAI">
+95	</Tab>
+96	<Tab title="LangChain">
+117	</Tab>
+118	<Tab title="LlamaIndex">
+137	</Tab>
+138	<Tab title="OpenAI Agents">
+155	</Tab>
+156	<Tab title="Pydantic">
+178	</Tab>
+179	</Tabs>
+181	</Tab>
+183	<Tab title="TypeScript">
+185	<Tabs>
+186	<Tab title="TypeScript">
+205	</Tab>
+206	<Tab title="OpenAI">
+234	</Tab>
+235	<Tab title="LangChain">
+264	</Tab>
+265	</Tabs>
+267	</Tab>
+269	</Tabs>
+271	<Tabs>
+273	<Tab title="Python">
+275	<Info>
+276	Your `model_callback` should accept an `input` (the simulated user's next message) and may optionally accept `turns` (the history so far) and `thread_id` (a stable session id). It must return a `Turn(role="assistant", content=...)`.
+277	</Info>
+279	</Tab>
+281	<Tab title="TypeScript">
+283	<Info>
+284	Your `modelCallback` receives a single object with `input` (the simulated user's next message), `turns` (the history so far), and `threadId` (a stable session id). Destructure only the ones you need. It must resolve to a `Turn` with `role: "assistant"`.
+285	</Info>
+287	</Tab>
+289	</Tabs>
+291	See [Conversation Simulator → Model Callback](/docs/conversation-simulator-model-callback) for the full callback contract, including custom argument injection.
+293	</Step>
+295	<Step>
+299	A `ConversationalGolden` describes the situation the simulated user is in, what success looks like, and who they are. Wrap a list of them in an `EvaluationDataset` so the simulator can iterate. Pick whichever source fits where your goldens live today:
+301	<Tabs>
+304	<Tabs>
+306	<Tab title="Python">
+323	</Tab>
+325	<Tab title="TypeScript">
+349	</Tab>
+351	</Tabs>
+355	</Tab>
+360	<Tabs>
+362	<Tab title="Python">
+371	</Tab>
+373	<Tab title="TypeScript">
+382	</Tab>
+384	</Tabs>
+390	</Tab>
+393	<Tabs>
+395	<Tab title="Python">
+409	</Tab>
+411	<Tab title="TypeScript">
+422	</Tab>
+424	</Tabs>
+428	</Tab>
+431	<Tabs>
+433	<Tab title="Python">
+447	</Tab>
+449	<Tab title="TypeScript">
+458	</Tab>
+460	</Tabs>
+464	</Tab>
+465	</Tabs>
+467	<Note>
+469	</Note>
+471	<Tip>
+472	This page covers **sourcing** goldens for an eval run only. To **persist** a dataset (push to Confident AI, save as CSV/JSON, version it across runs), see [the datasets page](/docs/evaluation-datasets) for the full storage and lifecycle story.
+473	</Tip>
+475	</Step>
+477	<Step>
+481	Hand the goldens and the callback to a `ConversationSimulator` to produce a list of `ConversationalTestCase`s:
+483	<Tabs>
+485	<Tab title="Python">
+497	</Tab>
+499	<Tab title="TypeScript">
+512	</Tab>
+514	</Tabs>
+516	The simulator exposes additional configuration beyond what fits here — see [stopping logic](/docs/conversation-simulator-stopping-logic), [custom templates](/docs/conversation-simulator-custom-templates), and [lifecycle hooks](/docs/conversation-simulator-lifecycle-hooks) for the full surface.
+518	<details>
+521	The simulator carries `scenario` and `expected_outcome` over from the golden, and fills in `turns`:
+523	<Tabs>
+525	<Tab title="Python">
+541	</Tab>
+543	<Tab title="TypeScript">
+558	</Tab>
+560	</Tabs>
+562	</details>
+564	</Step>
+566	<Step>
+567	### Run `evaluate()`
+569	Pass the simulated test cases and your multi-turn metrics to `evaluate()`:
+571	<Tabs>
+573	<Tab title="Python">
+575	<Tabs>
+576	<Tab title="Async">
+578	Default. Metrics dispatch concurrently across conversations for the fastest run.
+590	</Tab>
+591	<Tab title="Sync">
+593	Pass `AsyncConfig(run_async=False)` to score conversations one at a time. Useful for debugging, rate-limited providers, or anywhere asyncio gets in the way (e.g. some Jupyter setups).
+607	</Tab>
+608	</Tabs>
+610	There are **TWO** mandatory and **FIVE** optional parameters when calling `evaluate()` for multi-turn end-to-end evaluation:
+612	- `test_cases`: a list of `ConversationalTestCase`s (or an `EvaluationDataset`). You cannot mix `LLMTestCase`s and `ConversationalTestCase`s in the same test run.
+613	- `metrics`: a list of metrics of type `BaseConversationalMetric`. See the [multi-turn metrics](/docs/metrics-introduction#multi-turn-metrics) for the full list (e.g. `TurnRelevancyMetric`, `KnowledgeRetentionMetric`, `RoleAdherenceMetric`, `ConversationCompletenessMetric`).
+614	- [Optional] `identifier`: a string label for this test run.
+620	</Tab>
+622	<Tab title="TypeScript">
+624	Metrics dispatch concurrently across conversations, so `evaluate()` is always awaited.
+633	There are **TWO** mandatory and **FIVE** optional parameters when calling `evaluate()` for multi-turn end-to-end evaluation. The two mandatory ones are positional; the optional ones go in a third options object:
+635	- `testCases`: an array of `ConversationalTestCase`s. You cannot mix `LLMTestCase`s and `ConversationalTestCase`s in the same test run.
+636	- `metrics`: an array of metrics of type `BaseConversationalMetric`. See the [multi-turn metrics](/docs/metrics-introduction#multi-turn-metrics) for the full list (e.g. `TurnRelevancyMetric`, `KnowledgeRetentionMetric`, `RoleAdherenceMetric`, `ConversationCompletenessMetric`).
+637	- [Optional] `identifier`: a string label for this test run.
+641	- [Optional] `cacheConfig`: a `CacheConfig` controlling caching. See [cache configs](/docs/evaluation-flags-and-configs#cache-configs).
+643	</Tab>
+645	</Tabs>
+647	</Step>
+648	</Steps>
+650	<Tabs>
+652	<Tab title="Python">
+654	Note that **simulation** and **evaluation** have separate concurrency controls — `ConversationSimulator(max_concurrent=...)` decides how many conversations are simulated in parallel; `AsyncConfig` only affects how those finished conversations are scored.
+656	</Tab>
+658	<Tab title="TypeScript">
+660	Note that **simulation** and **evaluation** are separate phases: the simulator runs every golden concurrently and resolves once all conversations are complete, and only then are those finished conversations scored.
+662	</Tab>
+664	</Tabs>
+666	We highly recommend setting up [Confident AI](https://app.confident-ai.com) with your `deepeval` evaluations to get professional test reports and observe your application's performance over time:
+668	<figure>
+669	  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/evaluation:multi-turn-e2e-report.mp4"></video>
+671	</figure>
+675	Log the model, prompt, and other configuration values with each test run so you can compare runs side-by-side on Confident AI and identify the best combination. Values must be `str | int | float` or a [`Prompt`](/docs/evaluation-prompts). Pass them directly to `evaluate()`:
+677	<Tabs>
+679	<Tab title="Python">
+689	</Tab>
+691	<Tab title="TypeScript">
+699	</Tab>
+701	</Tabs>
+709	<Tabs>
+711	<Tab title="Python">
+736	</Tab>
+738	<Tab title="TypeScript">
+766	</Tab>
+768	</Tabs>
+772	## FAQs
+774	<AccordionGroup>
+775	<Accordion title="What is multi-turn end-to-end evaluation?">
+776	It evaluates an entire conversation between a user and your chatbot or assistant, scoring the back-and-forth as a whole instead of a single response. It's the right approach for any app where context carries across turns.
+777	</Accordion>
+778	<Accordion title="Why do I need to wrap my chatbot in a callback?">
+779	The model callback tells `deepeval` how to call your chatbot for the next turn given the conversation so far. This lets the [conversation simulator](/docs/conversation-simulator) drive realistic multi-turn dialogues automatically.
+780	</Accordion>
+781	<Accordion title="Do I have to script every conversation by hand?">
+782	No. You define `ConversationalGolden` s with a scenario and a user persona, then let `ConversationSimulator.simulate()` generate the turns, up to a limit you set on the number of simulated user turns.
+783	</Accordion>
+784	<Accordion title="Is there component-level evaluation for multi-turn apps?">
+785	No. Component-level evaluation only applies to single-turn use cases. Multi-turn apps are evaluated end-to-end across the full conversation.
+786	</Accordion>
+787	<Accordion title="How do I run multi-turn evals in CI/CD?">
+788	Simulate the conversations once at module load, then assert on each `ConversationalTestCase` inside a test in your language's test runner and run it with `deepeval test run` .
+789	</Accordion>
+790	<Accordion title="Can my team review long conversations on the cloud in a shared UI?">
+791	Multi-turn runs work locally, but inspecting long transcripts in a terminal is painful. When logged into [Confident AI](https://www.confident-ai.com) (the platform from the `deepeval` team), the same run produces a cloud testing report where your team can read each conversation, see per-turn scores, and track trends over time — optional and requiring no code changes.
+792	</Accordion>
+793	</AccordionGroup>

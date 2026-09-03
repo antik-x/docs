@@ -1,0 +1,513 @@
+1	---
+2	title: Introduction to LLM Evaluation Metrics
+3	---
+5	`deepeval` offers 50+ SOTA, ready-to-use metrics for you to quickly get started with. Essentially, while a test case represents the thing you're trying to measure, the metric acts as the ruler for specific criteria of interest.
+7	## Quick Summary
+9	Almost all predefined metrics on `deepeval` use **LLM-as-a-judge**, with techniques such as **QAG** (question-answer-generation), **DAG** (deep acyclic graphs), and **G-Eval**. Most score [test cases](/docs/evaluation-test-cases) representing atomic interactions, while [trajectory metrics](/docs/evaluation-trajectory-based-llm-evals) score the complete ordered trace produced by an AI agent.
+11	All of `deepeval`'s metrics output a **score between 0-1** based on its corresponding equation, as well as score **reasoning**. A metric is only successful if the evaluation score is equal to or greater than `threshold`, which is defaulted to `0.5` for all metrics.
+13	<Tabs>
+14	<Tab title="Custom metrics">
+16	Custom metrics allow you to define your **custom criteria** using SOTA implementations of LLM-as-a-Judge metrics in everyday language:
+18	- G-Eval
+19	- DAG (Deep Acyclic Graph)
+20	- Conversational G-Eval
+21	- Conversational DAG
+22	- Arena G-Eval
+23	- Do it yourself, 100% self-coded metrics (e.g. if you want to use BLEU, ROUGE)
+25	You should aim to have **at least one** custom metric in your LLM evals pipeline.
+27	</Tab>
+28	<Tab title="AI Agents">
+30	Agentic metrics evaluate AI agents at two different scopes:
+32	**Trajectory metrics** analyze the complete ordered chain of decisions and actions captured through [LLM tracing](/docs/evaluation-llm-tracing):
+34	- Task Completion — whether the agent successfully accomplished its task.
+35	- Step Efficiency — whether the agent avoided unnecessary or redundant steps.
+36	- Plan Adherence — whether the agent followed its generated plan.
+37	- Plan Quality — whether the generated plan was logical, complete, and efficient.
+39	**Component-level action metrics** evaluate one LLM decision about tool selection and arguments inside that trajectory:
+41	- Tool Correctness — whether the agent selected the correct tools.
+42	- Argument Correctness — whether it supplied the correct arguments to those tools.
+44	Use [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals) for overall execution quality and [component-level evaluation](/docs/evaluation-component-level-llm-evals) to diagnose individual actions.
+46	</Tab>
+47	<Tab title="RAG">
+49	RAG (retrieval augmented generation) metrics focus on the **retriever and generator components** independently.
+51	- Retriever:
+53	  - Contextual Relevancy
+54	  - Contextual Precision
+55	  - Contextual Recall
+57	- Generator:
+58	  - Answer Relevancy
+59	  - Faithfulness
+61	</Tab>
+62	<Tab title="Chatbots (multi-turn)">
+64	Multi-turn metrics' main use case are for evaluating chatbots and uses a `ConversationalTestCase` instead. They include:
+66	- Knowledge Retention
+67	- Role Adherence
+68	- Conversation Completeness
+69	- Conversation Relevancy
+71	Multi-turn metrics evaluates conversations as a whole and takes prior context into consideration when doing so.
+73	</Tab>
+74	<Tab title="Safety">
+76	Safety metrics concerns more on LLM security. They include:
+78	- Bias
+79	- Toxicity
+80	- Non-Advice
+81	- Misuse
+82	- PIILeakage
+83	- Role Violation
+85	For those looking for a full-blown LLM red teaming orchestration frameowork, checkout [DeepTeam](https://www.trydeepteam.com/). DeepTeam is `deepeval` but for red teaming LLMs specifically.
+87	</Tab>
+88	<Tab title="Image">
+90	Metrics in `deepeval` are multi-modal by default, metrics targeting images are metrics that definitely expects an image in the test case. They include:
+92	- Image Coherence
+93	- Image Helpfulness
+94	- Image Reference
+95	- Text-to-Image
+96	- Image-Editing
+98	Note that multi-modal metrics requires [`MLLMImage`s](/docs/evaluation-test-cases#mllmimage-data-model) in `LLMTestCase`s.
+100	</Tab>
+101	<Tab title="Others">
+103	Not use case specific, but still useful for some use cases:
+105	- Hallucination
+106	- Json Correctness
+107	- Summarization
+108	- Ragas
+110	</Tab>
+111	</Tabs>
+113	<Info>
+114	**Most metrics only require 1-2 parameters** in a test case, so it's important that you visit each metric's documentation pages to learn what's required.
+115	</Info>
+117	Metrics can score your app's black-box result, an agent's complete trajectory, or an individual component. This first example runs an **end-to-end** evaluation by providing metrics and test cases:
+119	<Tabs>
+121	<Tab title="Python">
+134	</Tab>
+136	<Tab title="TypeScript">
+154	</Tab>
+156	</Tabs>
+158	If you're logged into [Confident AI](https://confident-ai.com) before running an evaluation (`deepeval login` or `deepeval view` in the CLI), you'll also get entire testing reports on the platform:
+160	<figure>
+161	  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/evaluation:single-turn-e2e-report.mp4"></video>
+162	  <figcaption>Get sharable test reports for every metric you run with deepeval.</figcaption>
+163	</figure>
+165	More information on everything can be found on the [Confident AI evaluation docs.](https://www.confident-ai.com/docs/llm-evaluation/quickstart)
+167	## Why `deepeval` Metrics?
+169	Apart from the variety of metrics offered, `deepeval`'s metrics are a step up to other implementations because they:
+171	- Are research-backed LLM-as-as-Judge (`GEval`)
+172	- One of the most used in the world (20 million+ daily evaluations)
+173	- Make deterministic metric scores possible (when using `DAGMetric`)
+174	- Are extra reliable as LLMs are only used for extremely confined tasks during evaluation to greatly reduce stochasticity and flakiness in scores
+175	- Provide a comprehensive reason for the scores computed
+176	- Integrated 100% with Confident AI
+178	## Create Your First Metric
+180	### Custom Metrics
+182	`deepeval` provides G-Eval, a state-of-the-art LLM evaluation framework for anyone to create a custom LLM-evaluated metric using natural language. G-Eval is available for all single-turn, multi-turn, and multimodal evals.
+184	<Tabs>
+185	<Tab title="G-Eval">
+187	<Tabs>
+189	<Tab title="Python">
+207	</Tab>
+209	<Tab title="TypeScript">
+235	</Tab>
+237	</Tabs>
+239	</Tab>
+240	<Tab title="Conversational G-Eval">
+242	<Tabs>
+244	<Tab title="Python">
+262	</Tab>
+264	<Tab title="TypeScript">
+292	</Tab>
+294	</Tabs>
+296	</Tab>
+297	</Tabs>
+299	Under the hood, `deepeval` first generates a series of evaluation steps, before using these steps in conjunction with information in an `LLMTestCase` for evaluation. For more information, visit the [G-Eval documentation page.](/docs/metrics-llm-evals)
+301	<Tip>
+303	If you're looking for decision-tree based LLM-as-a-Judge, checkout the [Deep Acyclic Graph (DAG)](/docs/metrics-dag) metric.
+305	</Tip>
+307	### Default Metrics
+309	<Tabs>
+310	<Tab title="AI Agents">
+312	`deepeval` includes six metrics for evaluating AI agents. Choose them based on the scope you need:
+314	**Trajectory metrics** evaluate how the full execution works together:
+316	- **Task Completion:** Assesses whether the agent successfully completed its task.
+317	- **Step Efficiency:** Assesses whether the agent completed the task without unnecessary or redundant steps.
+318	- **Plan Adherence:** Assesses whether the agent followed its generated plan during execution.
+319	- **Plan Quality:** Assesses whether the generated plan was logical, complete, and efficient.
+321	**Component-level action metrics** evaluate individual LLM tool-calling decisions:
+323	- **Tool Correctness:** Assesses whether the agent selected the correct tools.
+324	- **Argument Correctness:** Assesses whether the agent supplied the correct arguments to those tools.
+326	Trajectory metrics require [tracing](/docs/evaluation-llm-tracing) because they analyze the complete ordered trace. Pass them to `evals_iterator()` when running the agent:
+328	<Tabs>
+330	<Tab title="Python">
+352	</Tab>
+354	<Tab title="TypeScript">
+381	</Tab>
+383	</Tabs>
+385	</Tab>
+386	<Tab title="RAG">
+388	The most used RAG metrics include:
+390	- **Answer Relevancy:** Evaluates if the generated answer is relevant to the user query
+391	- **Faithfulness:** Measures if the generated answer is factually consistent with the provided context
+392	- **Contextual Relevancy:** Assesses if the retrieved context is relevant to the user query
+393	- **Contextual Recall:** Evaluates if the retrieved context contains all relevant information
+394	- **Contextual Precision:** Measures if the retrieved context is precise and focused
+396	Which can be simply imported from the `deepeval.metrics` module:
+398	<Tabs>
+400	<Tab title="Python">
+413	</Tab>
+415	<Tab title="TypeScript">
+428	</Tab>
+430	</Tabs>
+432	</Tab>
+433	<Tab title="Chatbots">
+435	Chatbots require "conversational" (or multi-turn) metrics and they include:
+437	- **Conversation Completeness:** Evaluates if conversation satisfy user needs.
+438	- **Conversation Relevancy:** Measures if the generated outputs are relevant to user inputs.
+439	- **Role Adherence:** Assesses if the chatbot stays in character throughout a conversation.
+440	- **Knowledge Retention:** Evaluates if the chatbot is able to retain knowledge learnt throughout a conversation.
+442	You'll need to also use [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases#conversational-test-case)s instead of regular `LLMTestCase` for conversational metrics:
+444	<Tabs>
+446	<Tab title="Python">
+459	</Tab>
+461	<Tab title="TypeScript">
+479	</Tab>
+481	</Tabs>
+483	</Tab>
+484	<Tab title="Images">
+486	<Tabs>
+488	<Tab title="Python">
+501	</Tab>
+503	<Tab title="TypeScript">
+519	</Tab>
+521	</Tabs>
+523	</Tab>
+524	<Tab title="Safety">
+526	<Tabs>
+528	<Tab title="Python">
+541	</Tab>
+543	<Tab title="TypeScript">
+556	</Tab>
+558	</Tabs>
+560	</Tab>
+561	</Tabs>
+563	## Choosing Your Metrics
+565	These are the metric categories to consider when choosing your metrics:
+567	- **Custom metrics** are use case specific and architecture agnostic:
+568	  - G-Eval – best for **subjective** criteria like correctness, coherence, or tone; easy to set up.
+569	  - DAG – **decision-tree** metric for **objective or mixed** criteria (e.g., verify format before tone).
+570	  - Start with G-Eval for simplicity; use DAG for more control. You can also subclass `BaseMetric` to create your own.
+571	- **Generic metrics** are system specific and use case agnostic:
+572	  - Agent trajectory metrics: evaluate task completion, execution efficiency, planning, and plan adherence across the complete trace
+573	  - Agent component metrics: evaluate tool selection and argument generation at individual action steps
+574	  - RAG metrics: measures retriever and generator separately
+575	  - Multi-turn metrics: measure overall dialogue quality
+576	  - Combine these for multi-component LLM systems.
+577	- **Reference vs. Referenceless**:
+578	  - Reference-based metrics need **ground truth** (e.g., contextual recall or tool correctness).
+579	  - Referenceless metrics work **without labeled data**, ideal for online or production evaluation.
+580	  - Check each metric’s docs for required parameters.
+582	<Info>
+583	If you're running metrics in production, you _must_ choose a referenceless metric since no labelled data will exist.
+584	</Info>
+586	When deciding on metrics, no matter how tempting, try to limit yourself to **no more than 5 metrics**, with this breakdown:
+588	- **2-3** generic, system-specific metrics (e.g. task completion for agents, contextual precision for RAG)
+589	- **1-2** custom, use case-specific metrics (e.g. helpfulness for a medical chatbot, format correctness for summarization)
+591	The goal is to force yourself to prioritize and clearly define your evaluation criteria. This will not only help you use `deepeval`, but also help you understand what you care most about in your LLM application.
+593	<div style={{textAlign: 'center', margin: "1rem 0"}}>
+607	</div>
+609	Here are some additional ideas if you're not sure:
+611	- **AI agents**: Start with `TaskCompletionMetric` for overall trajectory quality, add `StepEfficiencyMetric`, `PlanAdherenceMetric`, or `PlanQualityMetric` when the execution path matters, and use `ToolCorrectnessMetric` or `ArgumentCorrectnessMetric` to diagnose individual LLM tool-calling decisions
+612	- **RAG**: Focus on the `AnswerRelevancyMetric` (evaluates `actual_output` alignment with the `input`) and `FaithfulnessMetric` (checks for hallucinations against `retrieval_context`)
+613	- **Chatbots**: Implement a `ConversationCompletenessMetric` to assess overall conversation quality
+614	- **Custom Requirements**: When standard metrics don't fit your needs, create custom evaluations with `G-Eval` or `DAG` frameworks
+616	In some cases, where your LLM model is doing most of the heavy lifting, it is not uncommon to have more use case specific metrics.
+618	## Configure LLM Judges
+620	You can use **ANY** LLM judge in `deepeval`, including OpenAI, Azure OpenAI, Ollama, Anthropic, Gemini, LiteLLM, etc. You can also wrap your own LLM API in `deepeval`'s `DeepEvalBaseLLM` class to use ANY model of your choice. [Click here](/guides/guides-using-custom-llms) for full guide.
+622	<Tabs>
+624	<Tab title="Python">
+626	<Tabs>
+641	<Warning>
+643	</Warning>
+645	</Tab>
+659	<Info>
+661	</Info>
+669	</Tab>
+670	<Tab title="Ollama">
+672	<Note>
+679	</Note>
+700	<Warning>
+702	</Warning>
+704	</Tab>
+705	<Tab title="Gemini">
+714	</Tab>
+721	- Azure OpenAI
+722	- Claude via AWS Bedrock
+723	- Google Vertex AI
+724	- Mistral 7B
+774	<Tip>
+778	</Tip>
+789	<Note>
+791	</Note>
+793	<Warning>
+804	</Warning>
+806	</Tab>
+807	</Tabs>
+809	</Tab>
+811	<Tab title="TypeScript">
+813	<Tabs>
+829	</Tab>
+830	<Tab title="Vercel AI SDK">
+856	<Tip>
+858	</Tip>
+860	</Tab>
+861	<Tab title="Anthropic">
+881	</Tab>
+895	<Info>
+897	</Info>
+905	</Tab>
+906	<Tab title="Ollama">
+908	<Note>
+915	</Note>
+936	</Tab>
+943	- Azure OpenAI
+944	- Claude via AWS Bedrock
+945	- Google Vertex AI
+946	- Mistral 7B
+997	<Tip>
+999	</Tip>
+1010	<Note>
+1012	</Note>
+1014	<Warning>
+1025	</Warning>
+1027	</Tab>
+1028	</Tabs>
+1030	</Tab>
+1032	</Tabs>
+1034	## Using Metrics
+1036	There are four ways you can use metrics:
+1038	1. [End-to-end](/docs/evaluation-end-to-end-llm-evals) evals, treating your LLM system as a black-box and evaluating the system inputs and outputs.
+1039	2. [Trajectory-based](/docs/evaluation-trajectory-based-llm-evals) evals, evaluating the complete ordered chain of steps taken by an AI agent.
+1040	3. [Component-level](/docs/evaluation-component-level-llm-evals) evals, placing metrics on individual components in your LLM app instead.
+1041	4. One-off (or standalone) evals, where you would use a metric to execute it individually.
+1043	### For End-to-End Evals
+1045	To run end-to-end evaluations of your LLM system, provide black-box metrics with a list of [test cases](/docs/evaluation-test-cases):
+1047	<Tabs>
+1049	<Tab title="Python">
+1061	</Tab>
+1063	<Tab title="TypeScript">
+1075	</Tab>
+1077	</Tabs>
+1079	The [`evaluate()` function](/docs/evaluation-introduction#evaluating-without-pytest) or `deepeval test run` **is the best way to run evaluations**. They offer tons of features out of the box, including caching, parallelization, cost tracking, error handling, and integration with [Confident AI.](https://confident-ai.com)
+1081	<Tip>
+1082	[`deepeval test run`](/docs/evaluation-introduction#evaluating-with-pytest) is `deepeval`'s native Pytest integration, which allows you to run evals in CI/CD pipelines.
+1083	</Tip>
+1085	### For Trajectory-Based Evals
+1087	Trajectory metrics analyze relationships between the plans, model calls, tools, handoffs, and intermediate steps in an agent's complete trace. Metrics carrying the **Trajectory** tag—Task Completion, Step Efficiency, Plan Adherence, and Plan Quality—require [LLM tracing](/docs/evaluation-llm-tracing).
+1089	Pass trajectory metrics to `evals_iterator()`, then invoke your traced agent once for each golden:
+1091	<Tabs>
+1093	<Tab title="Python">
+1108	</Tab>
+1110	<Tab title="TypeScript">
+1128	</Tab>
+1130	</Tabs>
+1132	Each metric receives the complete ordered trace after the agent finishes. See [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals) for instrumentation examples, CI/CD usage, and guidance on combining trajectory and component metrics.
+1134	### For Component-Level Evals
+1136	To run component-level evaluations of your LLM system using any metric of your choice, simply decorate your components with `@observe` and create [test cases](/docs/evaluation-test-cases) at runtime:
+1138	<Tabs>
+1140	<Tab title="Python">
+1168	</Tab>
+1170	<Tab title="TypeScript">
+1208	</Tab>
+1210	</Tabs>
+1212	### Use Metrics with Integrations
+1214	`deepeval`'s framework integrations capture the traces and spans that metrics evaluate, so you can score complete agent trajectories or individual framework-emitted components without recreating the execution structure yourself.
+1218	<Tabs>
+1219	  <Tab title="Python">
+1220	    <CardGroup cols={2}>
+1221	      <Card
+1222	        title="LangChain"
+1224	        href="/integrations/frameworks/langchain"
+1225	      />
+1226	      <Card
+1227	        title="Pydantic AI"
+1229	        href="/integrations/frameworks/pydanticai"
+1230	      />
+1231	      <Card
+1232	        title="AWS AgentCore"
+1234	        href="/integrations/frameworks/agentcore"
+1235	      />
+1236	      <Card
+1237	        title="Google ADK"
+1239	        href="/integrations/frameworks/google-adk"
+1240	      />
+1241	    </CardGroup>
+1242	  </Tab>
+1243	  <Tab title="TypeScript">
+1244	    <CardGroup cols={2}>
+1245	      <Card
+1246	        title="LangChain"
+1248	        href="/integrations/frameworks/langchain"
+1249	      />
+1250	      <Card
+1251	        title="Mastra"
+1253	        href="/integrations/frameworks/mastra"
+1254	      />
+1255	      <Card
+1256	        title="Vercel AI SDK"
+1258	        href="/integrations/frameworks/ai-sdk"
+1259	      />
+1260	      <Card
+1261	        title="LangGraph"
+1263	        href="/integrations/frameworks/langgraph"
+1264	      />
+1265	    </CardGroup>
+1266	  </Tab>
+1267	</Tabs>
+1269	Pass metrics to `evals_iterator()` for end-to-end or trajectory-based evaluation. Attach or stage metrics on framework-emitted spans for component-level evaluation. Each integration guide shows the supported patterns for that framework.
+1273	### For One-Off Evals
+1275	You can also execute each metric individually. All metrics in `deepeval`, including [custom metrics that you create](/docs/metrics-custom):
+1277	- can be executed via the `metric.measure()` method
+1278	- can have its score accessed via `metric.score`, which ranges from 0 - 1
+1279	- can have its score reason accessed via `metric.reason`
+1280	- can have its status accessed via `metric.is_successful()`
+1281	- can be used to evaluate test cases or entire datasets, with or without Pytest
+1282	- has a [`threshold`](/docs/metrics-introduction#metric-thresholds) that acts as the threshold for success. `metric.is_successful()` is only true if `metric.score` is above/below `threshold`
+1283	- has a [`flaky`](/docs/metrics-introduction#flaky-metrics) property, which when turned on stops the metric's verdict from deciding a test case's pass/fail status
+1284	- has a `strict_mode` property, which when turned on enforces `metric.score` to a binary one
+1285	- has a `verbose_mode` property, which when turned on prints metric logs whenever a metric is executed
+1287	In addition, all metrics in `deepeval` execute asynchronously by default.
+1289	You can configure this behavior using the `async_mode` parameter when instantiating a metric.
+1291	<Tip>
+1292	Visit an individual metric page to learn how they are calculated, and what is required when creating an `LLMTestCase` in order to execute it.
+1293	</Tip>
+1295	Here's a quick example:
+1297	<Tabs>
+1299	<Tab title="Python">
+1315	</Tab>
+1317	<Tab title="TypeScript">
+1333	</Tab>
+1335	</Tabs>
+1337	All of `deepeval`'s metrics give a `reason` alongside its score.
+1339	## Using Metrics Async
+1341	<Tabs>
+1343	<Tab title="Python">
+1345	When a metric's `async_mode=True` (which is the default for all metrics), invocations of `metric.measure()` will execute internal algorithms concurrently. However, it's important to note that while operations **INSIDE** `measure()` execute concurrently, the `metric.measure()` call itself still blocks the main thread.
+1347	</Tab>
+1349	<Tab title="TypeScript">
+1351	Every metric in `deepeval` is already asynchronous, and there is nothing to switch on. A metric's algorithm is made up of several LLM calls, and `measure()` fires the ones that don't depend on each other at the same time rather than one after the other.
+1353	<Info>
+1354	Take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-calculated) for example:
+1356	1. **Extract all factual claims** made in the `actualOutput`
+1357	2. **Extract all factual truths** found in the `retrievalContext`
+1358	3. **Compare extracted claims and truths** to generate a final score and reason
+1360	Steps 1 and 2 are independent, so they run concurrently, and only step 3 waits on both. The `await` you write is a single call, but underneath it is as parallel as the algorithm allows.
+1361	</Info>
+1363	</Tab>
+1365	</Tabs>
+1367	<Info>
+1368	Let's take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-calculated) for example:
+1370	1. **Extract all factual claims** made in the `actual_output`
+1371	2. **Extract all factual truths** found in the `retrieval_context`
+1372	3. **Compare extracted claims and truths** to generate a final score and reason.
+1383	When `async_mode=True`, steps 1 and 2 execute concurrently (i.e., at the same time) since they are independent of each other, while `async_mode=False` causes steps 1 and 2 to execute sequentially instead (i.e., one after the other).
+1385	In both cases, "Metric finished!" will wait for `metric.measure()` to finish running before printing, but setting `async_mode` to `True` would make the print statement appear earlier, as `async_mode=True` allows `metric.measure()` to run faster.
+1387	</Info>
+1389	<Tabs>
+1391	<Tab title="Python">
+1393	To measure multiple metrics at once and **NOT** block the main thread, use the asynchronous `a_measure()` method instead.
+1395	</Tab>
+1397	<Tab title="TypeScript">
+1399	This means the thing to control is not whether metrics run concurrently, but how many run at once. Awaiting a large `Promise.all()` of `measure()` calls sends every request to your evaluation model simultaneously, which is the fastest route to a rate limit error. Throttle instead, by capping how many metrics are in flight at a time:
+1401	</Tab>
+1403	</Tabs>
+1405	<Tabs>
+1407	<Tab title="Python">
+1428	</Tab>
+1430	<Tab title="TypeScript">
+1446	If you're running metrics through [`evaluate()`](/docs/evaluation-end-to-end-llm-evals) instead of calling `measure()` yourself, set the same limit through its `asyncConfig`:
+1454	</Tab>
+1456	</Tabs>
+1458	## Debug A Metric Judgement
+1460	You can turn on `verbose_mode` for **ANY** `deepeval` metric at metric initialization to debug a metric whenever <Tabs><Tab title="Python">the `measure()` or `a_measure()` method</Tab><Tab title="TypeScript">`measure()`</Tab></Tabs> is called:
+1462	<Tabs>
+1464	<Tab title="Python">
+1473	</Tab>
+1475	<Tab title="TypeScript">
+1484	</Tab>
+1486	</Tabs>
+1488	<Note>
+1489	Turning `verbose_mode` on will print the inner workings of a metric whenever <Tabs><Tab title="Python">`measure()` or `a_measure()`</Tab><Tab title="TypeScript">`measure()`</Tab></Tabs> is called.
+1490	</Note>
+1492	## Customize Metric Prompts
+1494	All of `deepeval`'s metrics use LLM-as-a-judge evaluation with unique default prompt templates for each metric. While `deepeval` has well-designed algorithms for each metric, you can customize these prompt templates to improve evaluation accuracy and stability. Simply provide a custom template class as the `evaluation_template` parameter to your metric of choice (example below).
+1496	<Info>
+1497	For example, in the `AnswerRelevancyMetric`, you might disagree with what we consider something to be "relevant", but with this capability you can now override any opinions `deepeval` has in its default evaluation prompts.
+1498	</Info>
+1500	You'll find this particularly valuable when [using a custom LLM](/guides/guides-using-custom-llms), as `deepeval`'s default metrics are optimized for OpenAI's models, which are generally more powerful than most custom LLMs.
+1502	<Note>
+1503	This means you can better handle invalid JSON outputs (along with [JSON confinement](/guides/guides-using-custom-llms#json-confinement-for-custom-llms)) which comes with weaker models, and provide better examples for in-context learning for your custom LLM judges for better metric accuracy.
+1504	</Note>
+1506	Here's a quick example of how you can define a custom `AnswerRelevancyTemplate` and inject it into the `AnswerRelevancyMetric` through the `evaluation_params` parameter:
+1508	<Tabs>
+1510	<Tab title="Python">
+1543	</Tab>
+1545	<Tab title="TypeScript">
+1576	</Tab>
+1578	</Tabs>
+1580	<Tip>
+1581	You can find examples of how this can be done in more detail on the **Customize Your Template** section of each individual metric page, which shows code examples, and a link to `deepeval`'s GitHub showing the default templates currently used.
+1582	</Tip>
+1584	## Metric Thresholds
+1588	<Tabs>
+1590	<Tab title="Python">
+1598	</Tab>
+1600	<Tab title="TypeScript">
+1608	</Tab>
+1610	</Tabs>
+1614	<Tabs>
+1616	<Tab title="Python">
+1622	</Tab>
+1624	<Tab title="TypeScript">
+1630	</Tab>
+1632	</Tabs>
+1634	<Warning>
+1636	</Warning>
+1638	## Flaky Metrics
+1642	<Tabs>
+1644	<Tab title="Python">
+1652	</Tab>
+1654	<Tab title="TypeScript">
+1662	</Tab>
+1664	</Tabs>
+1666	This is useful for metrics you know are noisy — for example ones with borderline scores that flip between passing and failing across runs — that you still want to keep measuring and tracking without letting them gate deployments. Flaky pass/fail counts are shown separately in test run results, and the `flaky` status is also logged on Confident AI.
+1668	<Info>
+1669	Test cases can also be [marked as flaky](/docs/evaluation-test-cases#mark-test-cases-as-flaky) — a failing flaky test case <Tabs><Tab title="Python">makes `assert_test()` print a warning instead of raising an `AssertionError`.</Tab><Tab title="TypeScript">makes `expect(testCase).toPass()` print a warning instead of failing the test.</Tab></Tabs>
+1670	</Info>
+1672	## What About Non-LLM-as-a-judge Metrics?
+1674	If you're looking to use something like **ROUGE**, **BLEU**, or **BLEURT**, etc. you can create a custom metric and use the `scorer` module available in `deepeval` for scoring by following [this guide](/docs/metrics-custom).
+1676	The [`scorer` module](https://github.com/confident-ai/deepeval/blob/main/deepeval/scorer/scorer.py) is available but not documented because our experience tells us these scorers are not useful as LLM metrics where outputs require a high level of reasoning to evaluate.
+1678	## FAQs
+1680	<AccordionGroup>
+1681	<Accordion title="How many metrics should I use?">
+1682	No more than 5: roughly **2-3** generic system metrics (e.g. agent or RAG metrics) and **1-2** custom use-case metrics. Capping forces you to prioritize what you actually care about.
+1683	</Accordion>
+1684	<Accordion title="Do all of deepeval's metrics use an LLM?">
+1685	Most do — they're **LLM-as-a-judge** (QAG, G-Eval). The [DAGMetric](/docs/metrics-dag) can be fully deterministic, and for statistical scorers like ROUGE/BLEU you build a [custom metric](/docs/metrics-custom) with the `scorer` module.
+1686	</Accordion>
+1687	<Accordion title="Which metrics can I use in production?">
+1688	Only **referenceless** ones, since no labeled data exists live. Reference-based metrics (e.g. [Contextual Recall](/docs/metrics-contextual-recall) , [Tool Correctness](/docs/metrics-tool-correctness) ) need a ground truth and are for development.
+1689	</Accordion>
+1690	<Accordion title="Should I use G-Eval or DAG for a custom metric?">
+1691	[G-Eval](/docs/metrics-llm-evals) for subjective criteria (correctness, tone) — easy to set up. [DAG](/docs/metrics-dag) is a decision-tree for objective/mixed criteria and gives deterministic scores. Start with G-Eval, move to DAG for more control.
+1692	</Accordion>
+1693	<Accordion title="Can I use my own LLM as the judge?">
+1694	Yes. Pass any model via the `model` param — OpenAI, Azure, Ollama, Gemini, LiteLLM — or wrap your own by subclassing `DeepEvalBaseLLM` . See the [custom LLM guide](/guides/guides-using-custom-llms) .
+1695	</Accordion>
+1696	<Accordion title="How do I run metrics in production for monitoring?">
+1697	In production you run **referenceless** metrics on your live LLM [traces](/docs/evaluation-llm-tracing) and spans rather than prebuilt test cases. Trajectory metrics can score the complete agent path, while component metrics can score selected spans. For continuous online evals, dashboards, and alerts on live traffic, run them on [Confident AI](https://confident-ai.com) , the enterprise platform for all-in-one evals, observability, and red teaming.
+1698	</Accordion>
+1699	<Accordion title="Can I run metrics on traces for monitoring?">
+1700	Yes. Once you [set up tracing](/docs/evaluation-llm-tracing) , metrics can score spans and traces automatically. Metrics on the complete ordered trace are [trajectory-based](/docs/evaluation-trajectory-based-llm-evals) , while metrics on individual spans are [component-level](/docs/evaluation-component-level-llm-evals) . Wire them up on [Confident AI](https://confident-ai.com) to track metric scores on production traffic over time.
+1701	</Accordion>
+1702	<Accordion title="Which metrics evaluate a complete agent trajectory?">
+1703	Metrics carrying the **Trajectory** tag evaluate the complete ordered trace. These are `TaskCompletionMetric` , `StepEfficiencyMetric` , `PlanAdherenceMetric` , and `PlanQualityMetric` . They require tracing and are passed to the evals iterator or test assertion rather than measured against one isolated component.
+1704	</Accordion>
+1705	</AccordionGroup>

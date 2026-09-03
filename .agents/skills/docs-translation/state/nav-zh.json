@@ -49,6 +49,8 @@
     "evaluation-trajectory-based-llm-evals": "基于轨迹的评估",
     "evaluation-component-level-llm-evals": "组件级 LLM 评估",
     "evaluation-unit-testing-in-ci-cd": "CI/CD 中的单元测试",
-    "evaluation-flags-and-configs": "开关与配置"
+    "evaluation-flags-and-configs": "开关与配置",
+    "evaluation-end-to-end-single-turn": "单轮端到端评估",
+    "evaluation-end-to-end-multi-turn": "多轮端到端评估"
   }
 }
