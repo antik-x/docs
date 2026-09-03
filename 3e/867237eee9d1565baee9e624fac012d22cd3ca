@@ -1,0 +1,19 @@
+docs/getting-started-chatbots.mdx
+  s_7135fdb4326699::t_3ec30fe3898f0e 1-1144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "3e867237eee9d1565baee9e624fac012d22cd3ca",
+  "prompts": {},
+  "sessions": {
+    "s_7135fdb4326699": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0670a-d6f2-7313-8143-92d39cf65af9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
