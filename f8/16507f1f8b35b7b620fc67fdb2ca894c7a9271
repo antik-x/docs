@@ -1,0 +1,30 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 41-45
+.agents/skills/docs-translation/state/translation-memory.json
+  h_04c00a69eeb820 587-930
+docs.json
+  h_04c00a69eeb820 103,113,127,139
+docs/evaluation-datasets.mdx
+  h_04c00a69eeb820 1-1446
+docs/evaluation-datasets.mdx.pending.tsv
+  h_04c00a69eeb820 1-432
+docs/evaluation-introduction.mdx
+  h_04c00a69eeb820 1-618
+docs/evaluation-prompts.mdx
+  h_04c00a69eeb820 1-456
+docs/evaluation-prompts.mdx.pending.tsv
+  h_04c00a69eeb820 1-111
+docs/evaluation-test-cases.mdx
+  h_04c00a69eeb820 1-962
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "f816507f1f8b35b7b620fc67fdb2ca894c7a9271",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
