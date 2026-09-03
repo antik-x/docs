@@ -44,6 +44,11 @@
     "(concepts)/evaluation-datasets": "数据集",
     "(concepts)/evaluation-prompts": "提示词",
     "(concepts)/evaluation-llm-tracing": "LLM 追踪",
-    "(concepts)/evaluation-mcp": "MCP"
+    "(concepts)/evaluation-mcp": "MCP",
+    "evaluation-end-to-end-llm-evals/index": "端到端 LLM 评估",
+    "evaluation-trajectory-based-llm-evals": "基于轨迹的评估",
+    "evaluation-component-level-llm-evals": "组件级 LLM 评估",
+    "evaluation-unit-testing-in-ci-cd": "CI/CD 中的单元测试",
+    "evaluation-flags-and-configs": "开关与配置"
   }
 }

@@ -1,0 +1,121 @@
+---
+title: 端到端 LLM 评估
+---
+
+端到端评估考察你的 LLM 应用**可观察的输入与输出**，把它当作黑盒——你只关心什么进去、什么出来，而不关心系统走了哪条路径。「输入」和「输出」的形态完全取决于你的应用做什么：
+
+- **当作黑盒的使用工具的智能体** —— 输入是用户的任务，输出是最终答案加上被调用的工具。
+- **多轮聊天机器人 / 客服智能体** —— 输入是用户所处的场景，输出是完整对话。
+- **RAG / 问答应用** —— 输入是一个问题，输出是答案（以及检索到的上下文，如果你想评估忠实度）。
+- **文档摘要** —— 输入是源文档，输出是摘要。
+- **分类器 / 抽取器** —— 输入是一段文本，输出是标签或你抽取出的结构化字段。
+- **写作助手 / 改写器** —— 输入是草稿（及任何指令），输出是改写后的文本。
+
+![端到端评估](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:end-to-end-llm-evals.png)
+
+本页解释端到端评估背后的**概念**。要看实际的分步演练，请直接跳到适合你应用的分支：
+
+- [**单轮端到端评估**](/docs/evaluation-end-to-end-single-turn) —— 适用于一个输入对应一个输出的任何 LLM 应用（当作黑盒的智能体、RAG / 问答、摘要、分类器等）。
+- [**多轮端到端评估**](/docs/evaluation-end-to-end-multi-turn) —— 适用于聊天机器人与对话式智能体，其评估单元是_整段对话_。
+
+如果你需要评估 AI 智能体或长程智能体走过的内部路径，请改用[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)。
+
+## 把你的应用当作黑盒
+
+在端到端评估中，你只描述 **LLM 应用外部可观察的东西**——你发送的输入、返回的输出、以及过程中用到的上下文。你不需要描述检索算法、智能体内部的 LLM 调用链，或任何内部推理步骤。这就是「端到端」的全部含义：你评判的是_结果_，而不是_系统到达结果的路径_。
+
+具体来说，你在测试用例上填充的参数就是指标能看到的全部表面。
+
+对于**单轮**应用，你填充 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases) 上的字段：
+
+- `input` —— 你传入应用的内容（问题、文档、草稿、任务等）。
+- `actual_output` —— 你的应用产出的内容（答案、摘要、标签、改写文本、智能体的最终回复）。
+- `retrieval_context` —— 对于 RAG 类应用，是检索器返回的文本块。`FaithfulnessMetric`、`ContextualRelevancyMetric` 等指标需要它。
+- `tools_called` —— 对于智能体类应用，是智能体调用的工具。`ToolCorrectnessMetric`、`ArgumentCorrectnessMetric` 等指标需要它。
+- `expected_output` / `expected_tools` —— 可选的金标准参考，供基于参考的指标使用。
+- `context` —— 可选的额外背景信息，供某些基于参考的指标使用。
+
+对于**多轮**应用，你填充 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 上的字段：
+
+- `scenario` —— 模拟用户想要做什么。
+- `expected_outcome` —— 成功是什么样子。
+- `turns` —— 构成对话的 `Turn` 对象序列（每个都带 `role` 与 `content`）。
+
+注意有什么是_不在其中_的：没有地方描述「检索器的提示词」「工具参数 schema」或「产出这个答案的内部 LLM 调用」。如果某个指标需要单独为这些东西打分，端到端就不是合适的选择。
+
+<Tip>
+端到端意味着**设计上就是黑盒**。要为智能体内部完整的决策与行动链打分，使用[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)。要为单个检索器、工具调用、LLM 生成或子智能体单独打分，使用[组件级评估](/docs/evaluation-component-level-llm-evals)。许多真实应用会同时结合这三种范围。
+</Tip>
+
+## 单轮 vs 多轮
+
+选择与你的应用匹配的分支：
+
+|                             | Single-Turn                                                                    | Multi-Turn                                                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Test case**               | [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases)                    | [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases)                                                                     |
+| **Dataset entry**           | [`Golden`](/docs/evaluation-datasets#what-are-goldens)                         | [`ConversationalGolden`](/docs/evaluation-datasets#what-are-goldens)                                                                  |
+| **评估什么**                | 一个输入 → 一个输出                                                             | 一段完整对话（`Turn` 序列）                                                                                            |
+| **测试用例如何产生** | 你在每个金标上调用你的应用，并从结果构建测试用例     | [`ConversationSimulator`](/docs/conversation-simulator) 驱动一个合成用户与你的聊天机器人对话，直到场景演绎完毕 |
+| **典型应用**            | 当作黑盒的智能体、RAG / 问答、摘要、分类器、写作助手 | 聊天机器人、客服智能体、多轮助手                                                                                       |
+| **Metric base class**       | `BaseMetric`                                                                   | `BaseConversationalMetric`                                                                                                            |
+| **Walkthrough**             | [Single-Turn E2E Evals →](/docs/evaluation-end-to-end-single-turn)             | [Multi-Turn E2E Evals →](/docs/evaluation-end-to-end-multi-turn)                                                                      |
+
+两种分支存在于**不同的测试用例类**上，因为评估单元确实不同（一次交换 vs 多次交换），`deepeval` 会拒绝在同一次测试运行中混用它们。
+
+## 端到端 vs 基于轨迹 vs 组件级
+
+端到端、[基于轨迹](/docs/evaluation-trajectory-based-llm-evals)与[组件级评估](/docs/evaluation-component-level-llm-evals)使用不同的范围。端到端把系统看作黑盒，基于轨迹看到智能体内部的完整链条，组件级则隔离出单个内部 span。
+
+每种情况下，你把指标挂到不同的工作单元上：
+
+- **端到端** —— 单元是整个应用。你的应用每次运行一个测试用例，为最终输入 → 最终输出打分。
+- **基于轨迹** —— 单元是智能体完整的有序执行路径，评估其内部步骤如何协同。
+- **Component-level** — the unit is each `@observe`（TypeScript 中为 `observe()`）'d span. Many test cases per run of your app — one per span you've chosen to grade — each scoring the input → output of _that_ span.
+
+|                              | End-to-End                                                                   | [Trajectory-Based](/docs/evaluation-trajectory-based-llm-evals)                     | [Component-Level](/docs/evaluation-component-level-llm-evals)                              |
+| ---------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **你打分的对象**           | 最终的用户可见输出（把系统当作一个黑盒组件）        | 完整有序的决策、工具调用与中间步骤链         | 单个内部 span（检索器、工具调用、子智能体等）                          |
+| **How metrics are attached** | To a test case or as black-box metrics on the trace                          | To the complete trace through `evals_iterator()`     | To each span, via `@observe(metrics=[...])`（TypeScript 中为 `observe({ metrics: [...] })`）    |
+| **最适合**                 | 扁平应用、多轮对话或最终输出质量检查  | 执行路径影响质量的 AI 智能体与长程智能体          | 需要诊断或分级单个组件的复杂应用           |
+| **是否需要追踪**         | 否                                                                           | 是                                                                                 | 是                                                                                        |
+
+You don't have to choose just one. With the [recommended evals iterator path](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended), black-box metrics can score the final result, [trajectory metrics](/docs/evaluation-trajectory-based-llm-evals) can score the complete agent path, and metrics attached to individual spans with `@observe(metrics=[...])`（TypeScript 中为 `observe({ metrics: [...] })`） can score components in the same traced run.
+
+<details>
+<summary><strong>When should you choose end-to-end?</strong></summary>
+
+Choose end-to-end evaluation when:
+
+- 你的 LLM 应用是「扁平」架构，自然适配单个 `LLMTestCase`（当作黑盒的智能体、RAG / 问答、摘要、单次分类器、写作助手等）。
+- 你的应用是多轮的（聊天机器人、客服智能体），而你想为整段对话打分而不是每一步。
+- 你的应用是复杂智能体，但你判断[组件级评估](/docs/evaluation-component-level-llm-evals)噪声太多，宁愿为最终结果打分。
+
+简而言之：**你关心的是结果，而不是系统到达结果的路径。**[快速上手](/docs/getting-started)的大部分内容就是端到端评估。
+
+</details>
+
+## 运行测试运行的两种方式
+
+单轮（以及 `evaluate()` 的多轮）都给你两种等价的代码路径：
+
+| Approach                                                                                                                       | What it looks like                                                                                                                                                                             | When to choose it                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`evaluate()`**                                                                                                               | 预先构建 `LLMTestCase`（或 `ConversationalTestCase`）列表，交给单次 `evaluate()` 调用。                                       | 你想要一个不依赖追踪的自包含脚本。                                                                                               |
+| **`dataset.evals_iterator()` with tracing** **— recommended (single-turn only)** | Instrument your app with `@observe`（TypeScript 中为 `observe()`）, then loop over goldens with the iterator, passing `metrics=[...]`（TypeScript 中为 `metrics: [...]`）. `deepeval` builds the test cases from the captured trace. | Your app is (or will be) instrumented with [tracing](/docs/evaluation-llm-tracing). You also get a full per-test-case trace view on Confident AI for free. |
+
+对于新的单轮项目，我们推荐迭代器——代码量相同，还附带追踪，而且同样的设置以后可以延续到[组件级评估](/docs/evaluation-component-level-llm-evals)。
+
+多轮端到端评估目前只使用 `evaluate()`；迭代器形式仅支持单轮。
+
+<Info>
+Passing `metrics=[...]`（TypeScript 中为 `metrics: [...]`） to the iterator attaches metrics at the **trace** level. A metric that judges only the observable result is end-to-end; a metric that analyzes the ordered internal spans is [trajectory-based](/docs/evaluation-trajectory-based-llm-evals). To grade one retriever, tool call, or inner LLM call, attach the metric to that span for [component-level evaluation](/docs/evaluation-component-level-llm-evals).
+</Info>
+
+## 下一步
+
+- 走一遍[单轮端到端评估](/docs/evaluation-end-to-end-single-turn)。
+- 使用 `ConversationSimulator` 走一遍[多轮端到端评估](/docs/evaluation-end-to-end-multi-turn)。
+- 用[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)评估智能体的完整内部路径。
+- Run end-to-end evals in [CI/CD pipelines](/docs/evaluation-unit-testing-in-ci-cd) using `pytest`（TypeScript 中为 `vitest`） and `deepeval test run`.
+- 如果你的应用有值得打分的内部结构，与[组件级评估](/docs/evaluation-component-level-llm-evals)比较一下。

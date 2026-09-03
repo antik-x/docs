@@ -1,0 +1,261 @@
+1	---
+2	title: Unit Testing in CI/CD
+3	---
+9	Unit testing in CI/CD is the same three steps regardless of which flavor of evaluation you're running:
+11	1. **Load your dataset** — pull goldens from Confident AI, a CSV, or a JSON file. This step is identical for every flavor.
+13	3. **Run your test file** — same command for every flavor. Drops into a `.yml` file unchanged.
+17	<Tip>
+20	- [Single-turn end-to-end evals](/docs/evaluation-end-to-end-single-turn)
+21	- [Multi-turn end-to-end evals](/docs/evaluation-end-to-end-multi-turn)
+22	- [Component-level evals](/docs/evaluation-component-level-llm-evals) (single-turn only)
+23	</Tip>
+25	## Step-by-Step Guide
+27	<Steps>
+28	<Step>
+30	### Load your dataset
+32	`deepeval` loads datasets from Confident AI, a CSV, a JSON file, or directly in code into an `EvaluationDataset`.
+34	<Tabs>
+37	<Tabs>
+39	<Tab title="Python">
+53	</Tab>
+55	<Tab title="TypeScript">
+69	</Tab>
+71	</Tabs>
+75	</Tab>
+80	<Tabs>
+82	<Tab title="Python">
+91	</Tab>
+93	<Tab title="TypeScript">
+102	</Tab>
+104	</Tabs>
+110	</Tab>
+113	<Tabs>
+115	<Tab title="Python">
+127	</Tab>
+129	<Tab title="TypeScript">
+143	</Tab>
+145	</Tabs>
+149	</Tab>
+152	<Tabs>
+154	<Tab title="Python">
+166	</Tab>
+168	<Tab title="TypeScript">
+180	</Tab>
+182	</Tabs>
+186	</Tab>
+187	</Tabs>
+189	<Note>
+191	</Note>
+193	<Info>
+195	**Multi-turn datasets**
+197	For [multi-turn](/docs/evaluation-end-to-end-multi-turn) evals, use `ConversationalGolden` instead of `Golden`. See [the datasets page](/docs/evaluation-datasets#load-dataset) for the full surface.
+198	</Info>
+200	</Step>
+202	<Step>
+203	### Construct test cases
+205	Pick the flavor that matches your application — [single-turn](/docs/evaluation-end-to-end-single-turn) (one input → one output) or [multi-turn](/docs/evaluation-end-to-end-multi-turn) (whole conversations).
+207	<Tabs>
+211	Within single-turn, we strongly recommend **instrumenting your app with tracing** so `deepeval` can build the `LLMTestCase` automatically from each run, and you get a full per-test-case trace on Confident AI for free.
+213	The same setup also unlocks [component-level evaluation](/docs/evaluation-component-level-llm-evals), where metrics live on individual spans (retrievers, tool calls, sub-agents) instead of the trace as a whole.
+215	**Instrument/Trace with Evals**
+217	Each example below is a complete `deepeval test run` file with instrumentation:
+219	<Tabs>
+221	<Tab title="Python">
+223	<Tabs>
+252	</Tab>
+253	<Tab title="LangChain">
+285	</Tab>
+286	<Tab title="LangGraph">
+326	</Tab>
+327	<Tab title="OpenAI">
+359	</Tab>
+360	<Tab title="Pydantic AI">
+389	</Tab>
+390	<Tab title="AgentCore">
+424	</Tab>
+425	<Tab title="Strands">
+456	</Tab>
+457	<Tab title="Anthropic">
+488	</Tab>
+489	<Tab title="LlamaIndex">
+523	</Tab>
+524	<Tab title="OpenAI Agents">
+554	</Tab>
+555	<Tab title="Google ADK">
+594	</Tab>
+595	<Tab title="CrewAI">
+632	</Tab>
+633	</Tabs>
+635	</Tab>
+637	<Tab title="TypeScript">
+641	<Tabs>
+679	</Tab>
+680	<Tab title="LangChain">
+723	</Tab>
+724	<Tab title="Mastra">
+768	</Tab>
+769	<Tab title="LangGraph">
+812	</Tab>
+813	<Tab title="OpenAI">
+851	</Tab>
+852	<Tab title="OpenAI Agents">
+889	</Tab>
+890	<Tab title="Vercel AI SDK">
+929	</Tab>
+930	</Tabs>
+932	</Tab>
+934	</Tabs>
+936	<Tabs>
+938	<Tab title="Python">
+945	</Tab>
+947	<Tab title="TypeScript">
+949	The golden goes to `expect()`, and `toPass()` takes:
+952	- `options.run`: a callback `(golden) => ...` that runs your app so the matcher can capture and score its trace.
+954	</Tab>
+956	</Tabs>
+958	<Tip>
+960	**Going component-level**
+964	See [component-level evaluation](/docs/evaluation-component-level-llm-evals) for the per-integration metric attachment surface; trace-level and span-level metrics coexist in the same test run.
+965	</Tip>
+967	**Without Tracing**
+971	<Tabs>
+973	<Tab title="Python">
+997	There are **TWO** mandatory and **ONE** optional parameter for `assert_test()` in this mode:
+999	- `test_case`: an `LLMTestCase` you constructed inside the test.
+1000	- `metrics`: a list of `BaseMetric`s.
+1002	</Tab>
+1004	<Tab title="TypeScript">
+1036	- `metrics`: an array of `BaseMetric`s, run concurrently against the test case.
+1038	</Tab>
+1040	</Tabs>
+1042	The fields you populate on `LLMTestCase` must match what your metrics need (e.g. `FaithfulnessMetric` requires `retrieval_context`). See [test cases](/docs/evaluation-test-cases#llm-test-cases) for the full parameter list.
+1044	</Tab>
+1048	Pick this if your app is multi-turn — chatbots, support agents, and any conversational app where the unit of evaluation is the whole conversation rather than a single exchange. You wrap your chatbot in a `model_callback`, simulate conversations against goldens, then evaluate each `ConversationalTestCase`. Multi-turn evaluation is end-to-end by default; for the full standalone walkthrough see the [multi-turn end-to-end guide](/docs/evaluation-end-to-end-multi-turn).
+1050	**1. Wrap your chatbot in a callback**
+1052	The `ConversationSimulator` needs a way to ask your chatbot for its next reply, given the conversation so far:
+1054	<Tabs>
+1056	<Tab title="Python">
+1058	<Tabs>
+1059	<Tab title="Python">
+1070	</Tab>
+1071	<Tab title="OpenAI">
+1090	</Tab>
+1091	<Tab title="LangChain">
+1112	</Tab>
+1113	<Tab title="LlamaIndex">
+1132	</Tab>
+1133	<Tab title="OpenAI Agents">
+1150	</Tab>
+1151	<Tab title="Pydantic">
+1173	</Tab>
+1174	</Tabs>
+1176	</Tab>
+1178	<Tab title="TypeScript">
+1180	<Tabs>
+1181	<Tab title="TypeScript">
+1200	</Tab>
+1201	<Tab title="OpenAI">
+1229	</Tab>
+1230	<Tab title="LangChain">
+1259	</Tab>
+1260	</Tabs>
+1262	</Tab>
+1264	</Tabs>
+1266	<Info>
+1267	Your `model_callback` is handed the `input` (the simulated user's next message), the `turns` so far, and a stable `thread_id` — take only the ones you need. It must return a `Turn` whose `role` is `assistant`.
+1268	</Info>
+1270	**2. Simulate conversations & write your test**
+1272	Run the simulator once at module load to produce `ConversationalTestCase`s, then parametrize over them:
+1274	<Tabs>
+1276	<Tab title="Python">
+1302	There are **TWO** mandatory and **ONE** optional parameter for `assert_test()` in this mode:
+1304	- `test_case`: a `ConversationalTestCase` produced by the simulator.
+1305	- `metrics`: a list of `BaseConversationalMetric`s. See [multi-turn metrics](/docs/metrics-introduction#multi-turn-metrics) (`TurnRelevancyMetric`, `KnowledgeRetentionMetric`, `RoleAdherenceMetric`, `ConversationCompletenessMetric`).
+1306	- [Optional] `run_async`: defaults to `True`.
+1308	</Tab>
+1310	<Tab title="TypeScript">
+1338	- `metrics`: an array of `BaseConversationalMetric`s. See [multi-turn metrics](/docs/metrics-introduction#multi-turn-metrics) (`TurnRelevancyMetric`, `KnowledgeRetentionMetric`, `RoleAdherenceMetric`, `ConversationCompletenessMetric`).
+1340	`logHyperparameters()` is the counterpart to Python's `@deepeval.log_hyperparameters` decorator — call it once anywhere in the file. Outside of `npx deepeval test run` there's no test run to label, so it's a no-op; pass `hyperparameters` to `evaluate()` instead.
+1342	</Tab>
+1344	</Tabs>
+1346	</Tab>
+1347	</Tabs>
+1349	</Step>
+1351	<Step>
+1354	Whichever flavor you picked above, the command is the same:
+1356	<Tabs>
+1358	<Tab title="Python">
+1364	<Warning>
+1366	</Warning>
+1368	</Tab>
+1370	<Tab title="TypeScript">
+1376	<Warning>
+1378	</Warning>
+1380	</Tab>
+1382	</Tabs>
+1384	</Step>
+1385	</Steps>
+1387	## Handling Flaky Test Cases
+1389	LLM evals are non-deterministic, and some test cases will sit right on a metric's threshold and flip between passing and failing across runs. Instead of removing them from your suite, mark them as flaky:
+1391	<Tabs>
+1393	<Tab title="Python">
+1401	</Tab>
+1403	<Tab title="TypeScript">
+1411	</Tab>
+1413	</Tabs>
+1415	When a flaky test case fails, <Tabs><Tab title="Python">`assert_test()` prints a warning instead of raising an `AssertionError`</Tab><Tab title="TypeScript">`expect(testCase).toPass()` prints a warning instead of failing the test</Tab></Tabs>, so your CI pipeline keeps going while the failure is still recorded in your test run results. Both `LLMTestCase` and `ConversationalTestCase` support the `flaky` parameter.
+1419	## YAML File For CI/CD Evals
+1421	Drop `deepeval test run` into a `.yml` to run your unit tests on every push or PR. This example uses `OPENAI_API_KEY` as your LLM judge to run evals locally. Add `CONFIDENT_API_KEY` to send results to Confident AI.
+1423	<Tabs>
+1425	<Tab title="Python">
+1463	</Tab>
+1465	<Tab title="TypeScript">
+1498	</Tab>
+1500	</Tabs>
+1502	[Click here](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run) to learn about the optional flags available to `deepeval test run`.
+1504	<Tip>
+1505	We highly recommend setting up [Confident AI](https://app.confident-ai.com) with your `deepeval` evaluations to get professional test reports and observe trends of your LLM application's performance over time:
+1507	<figure>
+1508	  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:spans.mp4"></video>
+1509	  <figcaption>Keep evaluating components in production after your CI/CD checks pass.</figcaption>
+1510	</figure>
+1511	</Tip>
+1513	## Marking an Official Run
+1515	You can designate a test run as the **official** test run on Confident AI — the marked good run that future runs are compared against for regressions. Add the `--official` flag (or `-o`) to mark the run once it completes:
+1517	<Tabs>
+1519	<Tab title="Python">
+1525	</Tab>
+1527	<Tab title="TypeScript">
+1533	</Tab>
+1535	</Tabs>
+1539	<Tabs>
+1541	<Tab title="Python">
+1549	</Tab>
+1551	<Tab title="TypeScript">
+1559	</Tab>
+1561	</Tabs>
+1563	This is typically done on your main branch so every baseline reflects merged, production-ready code.
+1565	<Note>
+1566	Marking a run as official requires a `CONFIDENT_API_KEY`, since official runs live on Confident AI.
+1567	</Note>
+1569	## FAQs
+1571	<AccordionGroup>
+1572	<Accordion title="How does deepeval fit into CI/CD?">
+1573	You write your evals as tests in your language's test runner and run them with the `deepeval test run` command as a step in your pipeline. Failing metrics fail the build, so regressions get caught before they ship.
+1574	</Accordion>
+1575	<Accordion title="What's the difference between unit testing and evaluate()?">
+1576	Unit testing is built for CI/CD: when a metric falls below its threshold the assertion fails, so the build goes red. Meanwhile `evaluate()` is for scripts and notebooks and collects results without failing anything. Use unit testing for gating.
+1577	</Accordion>
+1578	<Accordion title="Do I need a Confident AI account to run evals in CI/CD?">
+1579	No. Provide an LLM judge key such as `OPENAI_API_KEY` and your tests run entirely locally. Adding `CONFIDENT_API_KEY` is optional and only sends results to the cloud.
+1580	</Accordion>
+1581	<Accordion title="Which CI providers does this work with?">
+1582	Any provider that runs a shell step. The docs show a GitHub Actions `.yml` , but the same `deepeval test run` command works in GitLab CI, CircleCI, Jenkins, and others.
+1583	</Accordion>
+1584	<Accordion title="How do I speed up or control test runs in CI?">
+1585	Use `deepeval test run` flags like parallelization, caching, and ignore-errors. See [flags and configs](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run) for the full list.
+1586	</Accordion>
+1587	<Accordion title="Can my team see professional test reports on the cloud and track results over time?">
+1588	Yes — and it's optional. Add `CONFIDENT_API_KEY` to your CI secrets and the same `deepeval test run` sends results to [Confident AI](https://app.confident-ai.com) (the platform from the `deepeval` team), giving your team sharable testing reports, a UI to inspect failing cases, and trend lines of performance across commits. Without the key, the exact same tests still run locally.
+1589	</Accordion>
+1590	</AccordionGroup>

@@ -1,0 +1,1590 @@
+---
+title: CI/CD 中的单元测试
+---
+
+Integrate LLM evaluations into your CI/CD pipeline with `deepeval` to catch regressions before they ship. `deepeval` plugs into `pytest`（TypeScript 中为 `vitest`） via `assert_test()`（TypeScript 中为 `expect(testCase).toPass()`） and the `deepeval test run` command, so every push (or every PR) runs the same evals you'd run locally — single-turn or multi-turn, end-to-end or component-level.
+
+## 工作原理
+
+无论你运行哪种风格的评估，CI/CD 中的单元测试都是同样的三步：
+
+1. **加载数据集** —— 从 Confident AI、CSV 或 JSON 文件拉取金标。这一步对所有风格完全一致。
+2. **Construct test cases & write your test** — this is where the flavor matters. End-to-end vs component-level, single-turn vs multi-turn, and (for single-turn) instrumented vs un-instrumented all change what you put inside the `pytest`（TypeScript 中为 `vitest`） test.
+3. **运行你的测试文件** —— 对所有风格都是同一条命令。可原样放进 `.yml` 文件。
+
+`deepeval`'s `pytest`（TypeScript 中为 `vitest`） integration allows you to leverage all of its flags and functionalities, as well as capabilities offered by `deepeval`, which you can learn more about below.
+
+<Tip>
+If you haven't already, we recommend reading the end-to-end and component-level guides first to understand what we're doing — `deepeval`'s `pytest`（TypeScript 中为 `vitest`） integration mirrors those workflows, just inside a test file:
+
+- [单轮端到端评估](/docs/evaluation-end-to-end-single-turn)
+- [多轮端到端评估](/docs/evaluation-end-to-end-multi-turn)
+- [组件级评估](/docs/evaluation-component-level-llm-evals)（仅单轮）
+</Tip>
+
+## 分步指南
+
+<Steps>
+<Step>
+
+### 加载数据集
+
+`deepeval` 把来自 Confident AI、CSV、JSON 文件或直接来自代码的数据集加载进 `EvaluationDataset`。
+
+<Tabs>
+<Tab title="在代码中">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import Golden, EvaluationDataset
+
+goldens = [
+    Golden(input="What is your name?"),
+    Golden(input="Choose a number between 1 and 100"),
+    # ...
+]
+
+dataset = EvaluationDataset(goldens=goldens)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+
+const goldens = [
+  new Golden({ input: "What is your name?" }),
+  new Golden({ input: "Choose a number between 1 and 100" }),
+  // ...
+];
+
+const dataset = new EvaluationDataset({ goldens });
+```
+
+</Tab>
+
+</Tabs>
+
+数据集只在本次运行中存在——不推送、不保存。适合快速上手与一次性评估。
+
+</Tab>
+<Tab title="从 Confident AI 拉取">
+
+你可以用一行代码把整个数据集从 Confident AI 的云端加载。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.pull(alias="My Evals Dataset")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.pull({ alias: "My Evals Dataset" });
+```
+
+</Tab>
+
+</Tabs>
+
+非技术的领域专家可以在 Confident AI 上**创建、标注与评论**数据集。你还可以用 CSV 格式上传数据集，或用一行代码把在 `deepeval` 中创建的合成数据集推送到 Confident AI。
+
+更多信息请访问 [Confident AI 数据集板块](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens)。
+
+</Tab>
+<Tab title="从 CSV 加载">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.add_goldens_from_csv_file(
+    file_path="example.csv",
+    input_col_name="query",
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.addGoldensFromCSV({
+  filePath: "example.csv",
+  keys: { input: "query" },
+});
+```
+
+列名默认采用 `deepeval` 自己的命名，因此 `keys` 只需列出不同的那些。
+
+</Tab>
+
+</Tabs>
+
+更多高级选项（例如加载 `context` 与 `tools_called` 列或重命名所有列）见[加载数据集](/docs/evaluation-datasets#load-dataset)。
+
+</Tab>
+<Tab title="从 JSON 加载">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.add_goldens_from_json_file(
+    file_path="example.json",
+    input_key_name="query",
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.addGoldensFromJSON({
+  filePath: "example.json",
+  keys: { input: "query" },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+更多高级选项（例如加载 `context` 与 `tools_called` 键，或从 `.jsonl` 文件逐行读取金标）见[加载数据集](/docs/evaluation-datasets#load-dataset)。
+
+</Tab>
+</Tabs>
+
+<Note>
+一个 `EvaluationDataset` 只容纳单轮或多轮金标中的一种，不能混用。混有两种的文件会抛出错误。
+</Note>
+
+<Info>
+
+**多轮数据集**
+
+对于[多轮](/docs/evaluation-end-to-end-multi-turn)评估，使用 `ConversationalGolden` 而不是 `Golden`。完整能力见[数据集页面](/docs/evaluation-datasets#load-dataset)。
+</Info>
+
+</Step>
+
+<Step>
+### 构建测试用例
+
+选择与你的应用匹配的风格——[单轮](/docs/evaluation-end-to-end-single-turn)（一个输入 → 一个输出）或[多轮](/docs/evaluation-end-to-end-multi-turn)（整段对话）。
+
+<Tabs>
+
+<Tab title="单轮">
+
+在单轮之内，我们强烈建议**为你的应用做追踪埋点**，这样 `deepeval` 就能从每次运行自动构建 `LLMTestCase`，并且你可以在 Confident AI 上免费获得每个测试用例的完整追踪。
+
+同样的设置还解锁[组件级评估](/docs/evaluation-component-level-llm-evals)——指标挂到单个 span（检索器、工具调用、子智能体）上，而不是整条追踪上。
+
+**带评估的埋点/追踪**
+
+下面每个示例都是完整的、带埋点的 `deepeval test run` 文件：
+
+<Tabs>
+
+<Tab title="Python">
+
+<Tabs>
+<Tab title="手动埋点">
+
+```python title="test_llm_app.py" showLineNumbers
+import pytest
+from deepeval import assert_test
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+from deepeval.tracing import observe, update_current_trace
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+@observe()
+def my_ai_agent(query: str) -> str:
+    answer = "Pi rounded to 2 decimal places is 3.14."
+    update_current_trace(input=query, output=answer)
+    return answer
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_llm_app(golden: Golden):
+    my_ai_agent(golden.input)
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+用 `@observe` 包装智能体的顶层函数，并用 `update_current_trace(...)` 设置追踪级测试用例字段。完整用法见 [LLM 追踪](/docs/evaluation-llm-tracing)。
+
+</Tab>
+<Tab title="LangChain">
+
+```python title="test_langchain_app.py" showLineNumbers
+import pytest
+from langchain.agents import create_agent
+from deepeval import assert_test
+from deepeval.integrations.langchain import CallbackHandler
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    tools=[],
+    system_prompt="Answer math questions concisely.",
+)
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_langchain_app(golden: Golden):
+    agent.invoke(
+        {"messages": [{"role": "user", "content": golden.input}]},
+        config={"callbacks": [CallbackHandler()]},
+    )
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+把 `deepeval` 的 `CallbackHandler` 传给你智能体的 `invoke` 方法。完整用法见 [LangChain 集成](/integrations/frameworks/langchain)。
+
+</Tab>
+<Tab title="LangGraph">
+
+```python title="test_langgraph_app.py" showLineNumbers
+import pytest
+from langchain.chat_models import init_chat_model
+from langgraph.graph import StateGraph, MessagesState, START, END
+from deepeval import assert_test
+from deepeval.integrations.langchain import CallbackHandler
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+llm = init_chat_model("openai:gpt-4o-mini")
+
+def chatbot(state: MessagesState):
+    return {"messages": [llm.invoke(state["messages"])]}
+
+graph = (
+    StateGraph(MessagesState)
+    .add_node(chatbot)
+    .add_edge(START, "chatbot")
+    .add_edge("chatbot", END)
+    .compile()
+)
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_langgraph_app(golden: Golden):
+    graph.invoke(
+        {"messages": [{"role": "user", "content": golden.input}]},
+        config={"callbacks": [CallbackHandler()]},
+    )
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+把 `deepeval` 的 `CallbackHandler` 传给你的 `StateGraph` 的 `invoke` 方法。完整用法见 [LangGraph 集成](/integrations/frameworks/langgraph)。
+
+</Tab>
+<Tab title="OpenAI">
+
+```python title="test_openai_app.py" showLineNumbers
+import pytest
+from deepeval import assert_test
+from deepeval.openai import OpenAI
+from deepeval.tracing import trace
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent (drop-in replace `from openai import OpenAI`)
+client = OpenAI()
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_openai_app(golden: Golden):
+    with trace():
+        client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Answer in one short sentence."},
+                {"role": "user", "content": golden.input},
+            ],
+        )
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+把 `from openai import OpenAI` 直接替换为 `from deepeval.openai import OpenAI` —— 每次补全调用都会自动成为 LLM span。完整用法见 [OpenAI 集成](/integrations/frameworks/openai)。
+
+</Tab>
+<Tab title="Pydantic AI">
+
+```python title="test_pydantic_ai_app.py" showLineNumbers
+import pytest
+from pydantic_ai import Agent
+from deepeval import assert_test
+from deepeval.integrations.pydantic_ai import DeepEvalInstrumentationSettings
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+agent = Agent(
+    "openai:gpt-5",
+    system_prompt="Answer in one short sentence.",
+    instrument=DeepEvalInstrumentationSettings(),
+)
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_pydantic_ai_app(golden: Golden):
+    agent.run_sync(golden.input)
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+把 `DeepEvalInstrumentationSettings()` 传给你 `Agent` 的 `instrument` 关键字参数。完整用法见 [Pydantic AI 集成](/integrations/frameworks/pydanticai)。
+
+</Tab>
+<Tab title="AgentCore">
+
+```python title="test_agentcore_app.py" showLineNumbers
+import pytest
+from bedrock_agentcore import BedrockAgentCoreApp
+from strands import Agent
+from deepeval import assert_test
+from deepeval.integrations.agentcore import instrument_agentcore
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+instrument_agentcore()
+
+app = BedrockAgentCoreApp()
+agent = Agent(model="amazon.nova-lite-v1:0")
+
+@app.entrypoint
+def invoke(payload):
+    result = agent(payload["prompt"])
+    return {"result": result.message}
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_agentcore_app(golden: Golden):
+    invoke({"prompt": golden.input})
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+在创建 AgentCore 应用之前调用 `instrument_agentcore()`——它也会对运行在 AgentCore 内的 [Strands](https://strandsagents.com/) 智能体做埋点。完整用法见 [AgentCore 集成](/integrations/frameworks/agentcore)。
+
+</Tab>
+<Tab title="Strands">
+
+```python title="test_strands_agent.py" showLineNumbers
+import pytest
+from strands import Agent
+from strands.models.openai import OpenAIModel
+from deepeval import assert_test
+from deepeval.integrations.strands import instrument_strands
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="Help me return my order.")])
+
+# 2. Instrument your agent
+instrument_strands()
+
+agent = Agent(
+    model=OpenAIModel(model_id="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant.",
+)
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_strands_agent(golden: Golden):
+    agent(golden.input)
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+在创建或调用你的智能体之前调用 `instrument_strands()`（对托管在 AgentCore 上的 Strands，请改用 AgentCore 标签页）。完整用法见 [Strands 集成](/integrations/frameworks/strands)。
+
+</Tab>
+<Tab title="Anthropic">
+
+```python title="test_anthropic_app.py" showLineNumbers
+import pytest
+from deepeval import assert_test
+from deepeval.anthropic import Anthropic
+from deepeval.tracing import trace
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent (drop-in replace `from anthropic import Anthropic`)
+client = Anthropic()
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_anthropic_app(golden: Golden):
+    with trace():
+        client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=1024,
+            system="Answer in one short sentence.",
+            messages=[{"role": "user", "content": golden.input}],
+        )
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+把 `from anthropic import Anthropic` 直接替换为 `from deepeval.anthropic import Anthropic` —— 每次 `messages.create(...)` 调用都会自动成为 LLM span。完整用法见 [Anthropic 集成](/integrations/frameworks/anthropic)。
+
+</Tab>
+<Tab title="LlamaIndex">
+
+```python title="test_llamaindex_app.py" showLineNumbers
+import asyncio
+import pytest
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import FunctionAgent
+import llama_index.core.instrumentation as instrument
+from deepeval import assert_test
+from deepeval.integrations.llama_index import instrument_llama_index
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+instrument_llama_index(instrument.get_dispatcher())
+
+agent = FunctionAgent(
+    tools=[],
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="Answer math questions concisely.",
+)
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_llamaindex_app(golden: Golden):
+    asyncio.run(agent.run(golden.input))
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+把 `deepeval` 的事件处理器注册到 LlamaIndex 的 instrumentation 调度器上。完整用法见 [LlamaIndex 集成](/integrations/frameworks/llamaindex)。
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+```python title="test_openai_agents_app.py" showLineNumbers
+import pytest
+from agents import Runner, add_trace_processor
+from deepeval import assert_test
+from deepeval.openai_agents import Agent, DeepEvalTracingProcessor
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+add_trace_processor(DeepEvalTracingProcessor())
+
+agent = Agent(
+    name="math_agent",
+    instructions="Answer math questions concisely.",
+)
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_openai_agents_app(golden: Golden):
+    Runner.run_sync(agent, golden.input)
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+注册一次 `DeepEvalTracingProcessor`，然后用 `deepeval` 的 `Agent` 垫片构建你的智能体。完整用法见 [OpenAI Agents 集成](/integrations/frameworks/openai-agents)。
+
+</Tab>
+<Tab title="Google ADK">
+
+```python title="test_google_adk_app.py" showLineNumbers
+import asyncio
+import pytest
+from google.adk.agents import LlmAgent
+from google.adk.runners import InMemoryRunner
+from google.genai import types
+from deepeval import assert_test
+from deepeval.integrations.google_adk import instrument_google_adk
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+instrument_google_adk()
+
+agent = LlmAgent(model="gemini-2.0-flash", name="assistant", instruction="Answer math questions concisely.")
+runner = InMemoryRunner(agent=agent, app_name="deepeval-google-adk")
+
+async def run_agent(prompt: str) -> str:
+    session = await runner.session_service.create_session(app_name="deepeval-google-adk", user_id="demo-user")
+    message = types.Content(role="user", parts=[types.Part(text=prompt)])
+    async for event in runner.run_async(user_id="demo-user", session_id=session.id, new_message=message):
+        if event.is_final_response() and event.content:
+            return "".join(part.text for part in event.content.parts if getattr(part, "text", None))
+    return ""
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_google_adk_app(golden: Golden):
+    asyncio.run(run_agent(golden.input))
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+在构建 `LlmAgent` 之前调用一次 `instrument_google_adk()`。完整用法见 [Google ADK 集成](/integrations/frameworks/google-adk)。
+
+</Tab>
+<Tab title="CrewAI">
+
+```python title="test_crewai_app.py" showLineNumbers
+import pytest
+from crewai import Task
+from deepeval import assert_test
+from deepeval.integrations.crewai import instrument_crewai, Crew, Agent
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import TaskCompletionMetric
+
+# 1. Load your dataset of goldens
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+# 2. Instrument your agent
+instrument_crewai()
+
+tutor = Agent(
+    role="Math Tutor",
+    goal="Answer math questions accurately and concisely.",
+    backstory="An experienced tutor who explains simple math clearly.",
+)
+task = Task(
+    description="{question}",
+    expected_output="Pi rounded to 2 decimal places is 3.14.",
+    agent=tutor,
+)
+crew = Crew(agents=[tutor], tasks=[task])
+
+# 3. Evaluate end-to-end on each golden
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_crewai_app(golden: Golden):
+    crew.kickoff({"question": golden.input})
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+调用一次 `instrument_crewai()`，然后用 `deepeval` 的 `Crew` 与 `Agent` 垫片构建你的 crew。完整用法见 [CrewAI 集成](/integrations/frameworks/crewai)。
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+下面的每个标签页都用同一个匹配器：金标是被测主体，`task` 产出供评判的追踪。导入 `deepeval/vitest` 会注册 `toPass()`，`npx deepeval test run` 会为你自动注入。
+
+<Tabs>
+<Tab title="手动埋点">
+
+```typescript title="llm-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import { observe, updateCurrentTrace } from "deepeval/tracing";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your agent
+const myAiAgent = observe({
+  type: "agent",
+  fn: async (query: string): Promise<string> => {
+    const answer = "Pi rounded to 2 decimal places is 3.14.";
+    updateCurrentTrace({ input: query, output: answer });
+    return answer;
+  },
+});
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "completes the task #%$",
+  async (golden) => {
+    await expect(golden).toPass([new TaskCompletionMetric()], {
+      task: (g) => myAiAgent(g.input),
+    });
+  },
+);
+```
+
+用 `observe` 包装智能体的顶层函数，并用 `updateCurrentTrace(...)` 设置追踪级测试用例字段。完整用法见 [LLM 追踪](/docs/evaluation-llm-tracing)。
+
+</Tab>
+<Tab title="LangChain">
+
+```typescript title="langchain-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { createAgent } from "langchain";
+import { DeepEvalCallbackHandler } from "deepeval/integrations/langchain";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your agent
+const agent = createAgent({
+  model: "openai:gpt-4o-mini",
+  tools: [],
+  systemPrompt: "Answer math questions concisely.",
+});
+
+const handler = new DeepEvalCallbackHandler({});
+
+const ask = (prompt: string) =>
+  agent.invoke(
+    { messages: [{ role: "user", content: prompt }] },
+    { callbacks: [handler] },
+  );
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "completes the task #%$",
+  async (golden) => {
+    await expect(golden).toPass([new TaskCompletionMetric()], {
+      task: (g) => ask(g.input),
+    });
+  },
+);
+```
+
+把 `deepeval` 的 `DeepEvalCallbackHandler` 传给你智能体的 `invoke` 方法。完整用法见 [LangChain 集成](/integrations/frameworks/langchain)。
+
+</Tab>
+<Tab title="Mastra">
+
+```typescript title="mastra-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { Observability } from "@mastra/observability";
+import { Mastra } from "@mastra/core/mastra";
+import { DeepEvalExporter } from "deepeval/integrations/mastra";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your agent
+const mastra = new Mastra({
+  agents: { mathAgent },
+  observability: new Observability({
+    configs: {
+      deepeval: {
+        serviceName: "math-app",
+        exporters: [new DeepEvalExporter()],
+      },
+    },
+  }),
+});
+
+const ask = (prompt: string) => mastra.getAgent("mathAgent").generate(prompt);
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "completes the task #%$",
+  async (golden) => {
+    await expect(golden).toPass([new TaskCompletionMetric()], {
+      task: (g) => ask(g.input),
+    });
+  },
+);
+```
+
+`toPass()` 在打分前会等待 exporter 落定，因此测试内无需手动 flush。完整用法见 [Mastra 集成](/integrations/frameworks/mastra)。
+
+</Tab>
+<Tab title="LangGraph">
+
+```typescript title="langgraph-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { StateGraph, MessagesAnnotation, START, END } from "@langchain/langgraph";
+import { DeepEvalCallbackHandler } from "deepeval/integrations/langchain";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your graph
+const graph = new StateGraph(MessagesAnnotation)
+  .addNode("chatbot", chatbot)
+  .addEdge(START, "chatbot")
+  .addEdge("chatbot", END)
+  .compile();
+
+const handler = new DeepEvalCallbackHandler({});
+
+const ask = (prompt: string) =>
+  graph.invoke(
+    { messages: [{ role: "user", content: prompt }] },
+    { callbacks: [handler] },
+  );
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "completes the task #%$",
+  async (golden) => {
+    await expect(golden).toPass([new TaskCompletionMetric()], {
+      task: (g) => ask(g.input),
+    });
+  },
+);
+```
+
+同一个 `DeepEvalCallbackHandler` 也覆盖 LangGraph，因为 LangGraph 运行在 LangChain 的回调系统之上。完整用法见 [LangGraph 集成](/integrations/frameworks/langgraph)。
+
+</Tab>
+<Tab title="OpenAI">
+
+```typescript title="openai-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { OpenAI } from "openai";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { instrumentOpenAI } from "deepeval/openai";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your client
+const client = new OpenAI();
+instrumentOpenAI(client);
+
+const respond = (prompt: string) =>
+  client.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{ role: "user", content: prompt }],
+  });
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "answers the question #%$",
+  async (golden) => {
+    await expect(golden).toPass([new AnswerRelevancyMetric()], {
+      task: (g) => respond(g.input),
+    });
+  },
+);
+```
+
+`instrumentOpenAI` 会就地修补 client，它发出的每次调用都会成为 LLM span。完整用法见 [OpenAI 集成](/integrations/frameworks/openai)。
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+```typescript title="openai-agents-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { Agent, run, addTraceProcessor } from "@openai/agents";
+import { DeepEvalTracingProcessor } from "deepeval/integrations/openai-agents";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your agent
+addTraceProcessor(new DeepEvalTracingProcessor());
+
+const agent = new Agent({
+  name: "mathAgent",
+  instructions: "Answer math questions concisely.",
+  model: "gpt-4o-mini",
+});
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "completes the task #%$",
+  async (golden) => {
+    await expect(golden).toPass([new TaskCompletionMetric()], {
+      task: (g) => run(agent, g.input),
+    });
+  },
+);
+```
+
+注册一次处理器，每次 `run(...)` 都会成为一条追踪。完整用法见 [OpenAI Agents 集成](/integrations/frameworks/openai-agents)。
+
+</Tab>
+<Tab title="Vercel AI SDK">
+
+```typescript title="ai-sdk-app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { configureAiSdkTracing } from "deepeval/integrations/ai-sdk";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import "deepeval/vitest";
+
+// 1. Load your dataset of goldens
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+// 2. Instrument your app
+const tracer = configureAiSdkTracing({ name: "math-app" });
+
+const ask = (prompt: string) =>
+  generateText({
+    model: openai("gpt-4o-mini"),
+    prompt,
+    experimental_telemetry: { isEnabled: true, tracer },
+  });
+
+// 3. Evaluate end-to-end on each golden
+it.each(dataset.goldens as Golden[])(
+  "completes the task #%$",
+  async (golden) => {
+    await expect(golden).toPass([new TaskCompletionMetric()], {
+      task: (g) => ask(g.input),
+    });
+  },
+);
+```
+
+遥测按调用选择加入：没有 `isEnabled` 和 `tracer` 的调用永远不会被追踪。完整用法见 [Vercel AI SDK 集成](/integrations/frameworks/ai-sdk)。
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+此模式下 `assert_test()` 有 **一个** 必填参数和 **一个** 可选参数：
+
+- `golden`：你通过测试函数传入的 `Golden`。
+- [可选] `metrics`：你希望对追踪运行（即端到端评估）的 `BaseMetric` 列表。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+金标传入 `expect()`，`toPass()` 接受：
+
+- [可选] `metrics`：你希望对追踪运行（即端到端评估）的 `BaseMetric` 数组。
+- `options.run`：一个回调 `(golden) => ...`，运行你的应用，让匹配器捕获并为其追踪打分。
+
+</Tab>
+
+</Tabs>
+
+<Tip>
+
+**走向组件级**
+
+Once your app is instrumented, you can attach metrics directly to individual `@observe`（TypeScript 中为 `observe()`）'d (or framework-emitted) spans to grade internal components — retrievers, tool calls, sub-agents — alongside the end-to-end trace.
+
+每个集成的指标挂载方式见[组件级评估](/docs/evaluation-component-level-llm-evals)；追踪级与 span 级指标可以共存于同一次测试运行。
+</Tip>
+
+**无追踪**
+
+Use this when you can't (or don't want to) instrument your app — e.g. a QA engineer evaluating a deployed black-box system. You build the `LLMTestCase` yourself inside the test and hand it to `assert_test()`（TypeScript 中为 `expect(testCase).toPass()`） directly. No tracing is involved, so you don't get per-test-case traces in CI.
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_llm_app.py" showLineNumbers
+import pytest
+from deepeval import assert_test
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import AnswerRelevancyMetric
+
+def your_llm_app(query: str) -> str:
+    return "Pi rounded to 2 decimal places is 3.14."
+
+dataset = EvaluationDataset(goldens=[Golden(input="What is pi rounded to 2 decimal places?")])
+
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_llm_app(golden: Golden):
+    answer = your_llm_app(golden.input)
+    test_case = LLMTestCase(
+        input=golden.input,
+        actual_output=answer,
+    )
+    assert_test(test_case=test_case, metrics=[AnswerRelevancyMetric()])
+```
+
+此模式下 `assert_test()` 有**两个**必填参数和**一个**可选参数：
+
+- `test_case`：你在测试内构建的 `LLMTestCase`。
+- `metrics`：`BaseMetric` 列表。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="llm_app.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { LLMTestCase } from "deepeval/test-case";
+import "deepeval/vitest";
+
+async function yourLlmApp(query: string): Promise<string> {
+  return "Pi rounded to 2 decimal places is 3.14.";
+}
+
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What is pi rounded to 2 decimal places?" })],
+});
+
+it.each(dataset.goldens as Golden[])(
+  "answers the user's question #%$",
+  async (golden) => {
+    const answer = await yourLlmApp(golden.input);
+    const testCase = new LLMTestCase({
+      input: golden.input,
+      actualOutput: answer,
+    });
+    await expect(testCase).toPass([new AnswerRelevancyMetric()]);
+  },
+);
+```
+
+测试用例传入 `expect()`，`toPass()` 接受一个参数：
+
+- `metrics`：`BaseMetric` 数组，并发地对该测试用例运行。
+
+</Tab>
+
+</Tabs>
+
+你在 `LLMTestCase` 上填充的字段必须与指标所需匹配（例如 `FaithfulnessMetric` 需要 `retrieval_context`）。完整参数列表见[测试用例](/docs/evaluation-test-cases#llm-test-cases)。
+
+</Tab>
+
+<Tab title="多轮">
+
+如果你的应用是多轮的——聊天机器人、客服智能体，以及任何以整段对话而非单次交换为评估单元的对话式应用——选这个。你把聊天机器人包装进 `model_callback`，针对金标模拟对话，然后评估每个 `ConversationalTestCase`。多轮评估默认是端到端的；完整的独立演练见[多轮端到端指南](/docs/evaluation-end-to-end-multi-turn)。
+
+**1. 把聊天机器人包装进回调**
+
+`ConversationSimulator` 需要一种方式，在给定目前对话的情况下向你的聊天机器人询问下一条回复：
+
+<Tabs>
+
+<Tab title="Python">
+
+<Tabs>
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers={true}
+from typing import List
+from deepeval.test_case import Turn
+
+async def model_callback(input: str, turns: List[Turn], thread_id: str) -> Turn:
+    response = await your_chatbot(input, turns, thread_id)
+    return Turn(role="assistant", content=response)
+```
+
+</Tab>
+<Tab title="OpenAI">
+
+```python title="main.py" showLineNumbers={true} {6}
+from typing import List
+from deepeval.test_case import Turn
+from openai import OpenAI
+
+client = OpenAI()
+
+async def model_callback(input: str, turns: List[Turn]) -> Turn:
+    messages = [
+        {"role": "system", "content": "You are a ticket purchasing assistant"},
+        *[{"role": t.role, "content": t.content} for t in turns],
+        {"role": "user", "content": input},
+    ]
+    response = await client.chat.completions.create(model="gpt-4.1", messages=messages)
+    return Turn(role="assistant", content=response.choices[0].message.content)
+```
+
+</Tab>
+<Tab title="LangChain">
+
+```python title="main.py" showLineNumbers={true} {10,13}
+from langchain.agents import create_agent
+from langgraph.checkpoint.memory import InMemorySaver
+from deepeval.test_case import Turn
+
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    system_prompt="You are a ticket purchasing assistant.",
+    checkpointer=InMemorySaver(),
+)
+
+async def model_callback(input: str, thread_id: str) -> Turn:
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": input}]},
+        config={"configurable": {"thread_id": thread_id}},
+    )
+    return Turn(role="assistant", content=result["messages"][-1].content)
+```
+
+</Tab>
+<Tab title="LlamaIndex">
+
+```python title="main.py" showLineNumbers={true} {9}
+from llama_index.core.storage.chat_store import SimpleChatStore
+from llama_index.llms.openai import OpenAI
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from deepeval.test_case import Turn
+
+chat_store = SimpleChatStore()
+llm = OpenAI(model="gpt-4")
+
+async def model_callback(input: str, thread_id: str) -> Turn:
+    memory = ChatMemoryBuffer.from_defaults(chat_store=chat_store, chat_store_key=thread_id)
+    chat_engine = SimpleChatEngine.from_defaults(llm=llm, memory=memory)
+    response = chat_engine.chat(input)
+    return Turn(role="assistant", content=response.response)
+```
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+```python title="main.py" showLineNumbers={true} {6}
+from agents import Agent, Runner, SQLiteSession
+from deepeval.test_case import Turn
+
+sessions = {}
+agent = Agent(name="Test Assistant", instructions="You are a helpful assistant that answers questions concisely.")
+
+async def model_callback(input: str, thread_id: str) -> Turn:
+    if thread_id not in sessions:
+        sessions[thread_id] = SQLiteSession(thread_id)
+    session = sessions[thread_id]
+    result = await Runner.run(agent, input, session=session)
+    return Turn(role="assistant", content=result.final_output)
+```
+
+</Tab>
+<Tab title="Pydantic">
+
+```python title="main.py" showLineNumbers={true} {9}
+from typing import List
+from datetime import datetime
+from pydantic_ai import Agent
+from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
+from deepeval.test_case import Turn
+
+agent = Agent('openai:gpt-4', system_prompt="You are a helpful assistant that answers questions concisely.")
+
+async def model_callback(input: str, turns: List[Turn]) -> Turn:
+    message_history = []
+    for turn in turns:
+        if turn.role == "user":
+            message_history.append(ModelRequest(parts=[UserPromptPart(content=turn.content, timestamp=datetime.now())], kind='request'))
+        elif turn.role == "assistant":
+            message_history.append(ModelResponse(parts=[TextPart(content=turn.content)], model_name='gpt-4', timestamp=datetime.now(), kind='response'))
+    result = await agent.run(input, message_history=message_history)
+    return Turn(role="assistant", content=result.output)
+```
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+<Tabs>
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers={true}
+import { Turn } from "deepeval/test-case";
+
+export const modelCallback = async ({
+  input,
+  turns,
+  threadId,
+}: {
+  input: string;
+  turns: Turn[];
+  threadId: string;
+}): Promise<Turn> => {
+  const response = await yourChatbot(input, turns, threadId);
+  return new Turn({ role: "assistant", content: response });
+};
+```
+
+</Tab>
+<Tab title="OpenAI">
+
+```typescript title="main.ts" showLineNumbers={true} {16}
+import OpenAI from "openai";
+import { Turn } from "deepeval/test-case";
+
+const client = new OpenAI();
+
+export const modelCallback = async ({
+  input,
+  turns,
+}: {
+  input: string;
+  turns: Turn[];
+}): Promise<Turn> => {
+  const messages = [
+    { role: "system" as const, content: "You are a ticket purchasing assistant" },
+    ...turns.map((t) => ({ role: t.role as "user" | "assistant", content: t.content })),
+    { role: "user" as const, content: input },
+  ];
+  const response = await client.chat.completions.create({ model: "gpt-4.1", messages });
+  return new Turn({
+    role: "assistant",
+    content: response.choices[0].message.content ?? "",
+  });
+};
+```
+
+</Tab>
+<Tab title="LangChain">
+
+```typescript title="main.ts" showLineNumbers={true} {18-21}
+import { createAgent } from "langchain";
+import { MemorySaver } from "@langchain/langgraph";
+import { Turn } from "deepeval/test-case";
+
+const agent = createAgent({
+  model: "openai:gpt-4o-mini",
+  systemPrompt: "You are a ticket purchasing assistant.",
+  checkpointer: new MemorySaver(),
+});
+
+export const modelCallback = async ({
+  input,
+  threadId,
+}: {
+  input: string;
+  threadId: string;
+}): Promise<Turn> => {
+  const result = await agent.invoke(
+    { messages: [{ role: "user", content: input }] },
+    { configurable: { thread_id: threadId } },
+  );
+  const last = result.messages[result.messages.length - 1];
+  return new Turn({ role: "assistant", content: String(last.content) });
+};
+```
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+</Tabs>
+
+<Info>
+你的 `model_callback` 会拿到 `input`（模拟用户的下一条消息）、目前的 `turns`，以及一个稳定的 `thread_id`——只取你需要的即可。它必须返回一个 `role` 为 `assistant` 的 `Turn`。
+</Info>
+
+**2. 模拟对话并编写测试**
+
+在模块加载时运行一次模拟器来产出 `ConversationalTestCase`，然后对它们做参数化：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_chatbot.py" showLineNumbers
+import pytest
+import deepeval
+from deepeval import assert_test
+from deepeval.test_case import ConversationalTestCase
+from deepeval.metrics import TurnRelevancyMetric
+from deepeval.simulator import ConversationSimulator
+from your_app import model_callback
+
+simulator = ConversationSimulator(model_callback=model_callback)
+test_cases = simulator.simulate(
+    conversational_goldens=dataset.goldens,
+    max_user_simulations=10,
+)
+
+@pytest.mark.parametrize("test_case", test_cases)
+def test_chatbot(test_case: ConversationalTestCase):
+    assert_test(test_case=test_case, metrics=[TurnRelevancyMetric()])
+
+@deepeval.log_hyperparameters
+def hyperparameters():
+    return {"model": "gpt-4.1", "system_prompt": "Be concise."}
+```
+
+此模式下 `assert_test()` 有**两个**必填参数和**一个**可选参数：
+
+- `test_case`：模拟器产出的 `ConversationalTestCase`。
+- `metrics`：`BaseConversationalMetric` 列表。见[多轮指标](/docs/metrics-introduction#multi-turn-metrics)（`TurnRelevancyMetric`、`KnowledgeRetentionMetric`、`RoleAdherenceMetric`、`ConversationCompletenessMetric`）。
+- [可选] `run_async`：默认为 `True`。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="chatbot.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { ConversationalGolden } from "deepeval/dataset";
+import { TurnRelevancyMetric } from "deepeval/metrics";
+import { ConversationSimulator, logHyperparameters } from "deepeval";
+import { modelCallback } from "./your-app";
+import "deepeval/vitest";
+
+const simulator = new ConversationSimulator({ modelCallback });
+const testCases = await simulator.simulate({
+  conversationalGoldens: dataset.goldens as ConversationalGolden[],
+  maxUserSimulations: 10,
+});
+
+logHyperparameters({ model: "gpt-4.1", systemPrompt: "Be concise." });
+
+it.each(testCases)(
+  "stays relevant across the conversation #%$",
+  async (testCase) => {
+    await expect(testCase).toPass([new TurnRelevancyMetric()]);
+  },
+);
+```
+
+测试用例传入 `expect()`，`toPass()` 接受一个参数：
+
+- `metrics`：`BaseConversationalMetric` 数组。见[多轮指标](/docs/metrics-introduction#multi-turn-metrics)（`TurnRelevancyMetric`、`KnowledgeRetentionMetric`、`RoleAdherenceMetric`、`ConversationCompletenessMetric`）。
+
+`logHyperparameters()` 是 Python 的 `@deepeval.log_hyperparameters` 装饰器的对应物——在文件任意位置调用一次即可。在 `npx deepeval test run` 之外没有可标记的测试运行，因此它是空操作；请把 `hyperparameters` 传给 `evaluate()`。
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+### 运行你的测试文件
+
+无论你选择了哪种风格，命令都是一样的：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval test run test_llm_app.py
+```
+
+<Warning>
+直接用 `pytest` 命令也能跑，但强烈不推荐。`deepeval test run` 在 Pytest 之上为 LLM 单元测试增加了一系列功能，由 [8+ 个可选开关](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)启用——异步行为、错误处理、重复运行、标识符等等。
+</Warning>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval test run llm_app.test.ts
+```
+
+<Warning>
+直接用 `vitest` 命令也能跑，但强烈不推荐。`npx deepeval test run` 在 Vitest 之上为 LLM 单元测试增加了一系列功能，由 [8+ 个可选开关](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)启用——错误处理、重复运行、标识符等等。它还会为你注入 `toPass()` 匹配器。
+</Warning>
+
+</Tab>
+
+</Tabs>
+
+</Step>
+</Steps>
+
+## 处理 Flaky 测试用例
+
+LLM 评估是非确定性的，有些测试用例会恰好落在某个指标的阈值上，在多次运行之间于通过与失败之间来回摆动。与其把它们从套件中删除，不如把它们标记为 flaky：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase
+
+test_case = LLMTestCase(flaky=True, ...)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase } from "deepeval/test-case";
+
+const testCase = new LLMTestCase({ flaky: true, ... });
+```
+
+</Tab>
+
+</Tabs>
+
+当 flaky 测试用例失败时，<Tabs><Tab title="Python">`assert_test()` 会打印警告而不是抛出 `AssertionError`</Tab><Tab title="TypeScript">`expect(testCase).toPass()` 会打印警告而不是让测试失败</Tab></Tabs>，因此你的 CI 流水线继续运行，同时失败仍被记录在测试运行结果中。`LLMTestCase` 与 `ConversationalTestCase` 都支持 `flaky` 参数。
+
+You can also mark individual **metrics** as flaky (`AnswerRelevancyMetric(flaky=True)`（TypeScript 中为 `new AnswerRelevancyMetric({ flaky: true })`）) — a flaky metric's score and verdict are still reported, but its failure never fails the test case it ran on.
+
+## 用于 CI/CD 评估的 YAML 文件
+
+把 `deepeval test run` 放进 `.yml`，即可在每次推送或 PR 时运行你的单元测试。本例使用 `OPENAI_API_KEY` 作为 LLM 裁判在本地运行评估。添加 `CONFIDENT_API_KEY` 可把结果发送到 Confident AI。
+
+<Tabs>
+
+<Tab title="Python">
+
+```yaml {32-33}
+name: LLM App `deepeval` Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        run: poetry install --no-root
+
+      - name: Run `deepeval` Unit Tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CONFIDENT_API_KEY: ${{ secrets.CONFIDENT_API_KEY }}
+        run: poetry run deepeval test run test_llm_app.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```yaml {24-25}
+name: LLM App `deepeval` Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run `deepeval` Unit Tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CONFIDENT_API_KEY: ${{ secrets.CONFIDENT_API_KEY }}
+        run: npx deepeval test run llm_app.test.ts
+```
+
+</Tab>
+
+</Tabs>
+
+[点击这里](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)了解 `deepeval test run` 提供的可选开关。
+
+<Tip>
+我们强烈建议为你的 `deepeval` 评估配置 [Confident AI](https://app.confident-ai.com)，以获得专业的测试报告并观察 LLM 应用表现随时间变化的趋势。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:spans.mp4"></video>
+  <figcaption>CI/CD 检查通过后，继续在生产环境中评估各个组件。</figcaption>
+</figure>
+</Tip>
+
+## 标记正式运行
+
+你可以把某次测试运行指定为 Confident AI 上的**正式**测试运行——即被标记的优质运行，后续运行会与之比较以发现回归。添加 `--official` 开关（或 `-o`）在运行完成后进行标记：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval test run test_llm_app.py --official
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval test run llm_app.test.ts --official
+```
+
+</Tab>
+
+</Tabs>
+
+If you evaluate with `evaluate()` rather than `deepeval test run`, pass `official=True`（TypeScript 中为 `official: true`） instead:
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval import evaluate
+
+evaluate(test_cases=[...], metrics=[...], official=True)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate([...], [...], { official: true });
+```
+
+</Tab>
+
+</Tabs>
+
+这通常在主分支上进行，这样每个基线都反映已合并、可上生产的代码。
+
+<Note>
+把运行标记为正式运行需要 `CONFIDENT_API_KEY`，因为正式运行保存在 Confident AI 上。
+</Note>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="How does deepeval fit into CI/CD?">
+你把评估写成你所使用测试运行器中的测试，并用 `deepeval test run` 命令作为流水线中的一个步骤来运行它们。失败的指标会让构建失败，回归在上线前就会被发现。
+</Accordion>
+<Accordion title="What's the difference between unit testing and evaluate()?">
+单元测试是为 CI/CD 设计的：当指标低于阈值时断言失败，构建变红。而 `evaluate()` 面向脚本与笔记本，只收集结果而不让任何东西失败。把关请用单元测试。
+</Accordion>
+<Accordion title="Do I need a Confident AI account to run evals in CI/CD?">
+不需要。提供一个 LLM 裁判密钥（如 `OPENAI_API_KEY`），你的测试就完全在本地运行。添加 `CONFIDENT_API_KEY` 是可选的，只是把结果发送到云端。
+</Accordion>
+<Accordion title="Which CI providers does this work with?">
+任何能执行 shell 步骤的提供商都可以。文档展示的是 GitHub Actions 的 `.yml`，但同一条 `deepeval test run` 命令在 GitLab CI、CircleCI、Jenkins 等环境中同样可用。
+</Accordion>
+<Accordion title="How do I speed up or control test runs in CI?">
+使用 `deepeval test run` 的并行化、缓存、忽略错误等开关。完整列表见[开关与配置](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)。
+</Accordion>
+<Accordion title="Can my team see professional test reports on the cloud and track results over time?">
+可以——而且是可选的。把 `CONFIDENT_API_KEY` 加入你的 CI 密钥，同一条 `deepeval test run` 就会把结果发送到 [Confident AI](https://app.confident-ai.com)（`deepeval` 团队的平台），为你的团队提供可分享的测试报告、检查失败用例的界面，以及跨提交的性能趋势线。没有该密钥，完全相同的测试依然在本地运行。
+</Accordion>
+</AccordionGroup>

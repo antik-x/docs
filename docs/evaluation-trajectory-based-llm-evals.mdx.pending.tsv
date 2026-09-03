@@ -1,0 +1,234 @@
+1	---
+2	title: Trajectory-Based Evaluation
+3	---
+5	Trajectory-based evaluation assesses the **entire chain of decisions and actions** an AI agent takes to complete a task. It is designed for agents and long-horizon agents whose quality depends not only on the final answer, but also on the plans, tool calls, handoffs, and intermediate steps that produced it.
+7	## What Are Trajectory-Based Evals?
+9	An agent trajectory is the ordered sequence of steps between receiving a task and producing a result. A trajectory may contain planning, LLM generations, tool calls, retries, sub-agent handoffs, and other intermediate operations.
+11	<Tabs>
+13	<Tab title="Python">
+15	</Tab>
+17	<Tab title="TypeScript">
+19	</Tab>
+21	</Tabs>
+23	Trajectory-based evals score this sequence as a whole. They can determine whether an agent completed its task, followed its plan, and avoided unnecessary steps by analyzing the full trace produced during execution.
+25	This makes trajectory-based evaluation especially useful for:
+27	- **Tool-using agents** that make multiple decisions before responding.
+28	- **Long-horizon agents** that plan, act, observe, and revise over many steps.
+29	- **Multi-agent systems** where work is delegated between agents.
+30	- **Agent workflows** where two runs can produce the same final answer through very different paths.
+32	## Trajectory-Based vs Other Evals
+34	The difference is the scope visible to the metric:
+36	- **[End-to-end evaluation](/docs/evaluation-end-to-end-llm-evals)** treats your application as a black box and evaluates its observable input and output.
+37	- **Trajectory-based evaluation** looks inside an agent but evaluates the complete ordered chain of steps as one unit.
+38	- **[Component-level evaluation](/docs/evaluation-component-level-llm-evals)** evaluates one internal span, such as a single retriever, LLM, tool, or sub-agent invocation.
+40	Use trajectory-based evals when the path itself affects quality. You can combine all three approaches in one evaluation strategy: score the final result end-to-end, the complete agent trajectory, and selected critical components.
+42	## How Trajectory-Based Evals Work
+44	Each evaluation task produces one trace containing the agent's complete execution tree. The trace's ordered spans—such as plans, LLM calls, tool calls, and sub-agent handoffs—form the trajectory that the metrics evaluate.
+46	1. `evals_iterator()` yields a golden containing
+47	   the agent's task.
+48	2. Your instrumented agent runs the task and emits a trace of its internal steps.
+49	3. `deepeval` associates the completed trace with that golden.
+50	4. Trajectory metrics analyze the full trace and return a score and reason.
+51	5. The trajectory and its metric results are stored together in the test run.
+65	Unlike component-level evaluation, the metric is not attached to one span. It receives the complete trace so it can judge relationships between steps and the agent's overall execution.
+67	## Evaluate an Agent Trajectory
+69	Trajectory-based evaluation requires [tracing](/docs/evaluation-llm-tracing), because the metrics need access to the agent's internal execution steps. The `evals_iterator()` method associates each dataset golden with its captured trace and evaluates that trajectory.
+71	<Steps>
+72	<Step>
+76	Create an [`EvaluationDataset`](/docs/evaluation-datasets) containing representative tasks for your agent. Each [`Golden`](/docs/evaluation-datasets#what-are-goldens) supplies the input for one agent trajectory.
+78	<Tabs>
+81	<Tabs>
+83	<Tab title="Python">
+97	</Tab>
+99	<Tab title="TypeScript">
+113	</Tab>
+115	</Tabs>
+119	</Tab>
+124	<Tabs>
+126	<Tab title="Python">
+135	</Tab>
+137	<Tab title="TypeScript">
+146	</Tab>
+148	</Tabs>
+154	</Tab>
+157	<Tabs>
+159	<Tab title="Python">
+171	</Tab>
+173	<Tab title="TypeScript">
+187	</Tab>
+189	</Tabs>
+193	</Tab>
+196	<Tabs>
+198	<Tab title="Python">
+210	</Tab>
+212	<Tab title="TypeScript">
+224	</Tab>
+226	</Tabs>
+230	</Tab>
+231	</Tabs>
+233	<Note>
+235	</Note>
+237	</Step>
+238	<Step>
+240	### Instrument Agent
+242	Instrument your agent using `deepeval`'s native tracing or the integration for your framework. Every decision, tool call, and nested operation captured as a span becomes part of the trajectory available to the metrics.
+244	<Tabs>
+246	<Tab title="Python">
+248	<Tabs>
+253	<Tabs>
+254	<Tab title="Async">
+273	</Tab>
+274	<Tab title="Sync">
+295	</Tab>
+296	</Tabs>
+300	</Tab>
+301	<Tab title="LangChain">
+305	<Tabs>
+306	<Tab title="Async">
+336	</Tab>
+337	<Tab title="Sync">
+366	</Tab>
+367	</Tabs>
+371	</Tab>
+372	<Tab title="LangGraph">
+376	<Tabs>
+377	<Tab title="Async">
+411	</Tab>
+412	<Tab title="Sync">
+445	</Tab>
+446	</Tabs>
+450	</Tab>
+451	<Tab title="OpenAI">
+455	<Tabs>
+456	<Tab title="Async">
+479	</Tab>
+480	<Tab title="Sync">
+502	</Tab>
+503	</Tabs>
+507	</Tab>
+508	<Tab title="Pydantic AI">
+512	<Tabs>
+513	<Tab title="Async">
+533	</Tab>
+534	<Tab title="Sync">
+556	</Tab>
+557	</Tabs>
+561	</Tab>
+562	<Tab title="AgentCore">
+566	<Tabs>
+567	<Tab title="Async">
+585	</Tab>
+586	<Tab title="Sync">
+606	</Tab>
+607	</Tabs>
+611	</Tab>
+612	<Tab title="Strands">
+616	<Tabs>
+617	<Tab title="Async">
+639	</Tab>
+640	<Tab title="Sync">
+664	</Tab>
+665	</Tabs>
+669	</Tab>
+670	<Tab title="Anthropic">
+674	<Tabs>
+675	<Tab title="Async">
+699	</Tab>
+700	<Tab title="Sync">
+723	</Tab>
+724	</Tabs>
+728	</Tab>
+729	<Tab title="LlamaIndex">
+733	<Tabs>
+734	<Tab title="Async">
+761	</Tab>
+762	<Tab title="Sync">
+792	</Tab>
+793	</Tabs>
+797	</Tab>
+798	<Tab title="OpenAI Agents">
+802	<Tabs>
+803	<Tab title="Async">
+829	</Tab>
+830	<Tab title="Sync">
+858	</Tab>
+859	</Tabs>
+863	</Tab>
+864	<Tab title="Google ADK">
+868	<Tabs>
+869	<Tab title="Async">
+902	</Tab>
+903	<Tab title="Sync">
+939	</Tab>
+940	</Tabs>
+944	</Tab>
+945	<Tab title="CrewAI">
+949	<Tabs>
+950	<Tab title="Async">
+978	</Tab>
+979	<Tab title="Sync">
+1009	</Tab>
+1010	</Tabs>
+1014	</Tab>
+1015	</Tabs>
+1017	</Tab>
+1019	<Tab title="TypeScript">
+1023	<Tabs>
+1051	</Tab>
+1052	<Tab title="LangChain">
+1082	</Tab>
+1083	<Tab title="Mastra">
+1115	</Tab>
+1116	<Tab title="LangGraph">
+1146	</Tab>
+1147	<Tab title="OpenAI">
+1172	</Tab>
+1173	<Tab title="OpenAI Agents">
+1201	</Tab>
+1202	<Tab title="Vercel AI SDK">
+1228	</Tab>
+1229	</Tabs>
+1231	</Tab>
+1233	</Tabs>
+1235	</Step>
+1236	<Step>
+1238	### Evaluate Trajectory
+1240	Pass trajectory metrics to `evals_iterator()`, then invoke your traced agent once for each golden. This guide uses only `TaskCompletionMetric`, `StepEfficiencyMetric`, and `PlanAdherenceMetric`; see the [metrics introduction](/docs/metrics-introduction) for guidance on metrics and their behavior.
+1242	<Tabs>
+1244	<Tab title="Python">
+1263	</Tab>
+1265	<Tab title="TypeScript">
+1285	</Tab>
+1287	</Tabs>
+1289	The iterator captures one trace per golden and evaluates the complete trajectory after the agent finishes. Each metric score and reason is stored alongside the trace, allowing you to connect a failure to the exact execution path that produced it.
+1291	</Step>
+1292	</Steps>
+1294	## In CI/CD
+1298	<Tabs>
+1300	<Tab title="Python">
+1332	</Tab>
+1334	<Tab title="TypeScript">
+1370	</Tab>
+1372	</Tabs>
+1374	Your agent must remain instrumented in CI so the assertion can capture and evaluate its complete trace. See [unit testing in CI/CD](/docs/evaluation-unit-testing-in-ci-cd) for pipeline configuration and command options.
+1376	## FAQs
+1378	<AccordionGroup>
+1379	<Accordion title="What is trajectory-based evaluation?">
+1380	Trajectory-based evaluation scores the complete ordered path an AI agent takes through planning, model calls, tools, handoffs, and other intermediate steps while completing one task.
+1381	</Accordion>
+1382	<Accordion title="How is trajectory-based evaluation different from end-to-end and component-level evaluation?">
+1383	End-to-end evaluation treats the application as a black box and scores its observable result. Component-level evaluation scores one internal span. Trajectory-based evaluation looks inside the agent but scores the entire chain of spans as one execution.
+1384	</Accordion>
+1385	<Accordion title="Why does trajectory-based evaluation require tracing?">
+1386	The metrics need the agent's internal execution steps, not only its final output. Tracing captures those steps as an ordered tree and associates the resulting trajectory with the current golden.
+1387	</Accordion>
+1388	<Accordion title="Can trajectory-based evals run in CI/CD?">
+1389	Yes. Run your traced agent inside a `pytest` or `vitest` test and pass trajectory metrics to the assertion. The test fails when a metric misses its configured threshold.
+1390	</Accordion>
+1391	<Accordion title="Which metrics does this guide use?">
+1392	This guide uses `TaskCompletionMetric` , `StepEfficiencyMetric` , and `PlanAdherenceMetric` . See the [metrics introduction](/docs/metrics-introduction) for metric guidance and configuration.
+1393	</Accordion>
+1394	<Accordion title="Can I combine trajectory-based and component-level evaluation?">
+1395	Yes. Pass trajectory metrics to the iterator or test assertion, then attach component metrics to the individual spans you also want to inspect. Both scopes can be evaluated during the same traced run.
+1396	</Accordion>
+1397	</AccordionGroup>

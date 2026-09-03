@@ -1,0 +1,226 @@
+1	---
+2	title: Flags and Configs
+3	---
+7	<Note>
+8	For example, if you're using a custom LLM judge for evaluation, you may wish to ignore errors so that a model failing to produce a valid JSON doesn't interrupt the whole run — or avoid rate limit errors entirely by lowering the maximum concurrency.
+9	</Note>
+11	## Configs for `evaluate()`
+13	<Tabs>
+15	<Tab title="Python">
+17	Each config is a dataclass imported from `deepeval.evaluate`, and each is passed to `evaluate()` under its own keyword argument.
+19	</Tab>
+21	<Tab title="TypeScript">
+23	The configs are the third argument to `evaluate()`, which is a plain options object — there are no classes to import, and every field is optional.
+34	</Tab>
+36	</Tabs>
+38	### Async Configs
+40	The `AsyncConfig` controls how concurrently work is dispatched during `evaluate()`.
+42	<Tabs>
+44	<Tab title="Python">
+53	There are **THREE** optional parameters when creating an `AsyncConfig`:
+55	- [Optional] `run_async`: a boolean which when set to `True`, enables concurrent evaluation of test cases **AND** metrics. Defaulted to `True`.
+56	- [Optional] `throttle_value`: an integer that determines how long (in seconds) to throttle the evaluation of each test case. You can increase this value if your evaluation model is running into rate limit errors. Defaulted to 0.
+57	- [Optional] `max_concurrent`: an integer that determines the maximum number of test cases that can be ran in parallel at any point in time. You can decrease this value if your evaluation model is running into rate limit errors. Defaulted to `20`.
+59	The `throttle_value` and `max_concurrent` parameter is only used when `run_async` is set to `True`. A combination of a `throttle_value` and `max_concurrent` is the best way to handle rate limiting errors, either in your LLM judge or LLM application, when running evaluations.
+61	</Tab>
+63	<Tab title="TypeScript">
+71	There is **ONE** optional field on `asyncConfig`:
+73	- [Optional] `maxConcurrent`: a number that determines the maximum number of metrics evaluated at once. You can decrease this value if your evaluation model is running into rate limit errors. Defaulted to `20`.
+75	Metrics for a given test case are dispatched concurrently up to `maxConcurrent`, while the test cases themselves are evaluated one at a time.
+77	</Tab>
+79	</Tabs>
+81	### Display Configs
+83	The `DisplayConfig` controls how results and intermediate execution steps are displayed during `evaluate()`.
+85	<Tabs>
+87	<Tab title="Python">
+96	There are **TEN** optional parameters when creating a `DisplayConfig`:
+98	- [Optional] `verbose_mode`: a optional boolean which when **IS NOT** `None`, overrides each [metric's `verbose_mode` value](/docs/metrics-introduction#debugging-a-metric). Defaulted to `None`.
+99	- [Optional] `display`: a str of either `"all"`, `"failing"` or `"passing"`, which allows you to selectively decide which type of test cases to display as the final result. Defaulted to `"all"`.
+100	- [Optional] `show_indicator`: a boolean which when set to `True`, shows the evaluation progress indicator for each individual metric. Defaulted to `True`.
+101	- [Optional] `print_results`: a boolean which when set to `True`, prints the result of each evaluation. Defaulted to `True`.
+102	- [Optional] `results_folder`: a string path to a directory where each call to `evaluate()` (or `evals_iterator()`) will be persisted as a `test_run_<YYYYMMDD_HHMMSS>.json` file. Defaulted to `None` (no local save). See [Saving test runs locally](#saving-test-runs-locally) below.
+103	- [Optional] `results_subfolder`: an optional string that, when set together with `results_folder`, nests the `test_run_*.json` files under `results_folder/results_subfolder/`. Defaulted to `None` (flat layout).
+104	- [Optional] `truncate_passing_cases`: a boolean which when set to `True`, truncates the terminal output of passing test cases. Defaulted to `True`.
+105	- [Optional] `inspect_after_run`: a boolean which when set to `True`, prompts you at the end of an `evals_iterator()` run to open the captured traces in the [`deepeval inspect`](/docs/command-line-interface#inspect) TUI. Only fires in interactive terminals when at least one test case has a trace. Set to `False` to disable per call, or export `DEEPEVAL_NO_INSPECT_PROMPT=1` to disable globally (e.g. in CI). Defaulted to `True`.
+106	- [Optional] `file_type`: a string of either `"html"` or `"md"`, which allows you to export the evaluation dashboard to a file. Defaulted to `None`.
+107	- [Optional] `file_output_dir`: a string which when set, writes the evaluation dashboard to the specified directory using the format specified in `file_type`. Defaulted to `None`.
+109	</Tab>
+111	<Tab title="TypeScript">
+121	There are **SIX** optional fields on `displayConfig`:
+123	- [Optional] `verboseMode`: a boolean which when set, overrides each [metric's `verboseMode` value](/docs/metrics-introduction#debugging-a-metric). Omit it to leave each metric on the value it was constructed with.
+124	- [Optional] `showIndicator`: a boolean which when set to `true`, shows the evaluation progress indicator for each individual metric. Defaulted to `true`.
+125	- [Optional] `printResults`: a boolean which when set to `true`, prints the result of each evaluation. Defaulted to `true`.
+126	- [Optional] `truncatePassingCases`: a boolean which when set to `true`, truncates the terminal output of passing test cases. Defaulted to `true`.
+127	- [Optional] `fileOutputDir`: a string which when set, writes the evaluation report to the specified directory using the format specified in `fileType`.
+128	- [Optional] `fileType`: a string of either `"md"` or `"mdx"`, which sets the format used by `fileOutputDir`. Defaulted to `"md"`.
+130	</Tab>
+132	</Tabs>
+134	#### Saving test runs locally
+136	<Tabs>
+138	Runs can be persisted to disk as a structured `TestRun` JSON. Hyperparameters, per-test-case scores, and metric reasons are all serialized into each file via the same schema that Confident AI uses — no extra setup required.
+140	<Tab title="Python">
+142	Set `results_folder` to persist every `evaluate()` (or `evals_iterator()`) call:
+157	</Tab>
+159	<Tab title="TypeScript">
+161	Set the `DEEPEVAL_RESULTS_FOLDER` environment variable to persist every `npx deepeval test run`:
+167	Each run is also written to `.deepeval/.latest_test_run.json` regardless, which is what `npx deepeval view` uploads and `npx deepeval inspect` reads.
+169	</Tab>
+171	</Tabs>
+173	After a few runs, the folder is flat — just the raw test runs:
+182	The timestamp prefix makes `ls` order match chronological order, so an AI agent (Cursor, Claude Code) can iterate over the folder in the order runs happened.
+184	If two runs finish within the same second, the writer appends `_2`, `_3`, … to the filename so nothing is ever overwritten.
+186	Set `results_subfolder` to nest the runs under an extra directory — useful when the parent folder already holds other artifacts:
+199	If `results_folder` is unset but the `DEEPEVAL_RESULTS_FOLDER` environment variable is present, `deepeval` falls back to that path for backwards compatibility.
+201	<Info>
+203	**Reading results with Cursor / Claude Code**
+205	Point the agent at the folder and ask it to `ls` and open the `test_run_*.json` files directly. Everything an agent needs — hyperparameters, prompts, metric scores, and failure reasons — is inside each file, so no extra index or summary is required.
+207	Note that a **test run** is one evaluation run. An [Experiment](/docs/evaluation-introduction) is formed later by _comparing_ multiple test runs, e.g. across different prompts or models.
+208	</Info>
+210	### Error Configs
+212	The `ErrorConfig` controls how errors are handled in `evaluate()`.
+214	<Tabs>
+216	<Tab title="Python">
+225	</Tab>
+227	<Tab title="TypeScript">
+237	</Tab>
+239	</Tabs>
+241	There are **TWO** optional parameters:
+246	If both are enabled, `skip_on_missing_params` takes precedence. This means that if a metric is missing required test case parameters, it will be skipped (and the result will be missing) rather than appearing as an ignored error in the final test run.
+248	### Cache Configs
+250	The `CacheConfig` controls the caching behavior of `evaluate()`.
+252	<Tabs>
+254	<Tab title="Python">
+263	</Tab>
+265	<Tab title="TypeScript">
+275	</Tab>
+277	</Tabs>
+279	There are **TWO** optional parameters:
+284	Results are keyed by test case content plus metric configuration, so a cached result is only reused when both are unchanged. The `write_cache` parameter writes to disk and so you should disable it if that is causing any errors in your environment.
+286	## Hyperparameters
+288	Log the model, prompt, and other configuration values with each test run so you can compare runs side-by-side on Confident AI and identify the best combination.
+290	<Tabs>
+292	<Tab title="Python">
+294	Pass them to `evaluate()` directly, as a dict of `str | int | float` or [`Prompt`](/docs/evaluation-prompts) values:
+306	Under `deepeval test run` there is no `evaluate()` call to pass them to, so use the `@deepeval.log_hyperparameters` decorator anywhere in your test file instead:
+316	</Tab>
+318	<Tab title="TypeScript">
+320	Pass them to `evaluate()` directly, as an object of `string | number | boolean` or `Prompt` values:
+330	Under `npx deepeval test run` there is no `evaluate()` call to pass them to, so call `logHyperparameters()` anywhere in your test file instead:
+338	A `Prompt` is logged by reference, so pull it before passing it as a hyperparameter — an unpulled prompt has no version for the platform to point at, and is skipped with a warning.
+340	</Tab>
+342	</Tabs>
+344	Non-string values are stringified, and any key with an empty value is dropped. On Confident AI the logged values become filterable axes for comparing test runs and surfacing the configuration that performs best.
+346	## Flags for `deepeval test run`
+348	### Parallelization
+350	<Tabs>
+352	<Tab title="Python">
+354	Evaluate each test case in parallel by providing a number to the `-n` flag to specify how many processes to use.
+360	</Tab>
+362	<Tab title="TypeScript">
+364	Vitest runs test files in parallel by default, so there is no flag to turn it on. Use Vitest's own [pool options](https://vitest.dev/config/#pooloptions) to change how many workers it uses.
+366	To cap how many metrics are evaluated at once within a worker, use `--max-concurrent`:
+372	Defaulted to `100`.
+374	</Tab>
+376	</Tabs>
+378	### Cache
+380	Provide the `-c` flag (with no arguments) to read from the local `deepeval` cache instead of re-evaluating test cases on the same metrics.
+382	<Tabs>
+384	<Tab title="Python">
+390	</Tab>
+392	<Tab title="TypeScript">
+398	</Tab>
+400	</Tabs>
+402	<Info>
+403	This is extremely useful if you're running large amounts of test cases. For example, lets say you're running 1000 test cases, but you encounter an error on the 999th test case. The cache functionality would allow you to skip all the previously evaluated 999 test cases, and just evaluate the remaining one.
+404	</Info>
+406	### Ignore Errors
+408	Ignore errors for metric executions during a test run. An example of where this is helpful is if you're using a custom LLM and often find it generating invalid JSONs that will stop the execution of the entire test run.
+410	<Tabs>
+412	<Tab title="Python">
+414	The `-i` flag (with no arguments):
+420	<Tip>
+421	You can combine different flags, such as the `-i`, `-c`, and `-n` flag to execute any uncached test cases in parallel while ignoring any errors along the way:
+427	</Tip>
+429	</Tab>
+431	<Tab title="TypeScript">
+433	The `--ignore-errors` flag (with no arguments):
+439	<Note>
+440	There is no short form for `--ignore-errors`, because `-i` is bound to `--identifier`.
+441	</Note>
+443	</Tab>
+445	</Tabs>
+447	### Verbose Mode
+449	The `-v` flag (with no arguments) allows you to turn on [`verboseMode` for all metrics](/docs/metrics-introduction#debugging-a-metric). Not supplying the `-v` flag will default each metric's `verboseMode` to its value at instantiation.
+451	<Tabs>
+453	<Tab title="Python">
+459	</Tab>
+461	<Tab title="TypeScript">
+467	</Tab>
+469	</Tabs>
+471	<Note>
+472	When a metric's `verboseMode` is enabled, it prints the intermediate steps used to calculate said metric to the console during evaluation.
+473	</Note>
+475	### Skip Test Cases
+477	The `-s` flag (with no arguments) allows you to skip metric executions where the test case has missing/insufficient parameters (such as `retrieval_context`) that is required for evaluation. An example of where this is helpful is if you're using a metric such as the `ContextualPrecisionMetric` but don't want to apply it when the retrieval context is empty.
+479	<Tabs>
+481	<Tab title="Python">
+487	</Tab>
+489	<Tab title="TypeScript">
+495	</Tab>
+497	</Tabs>
+499	### Identifier
+501	Name test runs to better identify them on [Confident AI](https://confident-ai.com). An example of where this is helpful is if you're running automated deployment pipelines, have deployment IDs, or just want a way to identify which test run is which for comparison purposes.
+503	<Tabs>
+505	<Tab title="Python">
+507	The `-id` flag, followed by a string:
+513	When evaluating with `evaluate()` instead, pass `identifier` to achieve the same:
+521	</Tab>
+523	<Tab title="TypeScript">
+525	The `-i` flag, followed by a string:
+531	When evaluating with `evaluate()` instead, pass `identifier` to achieve the same:
+539	</Tab>
+541	</Tabs>
+543	### Display Mode
+545	The `-d` flag followed by a string of "all", "passing", or "failing" allows you to display only certain test cases in the terminal. For example, you can display "failing" only if you only care about the failing test cases.
+547	<Tabs>
+549	<Tab title="Python">
+555	</Tab>
+557	<Tab title="TypeScript">
+563	Every test case is still posted to Confident AI — `-d` only filters the terminal output.
+565	</Tab>
+567	</Tabs>
+569	### Repeats
+571	Repeat each test case by providing a number to the `-r` flag to specify how many times to rerun each test case.
+577	### Official Test Runs
+579	The `--official` flag (or `-o`) marks the resulting test run as the **official test run** on [Confident AI](https://confident-ai.com). The official run is used as the point of comparison for regression testing. This requires a `CONFIDENT_API_KEY`.
+581	<Tabs>
+583	<Tab title="Python">
+589	When evaluating with `evaluate()` instead, pass `official=True` to achieve the same:
+597	</Tab>
+599	<Tab title="TypeScript">
+605	When evaluating with `evaluate()` instead, pass `official` to achieve the same:
+613	</Tab>
+615	</Tabs>
+617	### Hooks
+619	`deepeval`'s Pytest integration allows you to run custom code at the end of each evaluation via the `@deepeval.on_test_run_end` decorator:
+629	## FAQs
+631	<AccordionGroup>
+632	<Accordion title="What's the difference between configs for evaluate() and flags for the test runner?">
+633	Configs are passed to `evaluate()` in code ( `AsyncConfig` , `DisplayConfig` , `ErrorConfig` , `CacheConfig` ). Flags are command-line options passed to the `deepeval test run` command. They control the same behaviors — concurrency, display, errors, caching — for the two ways of running evals.
+634	</Accordion>
+635	<Accordion title="How do I run evaluations faster?">
+636	Use `AsyncConfig` to raise concurrency in `evaluate()` , or run your test files in parallel with the test runner. Caching avoids re-running metrics on unchanged test cases.
+637	</Accordion>
+638	<Accordion title="How do I stop a single failing test case from aborting the whole run?">
+639	Use `ErrorConfig` (for `evaluate()` ) or the ignore-errors flag (for the test runner) so errored test cases are skipped and reported instead of halting the run.
+640	</Accordion>
+641	<Accordion title="What does caching do?">
+642	With `CacheConfig` or the cache flag, `deepeval` reuses prior metric results for identical test cases, which saves time and LLM cost when re-running an evaluation you've already executed.
+643	</Accordion>
+644	<Accordion title="What are hyperparameters used for?">
+645	They let you log arbitrary settings like model name, prompt template, and temperature alongside a test run, so you can compare which configuration produced the best scores.
+646	</Accordion>
+647	<Accordion title="Can I tag a run with an identifier so my team can find it later on the cloud?">
+648	Yes. The `identifier` config (and flag) labels a test run so it's easy to locate. That's especially handy when results are sent to [Confident AI](https://www.confident-ai.com) (the platform from the `deepeval` team), where your team can browse identified runs in a shared cloud UI and compare them over time. Sending results there is optional — runs work the same locally.
+649	</Accordion>
+650	</AccordionGroup>

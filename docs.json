@@ -146,23 +146,23 @@
       },
       {
         "page": "docs/evaluation-end-to-end-llm-evals/index",
-        "title": "End-to-End Evals"
+        "title": "端到端 LLM 评估"
       },
       {
         "page": "docs/evaluation-trajectory-based-llm-evals",
-        "title": "Trajectory-Based Evals"
+        "title": "基于轨迹的评估"
       },
       {
         "page": "docs/evaluation-component-level-llm-evals",
-        "title": "Component-Level Evals"
+        "title": "组件级 LLM 评估"
       },
       {
         "page": "docs/evaluation-unit-testing-in-ci-cd",
-        "title": "Unit Testing in CI/CD"
+        "title": "CI/CD 中的单元测试"
       },
       {
         "page": "docs/evaluation-flags-and-configs",
-        "title": "Flags and Configs"
+        "title": "开关与配置"
       },
       {
         "group": "评估指标",

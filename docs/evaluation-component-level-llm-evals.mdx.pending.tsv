@@ -1,0 +1,331 @@
+1	---
+2	title: Component-Level LLM Evaluation
+3	---
+9	If you haven't already, read the [end-to-end overview](/docs/evaluation-end-to-end-llm-evals) for black-box evaluation and [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals) for scoring an agent's complete chain of steps.
+11	<Warning>
+13	**Single-turn only**
+15	Component-level evaluation is currently single-turn only. Multi-turn component-level evaluation is on the roadmap.
+16	</Warning>
+18	<Info>
+20	**Already evaluating in a loop for end-to-end?**
+22	If you've already wired up [the evals iterator with tracing](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended), the only delta to go component-level is **attaching metrics to the spans you care about** — the integration tabs in [Instrument and evaluate](#instrument-and-evaluate) below show this inline.
+23	</Info>
+25	## How Component-Level Eval Works
+27	Component-level runs use the exact same iterator + tracing setup as [single-turn end-to-end](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended) — the only difference is **where metrics live**: on individual spans instead of (or in addition to) the trace as a whole.
+29	1. Your traced LLM app emits a trace with multiple spans whenever it runs.
+30	2. You attach metrics to the specific spans you want to grade (e.g. the retriever, a tool call, an inner LLM call).
+31	3. `dataset.evals_iterator()` opens a test run and yields each golden one at a time.
+32	4. Inside the loop, you call your traced app. Each emitted span that has metrics attached gets scored as one test case — many test cases per run of your app.
+33	5. The trace + per-span test cases + metric scores upload together as one test run.
+55	## Step-by-Step Guide
+57	<Steps>
+58	<Step>
+60	### Build dataset
+62	[Datasets](/docs/evaluation-datasets) in `deepeval` store [`Golden`s](/docs/evaluation-datasets#what-are-goldens) — precursors to test cases. You loop over goldens at evaluation time, run your LLM app on each, and the framework builds test cases from each emitted span.
+64	<Tabs>
+67	<Tabs>
+69	<Tab title="Python">
+83	</Tab>
+85	<Tab title="TypeScript">
+99	</Tab>
+101	</Tabs>
+105	</Tab>
+110	<Tabs>
+112	<Tab title="Python">
+121	</Tab>
+123	<Tab title="TypeScript">
+132	</Tab>
+134	</Tabs>
+140	</Tab>
+143	<Tabs>
+145	<Tab title="Python">
+157	</Tab>
+159	<Tab title="TypeScript">
+173	</Tab>
+175	</Tabs>
+179	</Tab>
+182	<Tabs>
+184	<Tab title="Python">
+196	</Tab>
+198	<Tab title="TypeScript">
+210	</Tab>
+212	</Tabs>
+216	</Tab>
+217	</Tabs>
+219	<Note>
+221	</Note>
+223	<Tip>
+224	This page covers **sourcing** goldens for an eval run only. To **persist** a dataset (push to Confident AI, save as CSV/JSON, version it across runs), see [the datasets page](/docs/evaluation-datasets).
+225	</Tip>
+227	</Step>
+229	<Step>
+231	### Instrument/trace and evaluate
+233	Instrument your AI agent based on your tech stack. The loop captures one trace per golden so the component metrics you attach get scored on the spans inside.
+235	Each integration ships **Async** (default — fastest) and **Sync** variants:
+237	- **Async** keeps `evals_iterator()` on its default async dispatch and wraps each invocation in `asyncio.create_task(...)` + `dataset.evaluate(task)` so goldens run concurrently.
+238	- **Sync** passes `AsyncConfig(run_async=False)` and runs the loop body one golden at a time. Useful for debugging, rate-limited providers, or anywhere asyncio gets in the way (e.g. some Jupyter setups).
+240	<Tabs>
+242	<Tab title="Python">
+244	<Tabs>
+247	Wrap the top-level function with `@observe`, set trace-level fields with `update_current_trace(...)`, and wrap inner functions you want to grade with `@observe` too. Attach a component metric by passing `metrics=[...]` to `@observe` and registering its test case with `update_current_span(test_case=...)`:
+249	<Tabs>
+250	<Tab title="Async">
+283	</Tab>
+284	<Tab title="Sync">
+316	</Tab>
+317	</Tabs>
+319	The same pattern works on any `@observe`'d function — retrievers, tool wrappers, sub-agents. See [tracing](/docs/evaluation-llm-tracing) for the full surface.
+321	</Tab>
+322	<Tab title="LangChain">
+324	Build your agent with `create_agent`, then pass `deepeval`'s `CallbackHandler` to its `invoke` / `ainvoke` method inside the loop. Stage a component metric for the next LLM call with `next_llm_span(...)` — the `CallbackHandler` drains it onto the first LLM span LangChain opens during the agent run:
+326	<Tabs>
+327	<Tab title="Async">
+359	</Tab>
+360	<Tab title="Sync">
+388	</Tab>
+389	</Tabs>
+391	`next_llm_span` is one-shot — only the first LLM span in the agent run picks up the metric, so later turns inside `create_agent`'s loop won't be scored. To score every LLM call, drive the loop yourself (`next_llm_span` per `agent.invoke(...)`) or score end-to-end with trace-level metrics on `CallbackHandler(metrics=[...])`. For retrievers, use `next_retriever_span(...)` the same way; for deterministic tool calls, prefer `next_tool_span(...)` + `update_current_span(...)`. See the [LangChain integration](/integrations/frameworks/langchain) for the full surface.
+393	</Tab>
+394	<Tab title="LangGraph">
+396	Wire your `StateGraph`, then pass `deepeval`'s `CallbackHandler` to its `invoke` / `ainvoke` method inside the loop. Stage a component metric for the next LLM call with `next_llm_span(...)` — the `CallbackHandler` drains it onto the first LLM span LangGraph opens during the graph run:
+398	<Tabs>
+399	<Tab title="Async">
+435	</Tab>
+436	<Tab title="Sync">
+468	</Tab>
+469	</Tabs>
+471	`next_llm_span` is one-shot — only the first LLM span the graph emits picks up the metric, so later loop turns through the `chatbot` node won't be scored. To score every LLM call, drive the loop yourself (`next_llm_span` per `graph.invoke(...)`) or score end-to-end with trace-level metrics on `CallbackHandler(metrics=[...])`. See the [LangGraph integration](/integrations/frameworks/langgraph) for the full surface.
+473	</Tab>
+474	<Tab title="OpenAI">
+476	Drop-in replace `from openai import OpenAI` with `from deepeval.openai import OpenAI` (or `AsyncOpenAI`). Every `chat.completions.create(...)`, `chat.completions.parse(...)`, and `responses.create(...)` call becomes an LLM span. Wrap a call in `with trace(llm_span_context=LlmSpanContext(metrics=[...])):` to stage a component metric for it:
+478	<Tabs>
+479	<Tab title="Async">
+502	</Tab>
+503	<Tab title="Sync">
+522	</Tab>
+523	</Tabs>
+527	</Tab>
+528	<Tab title="Pydantic AI">
+530	Pass `DeepEvalInstrumentationSettings()` to your `Agent`'s `instrument` keyword. Stage a component metric for the next Pydantic-emitted span with `next_llm_span(...)` (LLM call) or `next_agent_span(...)` (agent span):
+532	<Tabs>
+533	<Tab title="Async">
+558	</Tab>
+559	<Tab title="Sync">
+580	</Tab>
+581	</Tabs>
+585	</Tab>
+586	<Tab title="AgentCore">
+588	Call `instrument_agentcore()` before creating your agent. The same call also instruments [Strands](https://strandsagents.com/) agents running inside AgentCore. Stage a component metric for the next AgentCore-emitted span with `next_agent_span(...)` or `next_llm_span(...)`:
+590	<Tabs>
+591	<Tab title="Async">
+614	</Tab>
+615	<Tab title="Sync">
+634	</Tab>
+635	</Tabs>
+639	</Tab>
+640	<Tab title="Strands">
+642	Call `instrument_strands()` before invoking your Strands agent (for AgentCore-hosted Strands, use the AgentCore tab instead). Stage a component metric for the next Strands-emitted span with `next_agent_span(...)` or `next_llm_span(...)`:
+644	<Tabs>
+645	<Tab title="Async">
+672	</Tab>
+673	<Tab title="Sync">
+696	</Tab>
+697	</Tabs>
+701	</Tab>
+702	<Tab title="Anthropic">
+704	Drop-in replace `from anthropic import Anthropic` with `from deepeval.anthropic import Anthropic` (or `AsyncAnthropic`). Wrap a call in `with trace(llm_span_context=LlmSpanContext(metrics=[...])):` to stage a component metric for its LLM span:
+706	<Tabs>
+707	<Tab title="Async">
+731	</Tab>
+732	<Tab title="Sync">
+752	</Tab>
+753	</Tabs>
+757	</Tab>
+758	<Tab title="LlamaIndex">
+760	Register `deepeval`'s event handler against LlamaIndex's instrumentation dispatcher. Stage a component metric for the agent span with `AgentSpanContext` (or the next LLM span with `LlmSpanContext`) inside `with trace(...)`. `agent.run(...)` is async-only, so the sync variant uses `asyncio.run(...)`:
+762	<Tabs>
+763	<Tab title="Async">
+795	</Tab>
+796	<Tab title="Sync">
+828	</Tab>
+829	</Tabs>
+833	</Tab>
+834	<Tab title="OpenAI Agents">
+836	Register `DeepEvalTracingProcessor` once, then build your agent with `deepeval`'s `Agent` and `function_tool` shims. Attach component metrics directly on the `Agent` (`agent_metrics` for the agent span, `llm_metrics` for the LLM span) and on `@function_tool` (for the tool span):
+838	<Tabs>
+839	<Tab title="Async">
+872	</Tab>
+873	<Tab title="Sync">
+905	</Tab>
+906	</Tabs>
+908	`agent_metrics` apply on every run (including handoffs to sub-agents). See the [OpenAI Agents integration](/integrations/frameworks/openai-agents) for the full surface.
+910	</Tab>
+911	<Tab title="Google ADK">
+913	Call `instrument_google_adk()` once before building your `LlmAgent`. Stage a component metric for the next Google-ADK-emitted span with `next_agent_span(...)` or `next_llm_span(...)`. ADK's `runner.run_async(...)` is async-only, so the sync variant uses `asyncio.run(...)`:
+915	<Tabs>
+916	<Tab title="Async">
+954	</Tab>
+955	<Tab title="Sync">
+990	</Tab>
+991	</Tabs>
+995	</Tab>
+996	<Tab title="CrewAI">
+998	Call `instrument_crewai()` once, then build your crew with `deepeval`'s `Crew`, `Agent`, `LLM`, and `@tool` shims. Attach component metrics directly on `Agent` (agent span), `LLM` (LLM span), or `@tool` (tool span):
+1000	<Tabs>
+1001	<Tab title="Async">
+1030	</Tab>
+1031	<Tab title="Sync">
+1059	</Tab>
+1060	</Tabs>
+1062	See the [CrewAI integration](/integrations/frameworks/crewai) for the full surface (including `LLM` and `@tool` metric attachment).
+1064	</Tab>
+1065	</Tabs>
+1067	</Tab>
+1069	<Tab title="TypeScript">
+1071	<Tabs>
+1074	Wrap the top-level function with `observe`, set trace-level fields with `updateCurrentTrace(...)`, and wrap inner functions you want to grade with `observe` too. Attach a component metric by passing `metrics` to `observe` and registering its test case with `updateCurrentSpan({ testCase })`:
+1122	The same pattern works on any observed function — retrievers, tool wrappers, sub-agents. See [tracing](/docs/evaluation-llm-tracing) for the full surface.
+1124	</Tab>
+1125	<Tab title="LangChain">
+1127	Build your agent with `createAgent`, then pass `deepeval`'s `DeepEvalCallbackHandler` to its `invoke` method. Stage a component metric for the next LLM call with `nextLlmSpan(...)` — the handler drains it onto the first LLM span LangChain opens during the agent run:
+1157	`nextLlmSpan` is one-shot — only the first LLM span in the agent run picks up the metric, so later turns inside `createAgent`'s loop won't be scored. To score every LLM call, use `setTracingContext({ llmSpanContext: { metrics: [...] } }, ...)` or score end-to-end with trace-level metrics on `evalsIterator`. For retrievers use `nextRetrieverSpan(...)` the same way; for deterministic tool calls prefer `updateCurrentSpan(...)` inside the tool body. See the [LangChain integration](/integrations/frameworks/langchain) for the full surface.
+1159	</Tab>
+1160	<Tab title="Mastra">
+1162	Register a `DeepEvalExporter` on your `Mastra` instance's `Observability` config, then stage a component metric for the next LLM call with `nextLlmSpan(...)`:
+1191	Mastra's `MODEL_GENERATION` spans arrive as LLM spans and its tool calls as tool spans, so `nextToolSpan(...)` works the same way. See the [Mastra integration](/integrations/frameworks/mastra) for the full surface.
+1193	</Tab>
+1194	<Tab title="LangGraph">
+1196	Wire your `StateGraph`, then pass `deepeval`'s `DeepEvalCallbackHandler` to its `invoke` method. Stage a component metric for the next LLM call with `nextLlmSpan(...)` — the handler drains it onto the first LLM span the graph emits:
+1226	`nextLlmSpan` is one-shot — only the first LLM span the graph emits picks up the metric, so later loop turns through the `chatbot` node won't be scored. See the [LangGraph integration](/integrations/frameworks/langgraph) for the full surface.
+1228	</Tab>
+1229	<Tab title="OpenAI">
+1231	Call `instrumentOpenAI(client)` once on the client you already construct. Every `chat.completions.create(...)`, `chat.completions.parse(...)`, and `responses.create(...)` call becomes an LLM span. Stage a component metric for one call with `nextLlmSpan(...)`:
+1256	See the [OpenAI integration](/integrations/frameworks/openai) for tool-calling and scope-wide `LlmSpanContext`.
+1258	</Tab>
+1259	<Tab title="OpenAI Agents">
+1261	Register `DeepEvalTracingProcessor` once with the agents SDK, then stage a component metric for the next LLM call with `nextLlmSpan(...)` (or the agent span with `nextAgentSpan(...)`):
+1288	</Tab>
+1289	<Tab title="Vercel AI SDK">
+1291	Call `configureAiSdkTracing(...)` once, pass the returned tracer into `experimental_telemetry` on every call you want traced, then stage a component metric with `nextLlmSpan(...)`:
+1317	AI SDK emits no agent span — its root is the generation call itself — so stage metrics with `nextLlmSpan` / `nextToolSpan` / `nextRetrieverSpan`, or score the run end-to-end. See the [Vercel AI SDK integration](/integrations/frameworks/ai-sdk) for the full surface.
+1319	</Tab>
+1320	</Tabs>
+1322	</Tab>
+1324	</Tabs>
+1326	<Tabs>
+1328	<Tab title="Python">
+1330	There are **SIX** optional parameters on `evals_iterator()`:
+1332	- [Optional] `metrics`: a list of `BaseMetric`s applied at the **trace** level. Leave empty for pure component-level runs — your component metrics already live on the spans. Pass [trajectory metrics](/docs/evaluation-trajectory-based-llm-evals) here to also score the complete agent path.
+1333	- [Optional] `identifier`: a string label for this test run on Confident AI.
+1334	- [Optional] `async_config`: an `AsyncConfig` controlling concurrency. See [async configs](/docs/evaluation-flags-and-configs#async-configs).
+1335	- [Optional] `display_config`: a `DisplayConfig` controlling console output. See [display configs](/docs/evaluation-flags-and-configs#display-configs).
+1336	- [Optional] `error_config`: an `ErrorConfig` controlling error handling. See [error configs](/docs/evaluation-flags-and-configs#error-configs).
+1337	- [Optional] `cache_config`: a `CacheConfig` controlling caching. See [cache configs](/docs/evaluation-flags-and-configs#cache-configs).
+1339	</Tab>
+1341	<Tab title="TypeScript">
+1343	There are **FIVE** optional parameters on `evalsIterator()`, all passed in a single options object:
+1345	- [Optional] `metrics`: an array of `BaseMetric`s applied at the **trace** level. Leave empty for pure component-level runs — your component metrics already live on the spans. Pass [trajectory metrics](/docs/evaluation-trajectory-based-llm-evals) here to also score the complete agent path.
+1346	- [Optional] `identifier`: a string label for this test run on Confident AI.
+1347	- [Optional] `hyperparameters`: the model, prompt, and settings that produced these outputs. See [hyperparameters](#hyperparameters).
+1348	- [Optional] `displayConfig`: a `DisplayConfig` controlling console output. See [display configs](/docs/evaluation-flags-and-configs#display-configs).
+1349	- [Optional] `errorConfig`: an `ErrorConfig` controlling error handling. See [error configs](/docs/evaluation-flags-and-configs#error-configs).
+1351	`evalsIterator()` is an async generator, so it always runs concurrently — there's no sync variant or `asyncConfig` to configure.
+1353	</Tab>
+1355	</Tabs>
+1357	Every run of the iterator is snapshotted to disk, so you can open it in a trace-tree TUI — with per-span scores and metric reasons — by running bare `deepeval inspect`. See the [inspect reference](/docs/command-line-interface#inspect) for full details.
+1359	</Step>
+1360	</Steps>
+1362	Logging into Confident AI via the CLI also gives you testing reports with traces on the platform to annotate, share, and persist:
+1364	<Tabs>
+1366	<Tab title="Python">
+1372	</Tab>
+1374	<Tab title="TypeScript">
+1380	</Tab>
+1382	</Tabs>
+1384	<figure>
+1385	  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:spans.mp4"></video>
+1386	  <figcaption>Inspect component-level scores on every span in your traces.</figcaption>
+1387	</figure>
+1389	<Tip>
+1391	**Go further**
+1394	- **Deeper integration API.** Each integration exposes more (sub-agent handoffs, retriever scoring, span context customization). Read the [integration docs](/integrations/frameworks/openai) for your stack to see what else is available.
+1395	</Tip>
+1401	<Note>
+1402	Only integrations that emit agent spans are shown below. The OpenAI and Anthropic clients don't — they produce LLM spans only, which you can target with `LlmSpanContext` instead.
+1403	</Note>
+1405	<Tabs>
+1407	<Tab title="Python">
+1409	<Tabs>
+1431	</Tab>
+1432	<Tab title="LangChain">
+1452	</Tab>
+1453	<Tab title="LangGraph">
+1473	</Tab>
+1474	<Tab title="Pydantic AI">
+1488	</Tab>
+1489	<Tab title="AgentCore">
+1503	</Tab>
+1504	<Tab title="Strands">
+1518	</Tab>
+1519	<Tab title="LlamaIndex">
+1533	</Tab>
+1534	<Tab title="OpenAI Agents">
+1558	</Tab>
+1559	<Tab title="Google ADK">
+1573	</Tab>
+1574	<Tab title="CrewAI">
+1592	</Tab>
+1593	</Tabs>
+1595	</Tab>
+1597	<Tab title="TypeScript">
+1599	<Tabs>
+1629	</Tab>
+1630	<Tab title="LangChain">
+1645	</Tab>
+1646	<Tab title="Mastra">
+1661	</Tab>
+1662	<Tab title="LangGraph">
+1677	</Tab>
+1678	<Tab title="OpenAI Agents">
+1695	</Tab>
+1696	</Tabs>
+1700	</Tab>
+1702	</Tabs>
+1706	## Hyperparameters
+1708	Log the model, prompt, and other configuration values with each test run so you can compare runs side-by-side on Confident AI and identify the best combination. Values must be `str | int | float` or a [`Prompt`](/docs/evaluation-prompts).
+1710	<Tabs>
+1712	<Tab title="Python">
+1725	</Tab>
+1727	<Tab title="TypeScript">
+1737	</Tab>
+1739	</Tabs>
+1741	On Confident AI, the logged values become filterable axes for comparing test runs and surfacing the configuration that performs best.
+1743	## In CI/CD
+1747	<Tabs>
+1749	<Tab title="Python">
+1767	</Tab>
+1769	<Tab title="TypeScript">
+1791	</Tab>
+1793	</Tabs>
+1795	See [unit testing in CI/CD](/docs/evaluation-unit-testing-in-ci-cd) for assertion parameters, YAML pipeline examples, and `deepeval test run` flags.
+1797	## FAQs
+1799	<AccordionGroup>
+1800	<Accordion title="What is component-level evaluation?">
+1801	Instead of scoring only the final output, it scores individual components of your app — retrievers, tools, agents, and LLM calls — by attaching metrics to the spans your traced app emits.
+1802	</Accordion>
+1803	<Accordion title="When should I use component-level over end-to-end evaluation?">
+1804	Use it when a single end-to-end score isn't enough to tell you *where* things went wrong — for example, to check the retriever and the generator separately, or to run different metrics on different components in one pass.
+1805	</Accordion>
+1806	<Accordion title="Do I have to manually instrument my app, or does deepeval integrate with my framework?">
+1807	You can instrument your app manually, but `deepeval` also ships native [integrations](/integrations) for LangChain, LangGraph, LlamaIndex, Pydantic AI, CrewAI, and more. These attach component metrics to the spans your framework already emits — no manual tracing required.
+1808	</Accordion>
+1809	<Accordion title="Do I have to rewrite my app to run component-level evals?">
+1810	No. You wrap the components you care about in an observer (or use a [native framework integration](/integrations) ) and report the input and output on the current span from inside them. You don't need to refactor your code to bubble up intermediate values.
+1811	</Accordion>
+1812	<Accordion title="How does unit testing work with traced components in CI/CD?">
+1813	Because metrics stay attached to the spans, the assertion only needs the active golden — run your traced app on the golden's input, then assert on that golden inside a test in your language's test runner.
+1814	</Accordion>
+1815	<Accordion title="Can my team see a visual breakdown of component scores on the cloud?">
+1816	Component-level evals run locally, but the per-span scores are much easier to read visually. Logging into [Confident AI](https://www.confident-ai.com) (the official platform for `deepeval` ) renders the same traces and component scores into a shared cloud UI, so a team can drill into which span failed and track it over time — optional, with zero additional code.
+1817	</Accordion>
+1818	</AccordionGroup>

@@ -1,0 +1,647 @@
+---
+title: Flags and Configs
+---
+
+Sometimes you might want to customize the behavior of different settings for `evaluate()` and `assert_test()`（TypeScript 中为 `expect(testCase).toPass()`）, and this can be done using "configs" (short for configurations) and "flags".
+
+<Note>
+例如，如果你使用自定义 LLM 裁判做评估，你可能希望忽略错误，以免某个模型没能产出合法 JSON 而中断整次运行——或者通过降低最大并发数来完全避免速率限制错误。
+</Note>
+
+## `evaluate()` 的配置
+
+<Tabs>
+
+<Tab title="Python">
+
+每个配置都是一个从 `deepeval.evaluate` 导入的 dataclass，各自通过独立的关键字参数传给 `evaluate()`。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+这些配置是 `evaluate()` 的第三个参数，是一个普通的选项对象——没有类需要导入，每个字段都是可选的。
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, {
+  asyncConfig: { maxConcurrent: 10 },
+  errorConfig: { ignoreErrors: true },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+### 异步配置
+
+`AsyncConfig` 控制 `evaluate()` 期间工作的并发派发方式。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.evaluate import AsyncConfig
+from deepeval import evaluate
+
+evaluate(async_config=AsyncConfig(), ...)
+```
+
+创建 `AsyncConfig` 时有**三个**可选参数：
+
+- [可选] `run_async`：布尔值，设为 `True` 时启用测试用例**与**指标的并发评估。默认为 `True`。
+- [可选] `throttle_value`：整数，决定每个测试用例的评估要节流多久（秒）。如果你的评估模型遇到速率限制错误，可以增大该值。默认为 0。
+- [可选] `max_concurrent`：整数，决定任意时刻最多可以并行运行多少个测试用例。如果你的评估模型遇到速率限制错误，可以减小该值。默认为 `20`。
+
+`throttle_value` 与 `max_concurrent` 参数只在 `run_async` 设为 `True` 时使用。组合使用 `throttle_value` 与 `max_concurrent` 是运行评估时应对速率限制错误（无论来自 LLM 裁判还是 LLM 应用）的最佳方式。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, { asyncConfig: { maxConcurrent: 20 } });
+```
+
+`asyncConfig` 上有**一个**可选字段：
+
+- [可选] `maxConcurrent`：数字，决定一次最多评估多少个指标。如果你的评估模型遇到速率限制错误，可以减小该值。默认为 `20`。
+
+给定测试用例的指标会按 `maxConcurrent` 上限并发派发，而测试用例本身则逐个评估。
+
+</Tab>
+
+</Tabs>
+
+### 显示配置
+
+`DisplayConfig` 控制 `evaluate()` 期间结果与中间执行步骤的展示方式。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.evaluate import DisplayConfig
+from deepeval import evaluate
+
+evaluate(display_config=DisplayConfig(), ...)
+```
+
+创建 `DisplayConfig` 时有**十个**可选参数：
+
+- [可选] `verbose_mode`：可选布尔值，当其**不是** `None` 时，会覆盖[每个指标的 `verbose_mode` 值](/docs/metrics-introduction#debugging-a-metric)。默认为 `None`。
+- [可选] `display`：字符串，取值为 `"all"`、`"failing"` 或 `"passing"`，让你有选择地决定最终结果展示哪类测试用例。默认为 `"all"`。
+- [可选] `show_indicator`：布尔值，设为 `True` 时显示每个指标的评估进度指示器。默认为 `True`。
+- [可选] `print_results`：布尔值，设为 `True` 时打印每次评估的结果。默认为 `True`。
+- [可选] `results_folder`：字符串路径，指向一个目录，每次调用 `evaluate()`（或 `evals_iterator()`）都会在其中持久化为 `test_run_<YYYYMMDD_HHMMSS>.json` 文件。默认为 `None`（不本地保存）。见下文[在本地保存测试运行](#saving-test-runs-locally)。
+- [可选] `results_subfolder`：可选字符串，与 `results_folder` 一起设置时，会把 `test_run_*.json` 文件嵌套在 `results_folder/results_subfolder/` 下。默认为 `None`（扁平布局）。
+- [可选] `truncate_passing_cases`：布尔值，设为 `True` 时截断通过测试用例的终端输出。默认为 `True`。
+- [可选] `inspect_after_run`：布尔值，设为 `True` 时，`evals_iterator()` 运行结束会提示你在 [`deepeval inspect`](/docs/command-line-interface#inspect) TUI 中打开捕获的追踪。仅在交互式终端且至少有一个测试用例带追踪时触发。设为 `False` 可按次禁用，或导出 `DEEPEVAL_NO_INSPECT_PROMPT=1` 全局禁用（例如在 CI 中）。默认为 `True`。
+- [可选] `file_type`：字符串，取值为 `"html"` 或 `"md"`，允许你把评估仪表盘导出到文件。默认为 `None`。
+- [可选] `file_output_dir`：字符串，设置后会把评估仪表盘按 `file_type` 指定的格式写入指定目录。默认为 `None`。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, {
+  displayConfig: { truncatePassingCases: false },
+});
+```
+
+`displayConfig` 上有**六个**可选字段：
+
+- [可选] `verboseMode`：布尔值，设置后覆盖[每个指标的 `verboseMode` 值](/docs/metrics-introduction#debugging-a-metric)。省略则保持每个指标构造时的值。
+- [可选] `showIndicator`：布尔值，设为 `true` 时显示每个指标的评估进度指示器。默认为 `true`。
+- [可选] `printResults`：布尔值，设为 `true` 时打印每次评估的结果。默认为 `true`。
+- [可选] `truncatePassingCases`：布尔值，设为 `true` 时截断通过测试用例的终端输出。默认为 `true`。
+- [可选] `fileOutputDir`：字符串，设置后会把评估报告按 `fileType` 指定的格式写入指定目录。
+- [可选] `fileType`：字符串，取值为 `"md"` 或 `"mdx"`，设定 `fileOutputDir` 使用的格式。默认为 `"md"`。
+
+</Tab>
+
+</Tabs>
+
+#### 在本地保存测试运行
+
+<Tabs>
+
+运行可以持久化到磁盘为结构化的 `TestRun` JSON。超参数、每个测试用例的分数与指标原因都会按 Confident AI 使用的同一 schema 序列化进每个文件——无需额外设置。
+
+<Tab title="Python">
+
+设置 `results_folder` 以持久化每次 `evaluate()`（或 `evals_iterator()`）调用：
+
+```python
+from deepeval import evaluate
+from deepeval.evaluate import DisplayConfig
+
+for temp in [0.0, 0.4, 0.8]:
+    evaluate(
+        test_cases=test_cases,
+        metrics=metrics,
+        hyperparameters={"model": "gpt-4o-mini", "temperature": temp},
+        display_config=DisplayConfig(results_folder="./evals/prompt-v3"),
+    )
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+设置 `DEEPEVAL_RESULTS_FOLDER` 环境变量以持久化每次 `npx deepeval test run`：
+
+```bash
+DEEPEVAL_RESULTS_FOLDER=./evals/prompt-v3 npx deepeval test run llm_app.test.ts
+```
+
+无论如何，每次运行也会写入 `.deepeval/.latest_test_run.json`，这正是 `npx deepeval view` 上传、`npx deepeval inspect` 读取的文件。
+
+</Tab>
+
+</Tabs>
+
+运行几次后，该目录是扁平的——只有原始测试运行：
+
+```
+./evals/prompt-v3/
+  test_run_20260421_140114.json
+  test_run_20260421_140132.json
+  test_run_20260421_140151.json
+```
+
+时间戳前缀让 `ls` 的顺序与时间顺序一致，因此 AI 智能体（Cursor、Claude Code）可以按运行发生的顺序遍历该目录。
+
+如果两次运行在同一秒内结束，写入方会在文件名后追加 `_2`、`_3` 等，确保任何内容都不会被覆盖。
+
+设置 `results_subfolder` 把运行嵌套在额外的目录下——当父目录已存放其他产物时很有用：
+
+```python
+DisplayConfig(results_folder="./evals/prompt-v3", results_subfolder="test_runs")
+```
+
+```
+./evals/prompt-v3/
+  test_runs/
+    test_run_20260421_140114.json
+    test_run_20260421_140132.json
+```
+
+如果未设置 `results_folder` 但存在 `DEEPEVAL_RESULTS_FOLDER` 环境变量，`deepeval` 会为向后兼容回退到该路径。
+
+<Info>
+
+**用 Cursor / Claude Code 读取结果**
+
+把智能体指向该目录，让它 `ls` 并直接打开 `test_run_*.json` 文件。智能体需要的一切——超参数、提示词、指标分数与失败原因——都在每个文件里，因此不需要额外的索引或摘要。
+
+注意，**测试运行**是一次评估运行。[实验（Experiment）](/docs/evaluation-introduction)则是之后通过_比较_多次测试运行形成的，例如跨不同提示词或模型。
+</Info>
+
+### 错误配置
+
+`ErrorConfig` 控制 `evaluate()` 中错误的处理方式。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.evaluate import ErrorConfig
+from deepeval import evaluate
+
+evaluate(error_config=ErrorConfig(), ...)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, {
+  errorConfig: { ignoreErrors: true },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+有**两个**可选参数：
+
+- [Optional] `skip_on_missing_params`: a boolean which when enabled, skips all metric executions for test cases with missing parameters. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `ignore_errors`: a boolean which when enabled, ignores all exceptions raised during metrics execution for each test case. Defaulted to `False`（TypeScript 中为 `false`）.
+
+如果两者都启用，`skip_on_missing_params` 优先。也就是说，如果某个指标缺少必需的测试用例参数，它会被跳过（结果中缺失）而不是在最终测试运行中显示为被忽略的错误。
+
+### 缓存配置
+
+`CacheConfig` 控制 `evaluate()` 的缓存行为。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.evaluate import CacheConfig
+from deepeval import evaluate
+
+evaluate(cache_config=CacheConfig(), ...)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, {
+  cacheConfig: { useCache: true },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+有**两个**可选参数：
+
+- [Optional] `use_cache`: a boolean which when enabled, uses cached test run results instead. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `write_cache`: a boolean which when enabled, writes test run results to **DISK**. Defaulted to `True`（TypeScript 中为 `true`）.
+
+结果以测试用例内容加指标配置为键，因此只有在两者都未变时才会复用缓存的结果。`write_cache` 参数会写磁盘，如果它在你的环境中引发错误，应当禁用它。
+
+## 超参数
+
+
+<Tabs>
+
+<Tab title="Python">
+
+把它们直接传给 `evaluate()`，作为 `str | int | float` 或 [`Prompt`](/docs/evaluation-prompts) 值的字典：
+
+```python
+from deepeval import evaluate
+
+evaluate(
+    test_cases=test_cases,
+    metrics=metrics,
+    hyperparameters={"model": "gpt-4.1", "temperature": 0.7, "prompt": prompt},
+)
+```
+
+在 `deepeval test run` 下没有可以传入的 `evaluate()` 调用，因此改在测试文件的任意位置使用 `@deepeval.log_hyperparameters` 装饰器：
+
+```python title="test_llm_app.py"
+import deepeval
+
+@deepeval.log_hyperparameters
+def hyperparameters():
+    return {"model": "gpt-4.1", "temperature": 0.7}
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+把它们直接传给 `evaluate()`，作为 `string | number | boolean` 或 `Prompt` 值的对象：
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, {
+  hyperparameters: { model: "gpt-4.1", temperature: 0.7, prompt },
+});
+```
+
+在 `npx deepeval test run` 下没有可以传入的 `evaluate()` 调用，因此改在测试文件的任意位置调用 `logHyperparameters()`：
+
+```typescript title="llm_app.test.ts"
+import { logHyperparameters } from "deepeval";
+
+logHyperparameters({ model: "gpt-4.1", temperature: 0.7 });
+```
+
+`Prompt` 以引用方式记录，因此在作为超参数传入之前要先拉取——未拉取的提示词没有可供平台指向的版本，会被跳过并给出警告。
+
+</Tab>
+
+</Tabs>
+
+非字符串值会被字符串化，值为空的键会被丢弃。在 Confident AI 上，记录的值会成为可过滤的维度，用于比较测试运行并找出表现最好的配置。
+
+## `deepeval test run` 的开关
+
+### 并行化
+
+<Tabs>
+
+<Tab title="Python">
+
+通过给 `-n` 开关提供一个数字来并行评估每个测试用例，指定使用多少个进程。
+
+```
+deepeval test run test_example.py -n 4
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+Vitest 默认并行运行测试文件，因此没有开启它的开关。使用 Vitest 自己的 [pool 选项](https://vitest.dev/config/#pooloptions)来改变它使用的 worker 数量。
+要限制一个 worker 内同时评估的指标数量，使用 `--max-concurrent`：
+
+```
+npx deepeval test run llm_app.test.ts --max-concurrent 4
+```
+
+默认为 `100`。
+
+</Tab>
+
+</Tabs>
+
+### 缓存
+
+提供 `-c` 开关（无参数），从本地 `deepeval` 缓存读取，而不是对相同指标重新评估测试用例。
+
+<Tabs>
+
+<Tab title="Python">
+
+```
+deepeval test run test_example.py -c
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```
+npx deepeval test run llm_app.test.ts -c
+```
+
+</Tab>
+
+</Tabs>
+
+<Info>
+如果你要运行大量测试用例，这极其有用。例如你正在运行 1000 个测试用例，但在第 999 个用例上遇到错误。缓存功能让你可以跳过之前已评估的 999 个用例，只评估剩下的那一个。
+</Info>
+
+### 忽略错误
+
+在测试运行期间忽略指标执行的错误。一个有用的例子是：你正在使用自定义 LLM，而它经常生成非法 JSON 导致整个测试运行中止。
+
+<Tabs>
+
+<Tab title="Python">
+
+`-i` 开关（无参数）：
+
+```
+deepeval test run test_example.py -i
+```
+
+<Tip>
+你可以组合不同的开关，例如 `-i`、`-c` 与 `-n`，在忽略沿途错误的同时并行执行所有未缓存的测试用例：
+
+```
+deepeval test run test_example.py -i -c -n 2
+```
+
+</Tip>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+`--ignore-errors` 开关（无参数）：
+
+```
+npx deepeval test run llm_app.test.ts --ignore-errors
+```
+
+<Note>
+`--ignore-errors` 没有短形式，因为 `-i` 已被绑定到 `--identifier`。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+### 详细模式
+
+`-v` 开关（无参数）允许你为[所有指标开启 `verboseMode`](/docs/metrics-introduction#debugging-a-metric)。不提供 `-v` 时，每个指标的 `verboseMode` 默认为其实例化时的值。
+
+<Tabs>
+
+<Tab title="Python">
+
+```
+deepeval test run test_example.py -v
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```
+npx deepeval test run llm_app.test.ts -v
+```
+
+</Tab>
+
+</Tabs>
+
+<Note>
+当指标的 `verboseMode` 启用时，评估期间它会把用于计算该指标的中间步骤打印到控制台。
+</Note>
+
+### 跳过测试用例
+
+`-s` 开关（无参数）允许你在测试用例缺少评估所需的参数（或参数不足，如 `retrieval_context`）时跳过指标执行。一个有用的例子：你在使用 `ContextualPrecisionMetric` 这样的指标，但不想在检索上下文为空时应用它。
+
+<Tabs>
+
+<Tab title="Python">
+
+```
+deepeval test run test_example.py -s
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```
+npx deepeval test run llm_app.test.ts -s
+```
+
+</Tab>
+
+</Tabs>
+
+### 标识符
+
+为测试运行命名，以便在 [Confident AI](https://confident-ai.com) 上更好地识别它们。一个有用的例子：你在运行自动化部署流水线、有部署 ID，或者只是想要一种方式识别哪次运行是哪次以便比较。
+
+<Tabs>
+
+<Tab title="Python">
+
+`-id` 开关，后跟一个字符串：
+
+```
+deepeval test run test_example.py -id "My Latest Test Run"
+```
+
+如果改用 `evaluate()` 评估，传入 `identifier` 也能达到同样效果：
+
+```python
+from deepeval import evaluate
+
+evaluate(test_cases=[...], metrics=[...], identifier="My Latest Test Run")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+`-i` 开关，后跟一个字符串：
+
+```
+npx deepeval test run llm_app.test.ts -i "My Latest Test Run"
+```
+
+如果改用 `evaluate()` 评估，传入 `identifier` 也能达到同样效果：
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, { identifier: "My Latest Test Run" });
+```
+
+</Tab>
+
+</Tabs>
+
+### 显示模式
+
+`-d` 开关后跟字符串 "all"、"passing" 或 "failing"，让你只在终端显示某些测试用例。例如，如果你只关心失败的测试用例，可以只显示 "failing"。
+
+<Tabs>
+
+<Tab title="Python">
+
+```
+deepeval test run test_example.py -d "failing"
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```
+npx deepeval test run llm_app.test.ts -d "failing"
+```
+
+每个测试用例仍会被发送到 Confident AI——`-d` 只过滤终端输出。
+
+</Tab>
+
+</Tabs>
+
+### 重复运行
+
+通过给 `-r` 开关提供一个数字来重复每个测试用例，指定每个测试用例要重跑多少次。
+
+```
+deepeval test run test_example.py -r 2
+```
+
+### 正式测试运行
+
+`--official` 开关（或 `-o`）把产生的测试运行标记为 [Confident AI](https://confident-ai.com) 上的**正式测试运行**。正式运行被用作回归测试的比较基准。这需要 `CONFIDENT_API_KEY`。
+
+<Tabs>
+
+<Tab title="Python">
+
+```
+deepeval test run test_example.py --official
+```
+
+如果改用 `evaluate()` 评估，传入 `official=True` 也能达到同样效果：
+
+```python
+from deepeval import evaluate
+
+evaluate(test_cases=[...], metrics=[...], official=True)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```
+npx deepeval test run llm_app.test.ts --official
+```
+
+如果改用 `evaluate()` 评估，传入 `official` 也能达到同样效果：
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate(testCases, metrics, { official: true });
+```
+
+</Tab>
+
+</Tabs>
+
+### 钩子
+
+`deepeval` 的 Pytest 集成允许你通过 `@deepeval.on_test_run_end` 装饰器在每次评估结束时运行自定义代码：
+
+```python title="test_example.py"
+...
+
+@deepeval.on_test_run_end
+def function_to_be_called_after_test_run():
+    print("Test finished!")
+```
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What's the difference between configs for evaluate() and flags for the test runner?">
+配置是在代码中传给 `evaluate()` 的（ `AsyncConfig` 、 `DisplayConfig` 、 `ErrorConfig` 、 `CacheConfig` ）。开关是传给 `deepeval test run` 命令的命令行选项。两者控制同样的行为——并发、显示、错误、缓存——只是作用于两种不同的评估运行方式。
+</Accordion>
+<Accordion title="How do I run evaluations faster?">
+用 `AsyncConfig` 提高 `evaluate()` 的并发度，或用测试运行器并行运行你的测试文件。缓存可以避免对未变更的测试用例重跑指标。
+</Accordion>
+<Accordion title="How do I stop a single failing test case from aborting the whole run?">
+使用 `ErrorConfig`（针对 `evaluate()`）或忽略错误开关（针对测试运行器），让出错的测试用例被跳过并报告，而不是中止整次运行。
+</Accordion>
+<Accordion title="What does caching do?">
+使用 `CacheConfig` 或缓存开关时，`deepeval` 会为完全相同的测试用例复用之前的指标结果，这在你重跑已经执行过的评估时节省时间和 LLM 成本。
+</Accordion>
+<Accordion title="What are hyperparameters used for?">
+它们让你随测试运行记录任意设置（如模型名称、提示词模板、temperature），方便你比较哪种配置产出了最好的分数。
+</Accordion>
+<Accordion title="Can I tag a run with an identifier so my team can find it later on the cloud?">
+可以。`identifier` 配置（及开关）会为测试运行打标签，方便日后定位。当结果被发送到 [Confident AI](https://www.confident-ai.com)（`deepeval` 团队的平台）时尤其方便，你的团队可以在共享的云端界面中浏览带标识的运行并随时间比较。发送结果到那里是可选的——运行在本地行为完全一样。
+</Accordion>
+</AccordionGroup>
