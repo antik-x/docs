@@ -1,38 +1,14 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "DeepEval 中文文档（社区翻译）",
+  "description": "DeepEval 文档的非官方中文翻译，内容以 deepeval.com 官方英文文档为准",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -40,33 +16,612 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "官方英文文档",
+        "href": "https://deepeval.com/docs/introduction"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "GitHub",
+      "href": "https://github.com/antik-x/docs"
     }
   },
   "contextual": {
     "options": [
       "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
+      "view"
     ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/antik-x/docs"
     }
+  },
+  "navigation": {
+    "pages": [
+      {
+        "page": "docs/introduction",
+        "title": "Introduction"
+      },
+      {
+        "page": "docs/introduction-design-philosophy",
+        "title": "Design Philosophy"
+      },
+      {
+        "page": "docs/introduction-comparisons",
+        "title": "Comparisons"
+      },
+      {
+        "group": "快速开始",
+        "pages": [],
+        "icon": "rocket"
+      },
+      {
+        "page": "docs/getting-started",
+        "title": "Human 5-min Quickstart"
+      },
+      {
+        "page": "docs/vibe-coder-quickstart",
+        "title": "Vibe Coder 5-min Quickstart"
+      },
+      {
+        "page": "docs/vibe-coding",
+        "title": "Vibe Coding with DeepEval"
+      },
+      {
+        "group": "使用场景",
+        "pages": [
+          {
+            "page": "docs/(use-cases)/getting-started-agents",
+            "title": "AI Agents"
+          },
+          {
+            "page": "docs/(use-cases)/getting-started-chatbots",
+            "title": "Chatbots"
+          },
+          {
+            "page": "docs/(use-cases)/getting-started-rag",
+            "title": "RAG"
+          },
+          {
+            "page": "docs/(use-cases)/getting-started-mcp",
+            "title": "MCP"
+          },
+          {
+            "page": "docs/(use-cases)/getting-started-llm-arena",
+            "title": "LLM Arena"
+          }
+        ]
+      },
+      {
+        "group": "LLM 评估",
+        "pages": [],
+        "icon": "flask-conical"
+      },
+      {
+        "page": "docs/evaluation-introduction",
+        "title": "Introduction"
+      },
+      {
+        "group": "核心概念",
+        "pages": [
+          {
+            "group": "测试用例",
+            "pages": [
+              {
+                "page": "docs/(concepts)/(test-cases)/evaluation-test-cases",
+                "title": "Single-Turn"
+              },
+              {
+                "page": "docs/(concepts)/(test-cases)/evaluation-multiturn-test-cases",
+                "title": "Multi-Turn"
+              },
+              {
+                "page": "docs/(concepts)/(test-cases)/evaluation-arena-test-cases",
+                "title": "Arena"
+              }
+            ]
+          },
+          {
+            "page": "docs/(concepts)/evaluation-datasets",
+            "title": "Datasets"
+          },
+          {
+            "page": "docs/(concepts)/evaluation-llm-tracing",
+            "title": "Tracing"
+          },
+          {
+            "page": "docs/(concepts)/evaluation-voice",
+            "title": "Voice"
+          },
+          {
+            "page": "docs/(concepts)/evaluation-prompts",
+            "title": "Prompts"
+          },
+          {
+            "page": "docs/(concepts)/evaluation-mcp",
+            "title": "MCP"
+          }
+        ]
+      },
+      {
+        "page": "docs/evaluation-end-to-end-llm-evals/index",
+        "title": "End-to-End Evals"
+      },
+      {
+        "page": "docs/evaluation-trajectory-based-llm-evals",
+        "title": "Trajectory-Based Evals"
+      },
+      {
+        "page": "docs/evaluation-component-level-llm-evals",
+        "title": "Component-Level Evals"
+      },
+      {
+        "page": "docs/evaluation-unit-testing-in-ci-cd",
+        "title": "Unit Testing in CI/CD"
+      },
+      {
+        "page": "docs/evaluation-flags-and-configs",
+        "title": "Flags and Configs"
+      },
+      {
+        "group": "评估指标",
+        "pages": [],
+        "icon": "gauge"
+      },
+      {
+        "page": "docs/metrics-introduction",
+        "title": "Introduction"
+      },
+      {
+        "group": "自定义指标",
+        "pages": [
+          {
+            "page": "docs/(custom)/metrics-llm-evals",
+            "title": "G-Eval"
+          },
+          {
+            "page": "docs/(custom)/metrics-dag",
+            "title": "DAG"
+          },
+          {
+            "page": "docs/(custom)/metrics-conversational-g-eval",
+            "title": "Conversational G-Eval"
+          },
+          {
+            "page": "docs/(custom)/metrics-conversational-dag",
+            "title": "Conversational DAG"
+          },
+          {
+            "page": "docs/(custom)/metrics-arena-g-eval",
+            "title": "Arena G-Eval"
+          },
+          {
+            "page": "docs/(custom)/metrics-custom",
+            "title": "Do it yourself"
+          }
+        ]
+      },
+      {
+        "group": "智能体指标",
+        "pages": [
+          {
+            "page": "docs/(agentic)/metrics-task-completion",
+            "title": "Task Completion"
+          },
+          {
+            "page": "docs/(agentic)/metrics-step-efficiency",
+            "title": "Step Efficiency"
+          },
+          {
+            "page": "docs/(agentic)/metrics-argument-correctness",
+            "title": "Argument Correctness"
+          },
+          {
+            "page": "docs/(agentic)/metrics-tool-correctness",
+            "title": "Tool Correctness"
+          },
+          {
+            "page": "docs/(agentic)/metrics-plan-adherence",
+            "title": "Plan Adherence"
+          },
+          {
+            "page": "docs/(agentic)/metrics-plan-quality",
+            "title": "Plan Quality"
+          }
+        ]
+      },
+      {
+        "group": "RAG 指标",
+        "pages": [
+          {
+            "page": "docs/(rag)/metrics-answer-relevancy",
+            "title": "Answer Relevancy"
+          },
+          {
+            "page": "docs/(rag)/metrics-faithfulness",
+            "title": "Faithfulness"
+          },
+          {
+            "page": "docs/(rag)/metrics-contextual-precision",
+            "title": "Contextual Precision"
+          },
+          {
+            "page": "docs/(rag)/metrics-contextual-recall",
+            "title": "Contextual Recall"
+          },
+          {
+            "page": "docs/(rag)/metrics-contextual-relevancy",
+            "title": "Contextual Relevancy"
+          }
+        ]
+      },
+      {
+        "group": "多轮指标",
+        "pages": [
+          {
+            "page": "docs/(multi-turn)/metrics-turn-relevancy",
+            "title": "Turn Relevancy"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-role-adherence",
+            "title": "Role Adherence"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-knowledge-retention",
+            "title": "Knowledge Retention"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-conversation-completeness",
+            "title": "Conversation Completeness"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-goal-accuracy",
+            "title": "Goal Accuracy"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-tool-use",
+            "title": "Tool Use"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-topic-adherence",
+            "title": "Topic Adherence"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-turn-faithfulness",
+            "title": "Turn Faithfulness"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-turn-contextual-precision",
+            "title": "Turn Contextual Precision"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-turn-contextual-recall",
+            "title": "Turn Contextual Recall"
+          },
+          {
+            "page": "docs/(multi-turn)/metrics-turn-contextual-relevancy",
+            "title": "Turn Contextual Relevancy"
+          }
+        ]
+      },
+      {
+        "group": "语音指标",
+        "pages": [
+          {
+            "page": "docs/(voice)/metrics-voice-naturalness",
+            "title": "Voice Naturalness"
+          },
+          {
+            "page": "docs/(voice)/metrics-speech-intelligibility",
+            "title": "Speech Intelligibility"
+          },
+          {
+            "page": "docs/(voice)/metrics-voice-consistency",
+            "title": "Voice Consistency"
+          },
+          {
+            "page": "docs/(voice)/metrics-turn-taking-naturalness",
+            "title": "Turn-Taking Naturalness"
+          },
+          {
+            "page": "docs/(voice)/metrics-agent-responsiveness",
+            "title": "Agent Responsiveness"
+          },
+          {
+            "page": "docs/(voice)/metrics-audio-integrity",
+            "title": "Audio Integrity"
+          },
+          {
+            "page": "docs/(voice)/metrics-voice-reliability",
+            "title": "Voice Reliability"
+          }
+        ]
+      },
+      {
+        "group": "MCP 指标",
+        "pages": [
+          {
+            "page": "docs/(mcp)/metrics-mcp-use",
+            "title": "MCP-Use"
+          },
+          {
+            "page": "docs/(mcp)/metrics-multi-turn-mcp-use",
+            "title": "Multi-Turn MCP-Use"
+          },
+          {
+            "page": "docs/(mcp)/metrics-mcp-task-completion",
+            "title": "MCP Task Completion"
+          }
+        ]
+      },
+      {
+        "group": "安全指标",
+        "pages": [
+          {
+            "page": "docs/(safety)/metrics-bias",
+            "title": "Bias"
+          },
+          {
+            "page": "docs/(safety)/metrics-toxicity",
+            "title": "Toxicity"
+          },
+          {
+            "page": "docs/(safety)/metrics-non-advice",
+            "title": "Non-Advice"
+          },
+          {
+            "page": "docs/(safety)/metrics-misuse",
+            "title": "Misuse"
+          },
+          {
+            "page": "docs/(safety)/metrics-pii-leakage",
+            "title": "PII Leakage"
+          },
+          {
+            "page": "docs/(safety)/metrics-role-violation",
+            "title": "Role Violation"
+          }
+        ]
+      },
+      {
+        "group": "非 LLM 指标",
+        "pages": [
+          {
+            "page": "docs/(non-llm)/metrics-exact-match",
+            "title": "Exact Match"
+          },
+          {
+            "page": "docs/(non-llm)/metrics-pattern-match",
+            "title": "Pattern Match"
+          },
+          {
+            "page": "docs/(non-llm)/metrics-json-correctness",
+            "title": "Json Correctness"
+          }
+        ]
+      },
+      {
+        "group": "图像指标",
+        "pages": [
+          {
+            "page": "docs/(images)/multimodal-metrics-image-coherence",
+            "title": "Image Coherence"
+          },
+          {
+            "page": "docs/(images)/multimodal-metrics-image-helpfulness",
+            "title": "Image Helpfulness"
+          },
+          {
+            "page": "docs/(images)/multimodal-metrics-image-reference",
+            "title": "Image Reference"
+          },
+          {
+            "page": "docs/(images)/multimodal-metrics-text-to-image",
+            "title": "Text to Image"
+          },
+          {
+            "page": "docs/(images)/multimodal-metrics-image-editing",
+            "title": "Image Editing"
+          }
+        ]
+      },
+      {
+        "group": "其他指标",
+        "pages": [
+          {
+            "page": "docs/(metrics-others)/metrics-summarization",
+            "title": "Summarization"
+          },
+          {
+            "page": "docs/(metrics-others)/metrics-prompt-alignment",
+            "title": "Prompt Alignment"
+          },
+          {
+            "page": "docs/(metrics-others)/metrics-hallucination",
+            "title": "Hallucination"
+          },
+          {
+            "page": "docs/(metrics-others)/metrics-ragas",
+            "title": "RAGAS"
+          }
+        ]
+      },
+      {
+        "group": "社区指标",
+        "pages": [
+          {
+            "page": "docs/(community)/community-metrics-overview",
+            "title": "Overview"
+          },
+          {
+            "page": "docs/(community)/metrics-citation-faithfulness",
+            "title": "Citation Faithfulness"
+          },
+          {
+            "page": "docs/(community)/metrics-agent-loop-detection",
+            "title": "Agent Loop Detection"
+          },
+          {
+            "page": "docs/(community)/metrics-tool-permission",
+            "title": "Tool Permission"
+          }
+        ]
+      },
+      {
+        "group": "提示词优化",
+        "pages": [],
+        "icon": "sparkles"
+      },
+      {
+        "page": "docs/prompt-optimization-introduction",
+        "title": "Introduction"
+      },
+      {
+        "group": "优化算法",
+        "pages": [
+          {
+            "page": "docs/(algorithms)/prompt-optimization-gepa",
+            "title": "GEPA"
+          },
+          {
+            "page": "docs/(algorithms)/prompt-optimization-miprov2",
+            "title": "MIPROv2"
+          },
+          {
+            "page": "docs/(algorithms)/prompt-optimization-simba",
+            "title": "SIMBA"
+          },
+          {
+            "page": "docs/(algorithms)/prompt-optimization-copro",
+            "title": "COPRO"
+          }
+        ]
+      },
+      {
+        "group": "合成数据生成",
+        "pages": [],
+        "icon": "database"
+      },
+      {
+        "page": "docs/synthetic-data-generation-introduction",
+        "title": "Introduction"
+      },
+      {
+        "page": "docs/golden-synthesizer/index",
+        "title": "Golden Synthesizer"
+      },
+      {
+        "page": "docs/conversation-simulator/index",
+        "title": "Conversation Simulator"
+      },
+      {
+        "group": "基准测试",
+        "pages": [],
+        "icon": "trophy"
+      },
+      {
+        "page": "docs/benchmarks-introduction",
+        "title": "Introduction"
+      },
+      {
+        "group": "可用基准",
+        "pages": [
+          {
+            "page": "docs/(benchmarks)/benchmarks-mmlu",
+            "title": "MMLU"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-hellaswag",
+            "title": "HellaSwag"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-big-bench-hard",
+            "title": "BIG-Bench Hard"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-drop",
+            "title": "DROP"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-truthful-qa",
+            "title": "TruthfulQA"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-human-eval",
+            "title": "HumanEval"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-ifeval",
+            "title": "IFEval"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-squad",
+            "title": "SQuAD"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-gsm8k",
+            "title": "GSM8K"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-math-qa",
+            "title": "MathQA"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-logi-qa",
+            "title": "LogiQA"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-bool-q",
+            "title": "BoolQ"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-arc",
+            "title": "ARC"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-bbq",
+            "title": "BBQ"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-lambada",
+            "title": "LAMBADA"
+          },
+          {
+            "page": "docs/(benchmarks)/benchmarks-winogrande",
+            "title": "Winogrande"
+          }
+        ]
+      },
+      {
+        "group": "其他",
+        "pages": [],
+        "icon": "boxes"
+      },
+      {
+        "page": "docs/command-line-interface",
+        "title": "CLI Settings"
+      },
+      {
+        "page": "docs/environment-variables",
+        "title": "Environment Variables"
+      },
+      {
+        "page": "docs/troubleshooting",
+        "title": "Troubleshooting"
+      },
+      {
+        "page": "docs/faq",
+        "title": "FAQ"
+      },
+      {
+        "page": "docs/data-privacy",
+        "title": "Data Privacy"
+      },
+      {
+        "page": "docs/miscellaneous",
+        "title": "Miscellaneous"
+      }
+    ]
   }
 }

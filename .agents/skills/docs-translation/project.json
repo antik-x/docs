@@ -1,0 +1,39 @@
+{
+  "$comment": "docs-translation 技能的项目配置。所有相对路径以本文件所在目录（技能根）为基准。字段说明见同目录 SKILL.md。",
+  "site_name": "zh-docs-deepeval",
+  "target_language": "zh-CN",
+  "non_official": true,
+  "site_url": "https://zh-docs-deepeval.mintlifysite.com",
+  "upstream_site": "https://deepeval.com",
+  "upstream": {
+    "repo": "https://github.com/confident-ai/deepeval",
+    "branch": "main",
+    "docs_dir": "docs/content/docs",
+    "flavor": "fumadocs"
+  },
+  "source_cache": "/tmp/deepeval-src",
+  "site_root": "../../..",
+  "nav_file": "docs.json",
+  "target_content_dir": "docs",
+  "source_ext": ".mdx",
+  "target_ext": ".mdx",
+  "path_rule": "去掉括号路由组段后路径一一对应，URL 与 deepeval.com/docs/* 一致",
+  "pairs": "state/batches.json",
+  "rules": "references/rules.md",
+  "terminology": "references/terminology.md",
+  "sync_state": "state/sync-state.json",
+  "nav_translations": "state/nav-zh.json",
+  "converter": "scripts/convert_fumadocs.py",
+  "protected_assets": [],
+  "bootstrap_files": [
+    "docs.json",
+    "index.mdx",
+    "README.md",
+    "favicon.svg",
+    "logo/",
+    "LICENSE",
+    ".mintignore"
+  ],
+  "nav_tabs": {},
+  "batch_prefix": "B"
+}

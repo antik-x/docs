@@ -1,0 +1,32 @@
+{
+  "groups": {
+    "Getting Started": "快速开始",
+    "LLM Evals": "LLM 评估",
+    "Eval Metrics": "评估指标",
+    "Prompt Optimization": "提示词优化",
+    "Synthetic Data Generation": "合成数据生成",
+    "Benchmarks": "基准测试",
+    "Others": "其他",
+    "(use-cases)": "使用场景",
+    "(concepts)": "核心概念",
+    "(test-cases)": "测试用例",
+    "(custom)": "自定义指标",
+    "(agentic)": "智能体指标",
+    "(rag)": "RAG 指标",
+    "(multi-turn)": "多轮指标",
+    "(voice)": "语音指标",
+    "(mcp)": "MCP 指标",
+    "(safety)": "安全指标",
+    "(non-llm)": "非 LLM 指标",
+    "(images)": "图像指标",
+    "(metrics-others)": "其他指标",
+    "(community)": "社区指标",
+    "(algorithms)": "优化算法",
+    "(benchmarks)": "可用基准",
+    "Golden Synthesizer": "金标合成器",
+    "Conversation Simulator": "对话模拟器",
+    "Voice Mode": "语音模式",
+    "End-to-End Evals": "端到端评估"
+  },
+  "pages": {}
+}

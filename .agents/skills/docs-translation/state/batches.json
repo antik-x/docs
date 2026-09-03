@@ -1,0 +1,572 @@
+{
+ "P-_root": [
+  {
+   "src": "conversation-simulator-custom-templates.mdx",
+   "dst": "docs/conversation-simulator-custom-templates.mdx"
+  },
+  {
+   "src": "benchmarks-introduction.mdx",
+   "dst": "docs/benchmarks-introduction.mdx"
+  },
+  {
+   "src": "synthetic-data-generation-introduction.mdx",
+   "dst": "docs/synthetic-data-generation-introduction.mdx"
+  },
+  {
+   "src": "vibe-coder-quickstart.mdx",
+   "dst": "docs/vibe-coder-quickstart.mdx"
+  },
+  {
+   "src": "introduction-comparisons.mdx",
+   "dst": "docs/introduction-comparisons.mdx"
+  },
+  {
+   "src": "evaluation-introduction.mdx",
+   "dst": "docs/evaluation-introduction.mdx"
+  },
+  {
+   "src": "evaluation-end-to-end-single-turn.mdx",
+   "dst": "docs/evaluation-end-to-end-single-turn.mdx"
+  },
+  {
+   "src": "conversation-simulator-lifecycle-hooks.mdx",
+   "dst": "docs/conversation-simulator-lifecycle-hooks.mdx"
+  },
+  {
+   "src": "metrics-introduction.mdx",
+   "dst": "docs/metrics-introduction.mdx"
+  },
+  {
+   "src": "prompt-optimization-introduction.mdx",
+   "dst": "docs/prompt-optimization-introduction.mdx"
+  },
+  {
+   "src": "command-line-interface.mdx",
+   "dst": "docs/command-line-interface.mdx"
+  },
+  {
+   "src": "evaluation-flags-and-configs.mdx",
+   "dst": "docs/evaluation-flags-and-configs.mdx"
+  },
+  {
+   "src": "conversation-simulator-stopping-logic.mdx",
+   "dst": "docs/conversation-simulator-stopping-logic.mdx"
+  },
+  {
+   "src": "introduction-design-philosophy.mdx",
+   "dst": "docs/introduction-design-philosophy.mdx"
+  },
+  {
+   "src": "conversation-simulator-voice-interruptions.mdx",
+   "dst": "docs/conversation-simulator-voice-interruptions.mdx"
+  },
+  {
+   "src": "conversation-simulator-voice-connectors.mdx",
+   "dst": "docs/conversation-simulator-voice-connectors.mdx"
+  },
+  {
+   "src": "conversation-simulator-voice-personas.mdx",
+   "dst": "docs/conversation-simulator-voice-personas.mdx"
+  },
+  {
+   "src": "introduction.mdx",
+   "dst": "docs/introduction.mdx"
+  },
+  {
+   "src": "conversation-simulator-model-callback.mdx",
+   "dst": "docs/conversation-simulator-model-callback.mdx"
+  },
+  {
+   "src": "vibe-coding.mdx",
+   "dst": "docs/vibe-coding.mdx"
+  },
+  {
+   "src": "data-privacy.mdx",
+   "dst": "docs/data-privacy.mdx"
+  },
+  {
+   "src": "environment-variables.mdx",
+   "dst": "docs/environment-variables.mdx"
+  },
+  {
+   "src": "getting-started.mdx",
+   "dst": "docs/getting-started.mdx"
+  },
+  {
+   "src": "conversation-simulator-simulation-graph.mdx",
+   "dst": "docs/conversation-simulator-simulation-graph.mdx"
+  },
+  {
+   "src": "miscellaneous.mdx",
+   "dst": "docs/miscellaneous.mdx"
+  },
+  {
+   "src": "faq.mdx",
+   "dst": "docs/faq.mdx"
+  },
+  {
+   "src": "evaluation-trajectory-based-llm-evals.mdx",
+   "dst": "docs/evaluation-trajectory-based-llm-evals.mdx"
+  },
+  {
+   "src": "evaluation-unit-testing-in-ci-cd.mdx",
+   "dst": "docs/evaluation-unit-testing-in-ci-cd.mdx"
+  },
+  {
+   "src": "evaluation-component-level-llm-evals.mdx",
+   "dst": "docs/evaluation-component-level-llm-evals.mdx"
+  },
+  {
+   "src": "troubleshooting.mdx",
+   "dst": "docs/troubleshooting.mdx"
+  },
+  {
+   "src": "evaluation-end-to-end-multi-turn.mdx",
+   "dst": "docs/evaluation-end-to-end-multi-turn.mdx"
+  }
+ ],
+ "P-concepts": [
+  {
+   "src": "(concepts)/evaluation-datasets.mdx",
+   "dst": "docs/evaluation-datasets.mdx"
+  },
+  {
+   "src": "(concepts)/evaluation-mcp.mdx",
+   "dst": "docs/evaluation-mcp.mdx"
+  },
+  {
+   "src": "(concepts)/evaluation-prompts.mdx",
+   "dst": "docs/evaluation-prompts.mdx"
+  },
+  {
+   "src": "(concepts)/evaluation-llm-tracing.mdx",
+   "dst": "docs/evaluation-llm-tracing.mdx"
+  },
+  {
+   "src": "(concepts)/evaluation-voice.mdx",
+   "dst": "docs/evaluation-voice.mdx"
+  },
+  {
+   "src": "(concepts)/(test-cases)/evaluation-arena-test-cases.mdx",
+   "dst": "docs/evaluation-arena-test-cases.mdx"
+  },
+  {
+   "src": "(concepts)/(test-cases)/evaluation-test-cases.mdx",
+   "dst": "docs/evaluation-test-cases.mdx"
+  },
+  {
+   "src": "(concepts)/(test-cases)/evaluation-multiturn-test-cases.mdx",
+   "dst": "docs/evaluation-multiturn-test-cases.mdx"
+  }
+ ],
+ "P-mcp": [
+  {
+   "src": "(mcp)/metrics-multi-turn-mcp-use.mdx",
+   "dst": "docs/metrics-multi-turn-mcp-use.mdx"
+  },
+  {
+   "src": "(mcp)/metrics-mcp-task-completion.mdx",
+   "dst": "docs/metrics-mcp-task-completion.mdx"
+  },
+  {
+   "src": "(mcp)/metrics-mcp-use.mdx",
+   "dst": "docs/metrics-mcp-use.mdx"
+  }
+ ],
+ "P-community": [
+  {
+   "src": "(community)/community-metrics-overview.mdx",
+   "dst": "docs/community-metrics-overview.mdx"
+  },
+  {
+   "src": "(community)/metrics-citation-faithfulness.mdx",
+   "dst": "docs/metrics-citation-faithfulness.mdx"
+  },
+  {
+   "src": "(community)/metrics-agent-loop-detection.mdx",
+   "dst": "docs/metrics-agent-loop-detection.mdx"
+  },
+  {
+   "src": "(community)/metrics-tool-permission.mdx",
+   "dst": "docs/metrics-tool-permission.mdx"
+  }
+ ],
+ "P-safety": [
+  {
+   "src": "(safety)/metrics-misuse.mdx",
+   "dst": "docs/metrics-misuse.mdx"
+  },
+  {
+   "src": "(safety)/metrics-toxicity.mdx",
+   "dst": "docs/metrics-toxicity.mdx"
+  },
+  {
+   "src": "(safety)/metrics-pii-leakage.mdx",
+   "dst": "docs/metrics-pii-leakage.mdx"
+  },
+  {
+   "src": "(safety)/metrics-non-advice.mdx",
+   "dst": "docs/metrics-non-advice.mdx"
+  },
+  {
+   "src": "(safety)/metrics-bias.mdx",
+   "dst": "docs/metrics-bias.mdx"
+  },
+  {
+   "src": "(safety)/metrics-role-violation.mdx",
+   "dst": "docs/metrics-role-violation.mdx"
+  }
+ ],
+ "P-conversation-simulator": [
+  {
+   "src": "conversation-simulator/index.mdx",
+   "dst": "docs/conversation-simulator/index.mdx"
+  }
+ ],
+ "P-rag": [
+  {
+   "src": "(rag)/metrics-contextual-recall.mdx",
+   "dst": "docs/metrics-contextual-recall.mdx"
+  },
+  {
+   "src": "(rag)/metrics-contextual-relevancy.mdx",
+   "dst": "docs/metrics-contextual-relevancy.mdx"
+  },
+  {
+   "src": "(rag)/metrics-answer-relevancy.mdx",
+   "dst": "docs/metrics-answer-relevancy.mdx"
+  },
+  {
+   "src": "(rag)/metrics-faithfulness.mdx",
+   "dst": "docs/metrics-faithfulness.mdx"
+  },
+  {
+   "src": "(rag)/metrics-contextual-precision.mdx",
+   "dst": "docs/metrics-contextual-precision.mdx"
+  }
+ ],
+ "P-golden-synthesizer": [
+  {
+   "src": "golden-synthesizer/index.mdx",
+   "dst": "docs/golden-synthesizer/index.mdx"
+  }
+ ],
+ "P-multi-turn": [
+  {
+   "src": "(multi-turn)/metrics-turn-contextual-recall.mdx",
+   "dst": "docs/metrics-turn-contextual-recall.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-tool-use.mdx",
+   "dst": "docs/metrics-tool-use.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-turn-contextual-precision.mdx",
+   "dst": "docs/metrics-turn-contextual-precision.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-turn-faithfulness.mdx",
+   "dst": "docs/metrics-turn-faithfulness.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-goal-accuracy.mdx",
+   "dst": "docs/metrics-goal-accuracy.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-role-adherence.mdx",
+   "dst": "docs/metrics-role-adherence.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-turn-relevancy.mdx",
+   "dst": "docs/metrics-turn-relevancy.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-conversation-completeness.mdx",
+   "dst": "docs/metrics-conversation-completeness.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-turn-contextual-relevancy.mdx",
+   "dst": "docs/metrics-turn-contextual-relevancy.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-knowledge-retention.mdx",
+   "dst": "docs/metrics-knowledge-retention.mdx"
+  },
+  {
+   "src": "(multi-turn)/metrics-topic-adherence.mdx",
+   "dst": "docs/metrics-topic-adherence.mdx"
+  }
+ ],
+ "P-use-cases": [
+  {
+   "src": "(use-cases)/getting-started-agents.mdx",
+   "dst": "docs/getting-started-agents.mdx"
+  },
+  {
+   "src": "(use-cases)/getting-started-mcp.mdx",
+   "dst": "docs/getting-started-mcp.mdx"
+  },
+  {
+   "src": "(use-cases)/getting-started-chatbots.mdx",
+   "dst": "docs/getting-started-chatbots.mdx"
+  },
+  {
+   "src": "(use-cases)/getting-started-llm-arena.mdx",
+   "dst": "docs/getting-started-llm-arena.mdx"
+  },
+  {
+   "src": "(use-cases)/getting-started-rag.mdx",
+   "dst": "docs/getting-started-rag.mdx"
+  }
+ ],
+ "P-non-llm": [
+  {
+   "src": "(non-llm)/metrics-exact-match.mdx",
+   "dst": "docs/metrics-exact-match.mdx"
+  },
+  {
+   "src": "(non-llm)/metrics-json-correctness.mdx",
+   "dst": "docs/metrics-json-correctness.mdx"
+  },
+  {
+   "src": "(non-llm)/metrics-pattern-match.mdx",
+   "dst": "docs/metrics-pattern-match.mdx"
+  }
+ ],
+ "P-voice": [
+  {
+   "src": "(voice)/metrics-voice-naturalness.mdx",
+   "dst": "docs/metrics-voice-naturalness.mdx"
+  },
+  {
+   "src": "(voice)/metrics-agent-responsiveness.mdx",
+   "dst": "docs/metrics-agent-responsiveness.mdx"
+  },
+  {
+   "src": "(voice)/metrics-voice-reliability.mdx",
+   "dst": "docs/metrics-voice-reliability.mdx"
+  },
+  {
+   "src": "(voice)/metrics-voice-consistency.mdx",
+   "dst": "docs/metrics-voice-consistency.mdx"
+  },
+  {
+   "src": "(voice)/metrics-audio-integrity.mdx",
+   "dst": "docs/metrics-audio-integrity.mdx"
+  },
+  {
+   "src": "(voice)/metrics-speech-intelligibility.mdx",
+   "dst": "docs/metrics-speech-intelligibility.mdx"
+  },
+  {
+   "src": "(voice)/metrics-turn-taking-naturalness.mdx",
+   "dst": "docs/metrics-turn-taking-naturalness.mdx"
+  }
+ ],
+ "P-benchmarks": [
+  {
+   "src": "(benchmarks)/benchmarks-hellaswag.mdx",
+   "dst": "docs/benchmarks-hellaswag.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-logi-qa.mdx",
+   "dst": "docs/benchmarks-logi-qa.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-human-eval.mdx",
+   "dst": "docs/benchmarks-human-eval.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-ifeval.mdx",
+   "dst": "docs/benchmarks-ifeval.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-winogrande.mdx",
+   "dst": "docs/benchmarks-winogrande.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-squad.mdx",
+   "dst": "docs/benchmarks-squad.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-bool-q.mdx",
+   "dst": "docs/benchmarks-bool-q.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-gsm8k.mdx",
+   "dst": "docs/benchmarks-gsm8k.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-arc.mdx",
+   "dst": "docs/benchmarks-arc.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-truthful-qa.mdx",
+   "dst": "docs/benchmarks-truthful-qa.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-lambada.mdx",
+   "dst": "docs/benchmarks-lambada.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-big-bench-hard.mdx",
+   "dst": "docs/benchmarks-big-bench-hard.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-bbq.mdx",
+   "dst": "docs/benchmarks-bbq.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-math-qa.mdx",
+   "dst": "docs/benchmarks-math-qa.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-mmlu.mdx",
+   "dst": "docs/benchmarks-mmlu.mdx"
+  },
+  {
+   "src": "(benchmarks)/benchmarks-drop.mdx",
+   "dst": "docs/benchmarks-drop.mdx"
+  }
+ ],
+ "P-conversation-simulator-voice-mode": [
+  {
+   "src": "conversation-simulator-voice-mode/index.mdx",
+   "dst": "docs/conversation-simulator-voice-mode/index.mdx"
+  }
+ ],
+ "P-evaluation-end-to-end-llm-evals": [
+  {
+   "src": "evaluation-end-to-end-llm-evals/index.mdx",
+   "dst": "docs/evaluation-end-to-end-llm-evals/index.mdx"
+  }
+ ],
+ "P-generate-goldens": [
+  {
+   "src": "(generate-goldens)/synthesizer-generate-from-goldens.mdx",
+   "dst": "docs/synthesizer-generate-from-goldens.mdx"
+  },
+  {
+   "src": "(generate-goldens)/synthesizer-generate-from-scratch.mdx",
+   "dst": "docs/synthesizer-generate-from-scratch.mdx"
+  },
+  {
+   "src": "(generate-goldens)/synthesizer-generate-from-docs.mdx",
+   "dst": "docs/synthesizer-generate-from-docs.mdx"
+  },
+  {
+   "src": "(generate-goldens)/synthesizer-generate-from-contexts.mdx",
+   "dst": "docs/synthesizer-generate-from-contexts.mdx"
+  }
+ ],
+ "P-metrics-others": [
+  {
+   "src": "(metrics-others)/metrics-summarization.mdx",
+   "dst": "docs/metrics-summarization.mdx"
+  },
+  {
+   "src": "(metrics-others)/metrics-prompt-alignment.mdx",
+   "dst": "docs/metrics-prompt-alignment.mdx"
+  },
+  {
+   "src": "(metrics-others)/metrics-ragas.mdx",
+   "dst": "docs/metrics-ragas.mdx"
+  },
+  {
+   "src": "(metrics-others)/metrics-hallucination.mdx",
+   "dst": "docs/metrics-hallucination.mdx"
+  }
+ ],
+ "P-agentic": [
+  {
+   "src": "(agentic)/metrics-argument-correctness.mdx",
+   "dst": "docs/metrics-argument-correctness.mdx"
+  },
+  {
+   "src": "(agentic)/metrics-plan-quality.mdx",
+   "dst": "docs/metrics-plan-quality.mdx"
+  },
+  {
+   "src": "(agentic)/metrics-step-efficiency.mdx",
+   "dst": "docs/metrics-step-efficiency.mdx"
+  },
+  {
+   "src": "(agentic)/metrics-plan-adherence.mdx",
+   "dst": "docs/metrics-plan-adherence.mdx"
+  },
+  {
+   "src": "(agentic)/metrics-task-completion.mdx",
+   "dst": "docs/metrics-task-completion.mdx"
+  },
+  {
+   "src": "(agentic)/metrics-tool-correctness.mdx",
+   "dst": "docs/metrics-tool-correctness.mdx"
+  }
+ ],
+ "P-images": [
+  {
+   "src": "(images)/multimodal-metrics-image-helpfulness.mdx",
+   "dst": "docs/multimodal-metrics-image-helpfulness.mdx"
+  },
+  {
+   "src": "(images)/multimodal-metrics-image-editing.mdx",
+   "dst": "docs/multimodal-metrics-image-editing.mdx"
+  },
+  {
+   "src": "(images)/multimodal-metrics-image-reference.mdx",
+   "dst": "docs/multimodal-metrics-image-reference.mdx"
+  },
+  {
+   "src": "(images)/multimodal-metrics-text-to-image.mdx",
+   "dst": "docs/multimodal-metrics-text-to-image.mdx"
+  },
+  {
+   "src": "(images)/multimodal-metrics-image-coherence.mdx",
+   "dst": "docs/multimodal-metrics-image-coherence.mdx"
+  }
+ ],
+ "P-custom": [
+  {
+   "src": "(custom)/metrics-conversational-g-eval.mdx",
+   "dst": "docs/metrics-conversational-g-eval.mdx"
+  },
+  {
+   "src": "(custom)/metrics-llm-evals.mdx",
+   "dst": "docs/metrics-llm-evals.mdx"
+  },
+  {
+   "src": "(custom)/metrics-conversational-dag.mdx",
+   "dst": "docs/metrics-conversational-dag.mdx"
+  },
+  {
+   "src": "(custom)/metrics-arena-g-eval.mdx",
+   "dst": "docs/metrics-arena-g-eval.mdx"
+  },
+  {
+   "src": "(custom)/metrics-custom.mdx",
+   "dst": "docs/metrics-custom.mdx"
+  },
+  {
+   "src": "(custom)/metrics-dag.mdx",
+   "dst": "docs/metrics-dag.mdx"
+  }
+ ],
+ "P-algorithms": [
+  {
+   "src": "(algorithms)/prompt-optimization-simba.mdx",
+   "dst": "docs/prompt-optimization-simba.mdx"
+  },
+  {
+   "src": "(algorithms)/prompt-optimization-gepa.mdx",
+   "dst": "docs/prompt-optimization-gepa.mdx"
+  },
+  {
+   "src": "(algorithms)/prompt-optimization-miprov2.mdx",
+   "dst": "docs/prompt-optimization-miprov2.mdx"
+  },
+  {
+   "src": "(algorithms)/prompt-optimization-copro.mdx",
+   "dst": "docs/prompt-optimization-copro.mdx"
+  }
+ ]
+}

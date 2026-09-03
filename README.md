@@ -1,55 +1,20 @@
-# Mintlify Starter Kit
+# DeepEval 中文文档（社区翻译）
 
-Use the starter kit to get your docs deployed and ready to customize.
+本仓库是 [DeepEval](https://github.com/confident-ai/deepeval) 官方文档（deepeval.com）的**非官方中文翻译**，基于 Apache-2.0 许可的上游文档翻译，使用 Mintlify 构建与发布。
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+- 上游源码：[confident-ai/deepeval](https://github.com/confident-ai/deepeval) `docs/content/docs/`（Fumadocs/MDX）
+- 翻译基线：见 `.agents/skills/docs-translation/state/sync-state.json`
+- 内容以 [deepeval.com 官方英文文档](https://deepeval.com/docs/introduction) 为准；本站与官方无关，仅作社区学习交流
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+## 翻译流程
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+仓库内自带翻译技能 `.agents/skills/docs-translation/`（流程、术语表与校验脚本），采用「机械转换 → 人工翻译 → 结构校验」流水线：Fumadocs MDX 先转换为 Mintlify MDX 骨架（代码块逐字节保留），再进行人工翻译，最后由脚本校验结构一致性。
 
-## AI-assisted writing
-
-Set up your AI coding tool to work with Mintlify:
+## 本地开发
 
 ```bash
-npx skills add https://mintlify.com/docs
-```
-
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
-
-See the [AI tools guides](/ai-tools) for tool-specific setup.
-
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
 npm i -g mint
-```
-
-Run the following command at the root of your documentation, where your `docs.json` is located:
-
-```
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
-
-## Publishing changes
-
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
-
-## Need help?
-
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+访问 `http://localhost:3000` 预览。
