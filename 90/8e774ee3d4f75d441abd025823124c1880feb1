@@ -1,0 +1,44 @@
+.agents/skills/docs-translation/SKILL.md
+  h_04c00a69eeb820 1-118
+.agents/skills/docs-translation/project.json
+  h_04c00a69eeb820 1-39
+.agents/skills/docs-translation/references/rules.md
+  h_04c00a69eeb820 1-86
+.agents/skills/docs-translation/references/terminology.md
+  h_04c00a69eeb820 1-106
+.agents/skills/docs-translation/scripts/build_nav.py
+  h_04c00a69eeb820 1-138
+.agents/skills/docs-translation/scripts/convert_fumadocs.py
+  h_04c00a69eeb820 1-658
+.agents/skills/docs-translation/scripts/expected.py
+  h_04c00a69eeb820 1-95
+.agents/skills/docs-translation/scripts/fumadocs_norm.py
+  h_04c00a69eeb820 1-274
+.agents/skills/docs-translation/scripts/verify_mdx.py
+  h_04c00a69eeb820 1-54
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 1-191
+.agents/skills/docs-translation/state/batches.json
+  h_04c00a69eeb820 1-572
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 1-32
+.agents/skills/docs-translation/state/sync-state.json
+  h_04c00a69eeb820 1-5
+README.md
+  h_04c00a69eeb820 1,3,5-7,9,11,13,20
+docs.json
+  h_04c00a69eeb820 4-5,19-20,25-26,32,37,39-625,627
+index.mdx
+  h_04c00a69eeb820 2-3,6-8,10,12-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "908e774ee3d4f75d441abd025823124c1880feb1",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
