@@ -1,0 +1,80 @@
+1	---
+2	title: Arena Test Case
+3	---
+5	## Quick Summary
+7	An **arena test case** is a blueprint provided by `deepeval` for you to compare which iteration of your LLM app performed better. It works by comparing each contestants's `LLMTestCase` to run comparisons, and currently only supports the `LLMTestCase` for single-turn, text-based comparisons.
+9	<Info>
+10	Support for `ConversationalTestCase` is coming soon.
+11	</Info>
+13	The `ArenaTestCase` currently only runs with the `ArenaGEval` metric, and all that is required is to provide a list of `Contestant`s:
+15	<Tabs>
+17	<Tab title="Python">
+50	</Tab>
+52	<Tab title="TypeScript">
+87	</Tab>
+89	</Tabs>
+91	Note that all `input`s and `expected_output`s you provide across contestants **MUST** match.
+93	<Tip>
+94	For those wondering why we took the choice to include multiple duplicated `input`s in `LLMTestCase` instead of moving it to the `ArenaTestCase` class, it is because an `LLMTestCase` integrates nicely with the existing ecosystem.
+96	You also shouldn't worry about unexpected errors because `deepeval` will throw an error if `input`s or `expected_output`s aren't matching.
+97	</Tip>
+99	## Arena Test Case
+101	The `ArenaTestCase` takes a simple `contestants` argument, which is a list of `Contestant`s.
+103	<Tabs>
+105	<Tab title="Python">
+138	</Tab>
+140	<Tab title="TypeScript">
+175	</Tab>
+177	</Tabs>
+179	### Contestant
+181	A `Contestant` represents a single unit of [llm interaction](/docs/evaluation-test-cases#what-is-an-llm-interaction) from a specific version of your LLM app. It accepts a `test_case`, a `name` to identify the LLM app version that was used to generate the test case, and optionally any `hyperparameters` associated with the LLM version.
+200	## Including Images
+204	<Tabs>
+206	<Tab title="Python">
+233	</Tab>
+235	<Tab title="TypeScript">
+269	</Tab>
+271	</Tabs>
+273	<Info>
+274	Multimodal test cases are automatically detected when you include `MLLMImage` objects in your inputs or outputs of your `LLMTestCase`s. You can use the [`ArenaGEval`](/docs/metrics-arena-g-eval) metric to run evaluations for your multimodal test cases as usual.
+275	</Info>
+277	### `MLLMImage` Data Model
+290	You **MUST** either provide `url` or `dataBase64` and `mimeType` parameters when initializing an `MLLMImage`. The `local` attribute should be set to `True` for locally stored images and `False` for images hosted online (default is `False`).
+292	<Note>
+296	<Tabs>
+298	<Tab title="Python">
+313	</Tab>
+315	<Tab title="TypeScript">
+331	</Tab>
+333	</Tabs>
+365	</Note>
+367	## Using Test Cases For Evals
+369	The [`ArenaGEval` metric](/docs/metrics-arena-g-eval) is the only metric that uses an `ArenaTestCase`, which picks a "winner" out of the list of contestants:
+371	<Tabs>
+373	<Tab title="Python">
+391	</Tab>
+393	<Tab title="TypeScript">
+411	</Tab>
+413	</Tabs>
+415	The `ArenaTestCase` streamlines the evaluation by automatically masking contestant names (to ensure unbiased judging) and randomizing their order.
+417	## FAQs
+419	<AccordionGroup>
+420	<Accordion title="What is an ArenaTestCase used for?">
+421	It compares multiple candidates (contestants) for the same input and picks a winner, instead of scoring a single output in isolation. It's ideal for choosing between models, prompts, or configurations head to head.
+422	</Accordion>
+423	<Accordion title="Which metric works with an ArenaTestCase?">
+424	The [ArenaGEval](/docs/metrics-arena-g-eval) metric is the only metric that consumes an `ArenaTestCase` . It uses your `criteria` to pick the winning contestant via `compare()` .
+425	</Accordion>
+426	<Accordion title="How does deepeval prevent bias toward a particular contestant?">
+427	The ArenaTestCase automatically masks contestant names and randomizes their order before judging, so the judge can't be influenced by naming or position.
+428	</Accordion>
+429	<Accordion title="What's the difference between arena and regular single-turn evals?">
+430	A regular `LLMTestCase` scores one output against a metric threshold (absolute scoring). An arena test case is relative — it asks which candidate is best for the same input rather than whether a single output passes.
+431	</Accordion>
+432	<Accordion title="Can arena test cases include images?">
+433	Yes. Each contestant can include `MLLMImage` objects, so you can run head-to-head comparisons on multimodal outputs.
+434	</Accordion>
+435	<Accordion title="Can my team run these comparisons on the cloud and visualize the winners in a UI?">
+436	Arena comparisons run locally out of the box. If your team wants a shared, cloud-hosted view of which candidate won and why, [Confident AI](https://www.confident-ai.com) (built by the `deepeval` team) can visualize comparison results in a UI for collaborative review — optional, and your `compare()` runs work the same without it.
+437	</Accordion>
+438	</AccordionGroup>

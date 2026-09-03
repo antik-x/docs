@@ -1,0 +1,143 @@
+1	---
+2	title: Multi-Turn Test Case
+3	---
+5	## Quick Summary
+7	A **multi-turn test case** is a blueprint provided by `deepeval` to unit test a series of LLM interactions. A multi-turn test case in `deepeval` is represented by a `ConversationalTestCase`, and has **FIVE** parameters:
+9	- `turns`
+10	- [Optional] `scenario`
+11	- [Optional] `expected_outcome`
+12	- [Optional] `context`
+13	- [Optional] `chatbot_role`
+15	<Note>
+16	`deepeval` makes the assumption that a multi-turn use case are mainly conversational chatbots. Agents on the other hand, should be evaluated via [component-level evaluation](/docs/evaluation-component-level-llm-evals) instead, where each component in your agentic workflow is assessed individually.
+17	</Note>
+19	Here's an example implementation of a `ConversationalTestCase`:
+21	<Tabs>
+23	<Tab title="Python">
+38	</Tab>
+40	<Tab title="TypeScript">
+55	</Tab>
+57	</Tabs>
+59	## Multi-Turn LLM Interaction
+61	Different from a [single-turn LLM interaction](/docs/evaluation-test-cases#what-is-an-llm-interaction), a multi-turn LLM interaction encapsulates exchanges between a user and a conversational agent/chatbot, which is represented by a `ConversationalTestCase` in `deepeval`.
+65	The `turns` parameter in a conversational test case is vital to specifying the roles and content of a conversation (in OpenAI API format), and allows you to supply any optional `tools_called` and `retrieval_context`. Additional optional parameters such as `scenario` and `expected outcome` is best suited for users converting [`ConversationalGolden`s](/docs/evaluation-datasets#goldens-data-model) to test cases at evaluation time.
+67	## Conversational Test Case
+69	While a [single-turn test case](/docs/evaluation-test-cases) represents an individual LLM system interaction, a `ConversationalTestCase` encapsulates a series of `Turn`s that make up an LLM-based conversation. This is particular useful if you're looking to for example evaluate a conversation between a user and an LLM-based chatbot.
+71	A `ConversationalTestCase` can only be evaluated using **conversational metrics.**
+73	<Tabs>
+75	<Tab title="Python">
+88	</Tab>
+90	<Tab title="TypeScript">
+103	</Tab>
+105	</Tabs>
+107	<Note>
+108	Similar to how the term 'test case' refers to an `LLMTestCase` if not explicitly specified, the term 'metrics' also refer to non-conversational metrics throughout `deepeval`.
+109	</Note>
+111	### Turns
+113	The `turns` parameter is a list of `Turn`s and is basically a list of messages/exchanges in a user-LLM conversation. If you're using [`ConversationalGEval`](/docs/metrics-conversational-g-eval), you might also want to supply different parameters to a `Turn`. A `Turn` is made up of the following parameters:
+124	<Info>
+125	You should only provide the `retrieval_context` and `tools_called` parameter if the `role` is `"assistant"`.
+126	</Info>
+128	<Note>
+130	</Note>
+138	The `role` parameter specifies whether a particular turn is by the `"user"` (end user) or `"assistant"` (LLM). This is similar to OpenAI's API.
+140	For **voice conversations**, a `Turn` carries additional fields that record what was actually spoken, when, and whether the reply was cut short:
+150	- **`audio`** — the spoken audio for that turn as an [`Audio`](/docs/evaluation-voice#audio-data-model) object (clip length is `Audio.duration`).
+151	- **`latency_ms`** — how long the assistant took to start speaking after the user finished (assistant turns).
+152	- **`interrupted`** — `True` if a user barge-in cut this assistant reply short; `None` otherwise.
+154	A `ConversationalTestCase` whose turns carry audio has its `voice` flag set to `True` automatically. See [Voice](/docs/evaluation-voice) for what these fields mean in a simulation.
+156	### Scenario
+158	The `scenario` parameter is an **optional** parameter that specifies the circumstances of which a conversation is taking place in.
+160	<Tabs>
+162	<Tab title="Python">
+170	</Tab>
+172	<Tab title="TypeScript">
+183	</Tab>
+185	</Tabs>
+187	### Expected Outcome
+189	The `expected_outcome` parameter is an **optional** parameter that specifies the expected outcome of a given `scenario`.
+191	<Tabs>
+193	<Tab title="Python">
+205	</Tab>
+207	<Tab title="TypeScript">
+219	</Tab>
+221	</Tabs>
+223	### Chatbot Role
+225	The `chatbot_role` parameter is an **optional** parameter that specifies what role the chatbot is supposed to play. This is currently only required for the `RoleAdherenceMetric`, where it is particularly useful for a role-playing evaluation use case.
+227	<Tabs>
+229	<Tab title="Python">
+237	</Tab>
+239	<Tab title="TypeScript">
+250	</Tab>
+252	</Tabs>
+254	### Context
+258	<Tabs>
+260	<Tab title="Python">
+271	</Tab>
+273	<Tab title="TypeScript">
+284	</Tab>
+286	</Tabs>
+288	<Info>
+289	A single-turn `LLMTestCase` also contains `context`.
+290	</Info>
+292	## Including Images
+296	<Tabs>
+298	<Tab title="Python">
+316	</Tab>
+318	<Tab title="TypeScript">
+336	</Tab>
+338	</Tabs>
+340	<Info>
+341	Multimodal test cases are automatically detected when you include `MLLMImage` objects in your inputs or outputs. You can use them with almost all the `deepeval` metrics.
+342	</Info>
+344	### `MLLMImage` Data Model
+357	You **MUST** either provide `url` or `dataBase64` and `mimeType` parameters when initializing an `MLLMImage`. The `local` attribute should be set to `True` for locally stored images and `False` for images hosted online (default is `False`).
+359	<Note>
+363	<Tabs>
+365	<Tab title="Python">
+382	</Tab>
+384	<Tab title="TypeScript">
+401	</Tab>
+403	</Tabs>
+437	</Note>
+439	## Mark Test Cases As Flaky
+441	The `flaky` is an **optional** parameter of type boolean (defaulted to `False`) that marks a `ConversationalTestCase` as flaky. A flaky test case's results are still computed, recorded, and reported as normal, but its failures won't block your CI/CD pipeline — when a flaky test case fails, `assert_test()` prints a warning instead of raising an `AssertionError`.
+452	This is most useful for conversations you know are noisy — for example simulated conversations with borderline scores that flip between passing and failing across runs — that you still want to keep evaluating and tracking without letting them gate deployments. The `flaky` status is also logged on Confident AI so you can monitor how often flaky test cases actually fail.
+454	<Info>
+455	A single-turn `LLMTestCase` can also be marked `flaky`, and so can metrics — a flaky **metric's** failure never decides its test case's pass/fail status.
+456	</Info>
+458	## Label Test Cases For Confident AI
+460	If you're using Confident AI, these are some additional parameters to help manage your test cases.
+462	### Name
+466	<Tabs>
+468	<Tab title="Python">
+476	</Tab>
+478	<Tab title="TypeScript">
+489	</Tab>
+491	</Tabs>
+493	### Tags
+503	## Using Test Cases For Evals
+505	You can create test cases for two types of evaluation:
+507	- [End-to-end](/docs/evaluation-end-to-end-llm-evals) - Treats your multi-turn LLM app as a black-box, and evaluates the overall conversation by considering each turn's inputs and outputs.
+510	Unlike for single-turn test cases, the concept of component-level evaluation does not exist for multi-turn use cases.
+512	## FAQs
+514	<AccordionGroup>
+515	<Accordion title="What's the difference between a ConversationalTestCase and an LLMTestCase?">
+516	A `ConversationalTestCase` represents an entire multi-turn conversation through a list of `Turn` s, while an [LLMTestCase](/docs/evaluation-test-cases) represents a single atomic interaction. Use the conversational one for chatbots and assistants where context spans multiple turns.
+517	</Accordion>
+518	<Accordion title="What does a Turn contain?">
+519	Each `Turn` has a `role` ( `user` or `assistant` ) and `content` , and can optionally carry retrieval context, tools called, and MCP primitives so per-turn behavior can be evaluated.
+520	</Accordion>
+521	<Accordion title="What are scenario and expected_outcome for?">
+522	They describe the conversation at a high level: `scenario` sets up the situation the user is in, and `expected_outcome` describes what a successful conversation should achieve. They're especially useful for simulating turns and for outcome-based conversational metrics.
+523	</Accordion>
+524	<Accordion title="Do I have to write every turn by hand?">
+525	No. You can author turns manually, or generate them automatically with the [conversation simulator](/docs/conversation-simulator) from a `ConversationalGolden` 's scenario and user persona.
+526	</Accordion>
+527	<Accordion title="Can multi-turn test cases include images?">
+528	Yes. You can embed `MLLMImage` objects inside a turn's content to evaluate multimodal conversations.
+529	</Accordion>
+530	<Accordion title="How can my team share multi-turn conversations and visualize them in a UI?">
+531	Conversations run fully locally, but reading long multi-turn transcripts in a terminal doesn't scale. Logging into [Confident AI](https://www.confident-ai.com) (the platform from the `deepeval` team) renders the same conversations and their per-turn scores into a shared cloud UI, so a team can review, annotate, and track them over time — with no change to your test case code. It's entirely optional.
+532	</Accordion>
+533	</AccordionGroup>

@@ -311,18 +311,18 @@ def convert_callouts(text):
     out, stack = [], []
     for line in text.split("\n"):
         s = line.strip()
-        m = re.match(r"^:::([a-z]+)(?:\[([^\]]*)\])?\s*$", s)
+        m = re.match(r"^(:::+)([a-z]+)(?:\[([^\]]*)\])?\s*$", s)
         if m:
-            comp = N.CALLOUT_MAP[m.group(1)]
-            stack.append(comp)
+            comp = N.CALLOUT_MAP[m.group(2)]
+            stack.append((len(m.group(1)), comp))
             out.append(f"<{comp}>")
-            if m.group(2):
+            if m.group(3):
                 out.append("")
-                out.append(f"**{m.group(2).strip()}**")
+                out.append(f"**{m.group(3).strip()}**")
                 out.append("")
             continue
-        if s == ":::":
-            comp = stack.pop() if stack else "Note"
+        if re.match(r"^:::+$", s):
+            comp = stack.pop()[1] if stack else "Note"
             out.append(f"</{comp}>")
             continue
         out.append(line)

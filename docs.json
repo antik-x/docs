@@ -128,7 +128,7 @@
           },
           {
             "page": "docs/(concepts)/evaluation-llm-tracing",
-            "title": "Tracing"
+            "title": "LLM 追踪"
           },
           {
             "page": "docs/(concepts)/evaluation-voice",

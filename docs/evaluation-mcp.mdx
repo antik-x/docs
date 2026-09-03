@@ -1,0 +1,620 @@
+---
+title: 模型上下文协议（MCP）
+---
+
+**模型上下文协议（MCP）**是由 **Anthropic** 开发的开源框架，用于标准化 AI 系统（尤其是大语言模型（LLM））与外部工具及数据源的交互方式。
+
+## 架构
+
+MCP 架构由三个主要组件组成：
+
+- **宿主（Host）** —— 协调并管理一个或多个 MCP 客户端的 AI 应用。
+- **客户端（Client）** —— 与服务器保持一对一连接，并从服务器检索上下文供宿主使用。
+- **服务器（Server）** —— 与单个客户端配对，提供客户端传递给宿主的上下文。
+
+![MCP 架构图](https://deepeval-docs.s3.amazonaws.com/mcp-architecture.png)
+
+例如，Claude 充当 MCP 宿主。当 Claude 连接到诸如 Google Sheets 的 MCP 服务器时，Claude 运行时会实例化一个与该服务器保持专用连接的 MCP 客户端。当 Claude 随后连接到另一个 MCP 服务器（如 Google Docs）时，它会实例化额外的 MCP 客户端来维护这第二个连接。这在 MCP 客户端与 MCP 服务器之间保持一对一关系，由宿主（Claude）编排多个客户端。
+
+## 原语
+
+`deepeval` 遵循 MCP 原语。在评估之前，你需要使用这些原语在 `deepeval` 中创建 `MCPServer` 类。
+
+MCP 服务器可以暴露三种核心原语：
+
+- **工具（Tools）**：LLM 应用可以调用以执行操作的可执行函数
+- **资源（Resources）**：为 LLM 应用提供上下文信息的数据源
+- **提示词（Prompts）**：帮助构建与语言模型交互的可复用模板
+
+你可以从 `mcp` 的 `ClientSession` 获得全部三种原语：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from mcp import ClientSession
+
+session = ClientSession(...)
+
+# List available tools
+tool_list = await session.list_tools()
+resource_list = await session.list_resources()
+prompt_list = await session.list_prompts()
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+
+const session = new Client({ name: "my-mcp-client", version: "1.0.0" });
+
+// List available tools
+const toolList = await session.listTools();
+const resourceList = await session.listResources();
+const promptList = await session.listPrompts();
+```
+
+</Tab>
+
+</Tabs>
+
+<Info>
+把这些原语暴露出来供你评估是 MCP **服务器开发者**的职责。这意味着与你交互的 MCP 服务器不一定总在你的控制之下。
+</Info>
+
+## MCP 服务器
+
+`MCPServer` 类是 **`deepeval` 提供的**抽象，用于承载不同 MCP 服务器及其提供的原语的信息，可在评估期间使用。
+
+创建 `MCPServer` 实例的方法如下：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.test_case import MCPServer
+
+mcp_server = MCPServer(
+    server_name="GitHub",
+    transport="stdio",
+    available_tools=tool_list.tools, # get from ClientSession
+    available_resources=resource_list.resources, # get from ClientSession
+    available_prompts=prompt_list.prompts # get from ClientSession
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { MCPServer } from "deepeval/test-case";
+
+const mcpServer = new MCPServer({
+  serverName: "GitHub",
+  transport: "stdio",
+  availableTools: toolList.tools, // get from Client
+  availableResources: resourceList.resources, // get from Client
+  availablePrompts: promptList.prompts, // get from Client
+});
+```
+
+</Tab>
+
+</Tabs>
+
+`MCPServer` 接受**五个**参数：
+
+- `server_name`：可选字符串，用于记录你的 MCP 服务器的细节。
+- [可选] `transport`：可选字面量，记录你的 MCP 服务器使用的传输类型。该信息不影响 MCP 测试用例的评估。
+- [可选] `available_tools`：可选列表，你的 MCP 服务器让你可用的工具。
+- [可选] `available_prompts`：可选列表，你的 MCP 服务器让你可用的提示词。
+- [可选] `available_resources`：可选列表，你的 MCP 服务器让你可用的资源。
+
+<Tip>
+你须确保提供 `list` 方法响应中的 `.tools`、`.resources` 与 `.prompts`。它们分别是来自 `mcp.types` 的 `Tool`、`Resource` 与 `Prompt` 类型，并由官方 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) 标准化。
+</Tip>
+
+## 运行时的 MCP
+
+运行期间，你不可避免地会调用 MCP 服务器，进而调用工具、提示词与资源。要对基于 MCP 的 LLM 应用运行评估，你需要把针对给定输入调用过的每个原语格式化。
+
+### 工具
+
+为智能体在交互期间调用的每个工具提供一个 `MCPToolCall` 对象列表。下面的示例展示调用一个工具并构造对应的 `MCPToolCall`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from mcp import ClientSession
+from deepeval.test_case import MCPToolCall
+
+session = ClientSession(...)
+
+# Replace with your values
+tool_name = "..."
+tool_args = "..."
+
+# Call tool
+result = await session.call_tool(tool_name, tool_args)
+
+# Format into deepeval
+mcp_tool_called = MCPToolCall(
+    name=tool_name,
+    args=tool_args,
+    result=result,
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { MCPToolCall } from "deepeval/test-case";
+
+const session = new Client({ name: "my-mcp-client", version: "1.0.0" });
+
+// Replace with your values
+const toolName = "...";
+const toolArgs = { /* ... */ };
+
+// Call tool
+const result = await session.callTool({ name: toolName, arguments: toolArgs });
+
+// Format into deepeval
+const mcpToolCalled = new MCPToolCall({
+  name: toolName,
+  args: toolArgs,
+  result,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+`session.call_tool()` 返回的 `result` 是来自 `mcp.types` 的 `CallToolResult`。
+
+### 资源
+
+为智能体读取的每个资源提供一个 `MCPResourceCall` 对象列表。下面的示例展示读取一个资源并构造对应的 `MCPResourceCall`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from mcp import ClientSession
+from deepeval.test_case import MCPResourceCall
+
+session = ClientSession(...)
+
+# Replace with your values
+uri = "..."
+
+# Read resource
+result = await session.read_resource(uri)
+
+# Format into deepeval
+mcp_resource_called = MCPResourceCall(
+    uri=uri,
+    result=result,
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { MCPResourceCall } from "deepeval/test-case";
+
+const session = new Client({ name: "my-mcp-client", version: "1.0.0" });
+
+// Replace with your values
+const uri = "...";
+
+// Read resource
+const result = await session.readResource({ uri });
+
+// Format into deepeval
+const mcpResourceCalled = new MCPResourceCall({
+  uri,
+  result,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+`session.read_resource()` 返回的 `result` 是来自 `mcp.types` 的 `ReadResourceResult`。
+
+### 提示词
+
+为智能体获取的每个提示词提供一个 `MCPPromptCall` 对象列表。下面的示例展示获取一个提示词并构造对应的 `MCPPromptCall`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from mcp import ClientSession
+from deepeval.test_case import MCPPromptCall
+
+session = ClientSession(...)
+
+# Replace with your values
+prompt_name = "..."
+
+# Get prompt
+result = await session.get_prompt(prompt_name)
+
+# Format into deepeval
+mcp_prompt_called = MCPPromptCall(
+    name=prompt_name,
+    result=result,
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { MCPPromptCall } from "deepeval/test-case";
+
+const session = new Client({ name: "my-mcp-client", version: "1.0.0" });
+
+// Replace with your values
+const promptName = "...";
+
+// Get prompt
+const result = await session.getPrompt({ name: promptName });
+
+// Format into deepeval
+const mcpPromptCalled = new MCPPromptCall({
+  name: promptName,
+  result,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+`session.get_prompt()` 返回的 `result` 是来自 `mcp.types` 的 `GetPromptResult`。
+
+## 评估 MCP
+
+你可以对**单轮与多轮**两种场景评估 MCP。评估 MCP 包含 4 个步骤：
+
+- 定义一个 `MCPServer`，以及
+- 把运行时的原语数据接入 `deepeval`
+- 用这些数据创建单轮或多轮测试用例
+- 在你定义的测试用例上运行 MCP 指标
+
+### 单轮
+
+[`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 是单轮测试用例，它接受以下可选参数以支持 MCP 评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.test_case.mcp import (
+    MCPServer,
+    MCPToolCall,
+    MCPResourceCall,
+    MCPPromptCall
+)
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import MCPUseMetric
+from deepeval import evaluate
+
+# Create test case
+test_case = LLMTestCase(
+    input="...", # Your input
+    actual_output="..." # Your LLM app's output
+    mcp_servers=[MCPServer(...)],
+    mcp_tools_called=[MCPToolCall(...)],
+    mcp_prompts_called=[MCPPromptCall(...)],
+    mcp_resources_called=[MCPResourceCall(...)]
+)
+
+# Run evaluations
+evaluate(test_cases=[test_case], metrics=[MCPUseMetric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import {
+  MCPServer,
+  MCPToolCall,
+  MCPResourceCall,
+  MCPPromptCall,
+  LLMTestCase,
+} from "deepeval/test-case";
+import { MCPUseMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+// Create test case
+const testCase = new LLMTestCase({
+  input: "...", // Your input
+  actualOutput: "...", // Your LLM app's output
+  mcpServers: [new MCPServer({ serverName: "..." })],
+  // Each `result` is the one your MCP client returned, unchanged
+  mcpToolsCalled: [new MCPToolCall({ name: "...", args: {}, result: toolResult })],
+  mcpPromptsCalled: [new MCPPromptCall({ name: "...", result: promptResult })],
+  mcpResourcesCalled: [
+    new MCPResourceCall({ uri: "...", result: resourceResult }),
+  ],
+});
+
+// Run evaluations
+await evaluate([testCase], [new MCPUseMetric()]);
+```
+
+</Tab>
+
+</Tabs>
+
+通常测试用例中的所有 MCP 参数都是可选的。但如果你想使用 `MCPUseMetric` 等 MCP 指标，则需要提供以下部分内容：
+
+- `mcp_servers` —— `MCPServer` 列表
+- `mcp_tools_called` —— 你的 LLM 应用使用过的 `MCPToolCall` 对象列表
+- `mcp_resources_called` —— 你的 LLM 应用使用过的 `MCPResourceCall` 对象列表
+- `mcp_prompts_called` —— 你的 LLM 应用使用过的 `MCPPromptCall` 对象列表
+
+关于 `MCPUseMetric` 的更多内容见[这里](/docs/metrics-mcp-use)。
+
+### 多轮
+
+[`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases#conversational-test-case) 接受名为 `mcp_server` 的可选参数来添加你的 `MCPServer` 实例，告诉 `deepeval` 应当如何评估你的 MCP 交互：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.test_case import ConversationalTestCase
+from deepeval.metrics import MultiTurnMCPMetric
+from deepeval.test_case.mcp import MCPServer
+from deepeval import evaluate
+
+test_case = ConversationalTestCase(
+    turns=turns,
+    mcp_servers=[MCPServer(...), MCPServer(...)]
+)
+
+evaluate(test_cases=[test_case], metrics=[MultiTurnMCPMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { ConversationalTestCase, MCPServer } from "deepeval/test-case";
+import { MultiTurnMCPUseMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const testCase = new ConversationalTestCase({
+  turns,
+  mcpServers: [new MCPServer({ serverName: "..." }), new MCPServer({ serverName: "..." })],
+});
+
+await evaluate([testCase], [new MultiTurnMCPUseMetric()]);
+```
+
+</Tab>
+
+</Tabs>
+
+<details>
+
+<summary>
+  点击查看如何在运行时为轮次设置 MCP 原语
+</summary>
+
+要在运行时设置原语，`Turn` 对象接受 `mcp_tools_called`、`mcp_resources_called` 与 `mcp_prompts_called` 等可选参数，与 `LLMTestCase` 中一样：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case.mcp import (
+    MCPServer,
+    MCPToolCall,
+    MCPResourceCall,
+    MCPPromptCall
+)
+from deepeval.test_case.mcp import MCPServer
+
+turns = [
+    Turn(role="user", content="Some example input"),
+    Turn(
+        role="assistant",
+        content="Do this too", # Your content here for a tool / resource / prompt call
+        mcp_tools_called=[MCPToolCall(...)],
+        mcp_resources_called=[MCPResourceCall(...)],
+        mcp_prompts_called=[MCPPromptCall(...)],
+    )
+]
+
+test_case = ConversationalTestCase(
+    turns=turns,
+    mcp_servers=[MCPServer(...)],
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import {
+  ConversationalTestCase,
+  Turn,
+  MCPServer,
+  MCPToolCall,
+  MCPResourceCall,
+  MCPPromptCall,
+} from "deepeval/test-case";
+
+const turns = [
+  new Turn({ role: "user", content: "Some example input" }),
+  new Turn({
+    role: "assistant",
+    content: "Do this too", // Your content here for a tool / resource / prompt call
+    // Each `result` is the one your MCP client returned, unchanged
+    mcpToolsCalled: [
+      new MCPToolCall({ name: "...", args: {}, result: toolResult }),
+    ],
+    mcpResourcesCalled: [
+      new MCPResourceCall({ uri: "...", result: resourceResult }),
+    ],
+    mcpPromptsCalled: [
+      new MCPPromptCall({ name: "...", result: promptResult }),
+    ],
+  }),
+];
+
+const testCase = new ConversationalTestCase({
+  turns,
+  mcpServers: [new MCPServer({ serverName: "..." })],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+</details>
+
+### 共享 MCP 服务器
+
+<Info>
+`evaluate()` 上的 `mcp_servers` 目前仅在 Python 中可用。
+</Info>
+
+如果一次运行中的每个测试用例都与相同的 MCP 服务器通信，你可以把它们一次性提供给 `evaluate()`，而不必在每个测试用例上重复：
+
+```python title="main.py"
+from deepeval.test_case import LLMTestCase, MCPServer
+from deepeval.metrics import MCPUseMetric
+from deepeval import evaluate
+
+evaluate(
+    test_cases=[LLMTestCase(...), LLMTestCase(...)],
+    metrics=[MCPUseMetric()],
+    mcp_servers=[MCPServer(...)],
+)
+```
+
+<Info>
+测试用例上的 `mcp_servers` 优先，因此定义了自己服务器的测试用例不会被改动。
+</Info>
+
+### 使用官方 MCP SDK
+
+如果你用官方 MCP Python SDK 构建了服务器，直接把该对象传入即可——`deepeval` 会替你读取它的工具、资源与提示词，无需手工构造 `deepeval` 的 `MCPServer`。
+
+注意 SDK 的服务器类*也*叫 `MCPServer`，因此同时导入两者时请给其中一个起别名。
+
+```python title="main.py"
+from mcp.server import MCPServer
+from deepeval.test_case import LLMTestCase
+from deepeval import evaluate
+
+server = MCPServer(name="GitHub")
+
+@server.tool()
+def search_issues(query: str) -> str:
+    ...
+
+evaluate(
+    test_cases=[LLMTestCase(...)],
+    metrics=[...],
+    mcp_servers=[server],
+)
+```
+
+两种形式都可以用在任何接受 `mcp_servers` 的地方，包括直接放在测试用例上，并且可以在一个列表中混用。官方服务器会通过调用其 `list_tools()`、`list_resources()` 与 `list_prompts()` 转换为 `deepeval` 的 `MCPServer`，因此评估开始后 `test_case.mcp_servers` 中始终是 `deepeval` 的 `MCPServer`。
+
+<Warning>
+仅支持 SDK 的**服务器**对象。`ClientSession`——即你的应用*消费*他人 MCP 服务器（而非自己定义）时持有的对象——目前不被接受。对于这种情况，请继续构建 `deepeval` 的 `MCPServer`，并按[上文](#mcp-server)所示传入 `session.list_tools()` 的原语。
+</Warning>
+
+提供 `mcp_servers` 还会告诉 `deepeval` 如何**分类每个工具调用**。任何 `name` 匹配你某个 MCP 服务器上 `available_tools` 条目的 `ToolCall` 都会被标记为 `ToolCallType.MCP`，其余保持 `ToolCallType.FUNCTION`：
+
+```python title="main.py"
+from mcp.types import Tool
+from deepeval.test_case import LLMTestCase, ToolCall, MCPServer
+from deepeval import evaluate
+
+test_case = LLMTestCase(
+    input="...",
+    actual_output="...",
+    tools_called=[ToolCall(name="search_issues"), ToolCall(name="my_local_tool")],
+)
+
+evaluate(
+    test_cases=[test_case],
+    metrics=[...],
+    mcp_servers=[
+        MCPServer(server_name="GitHub", available_tools=[Tool(name="search_issues")])
+    ],
+)
+
+print(test_case.tools_called[0].type) # ToolCallType.MCP
+print(test_case.tools_called[1].type) # ToolCallType.FUNCTION
+```
+
+这适用于 `LLMTestCase` 的 `tools_called` 与 `expected_tools`，以及 `ConversationalTestCase` 每个 `Turn` 上的 `tools_called`。测试运行发送到 Confident AI 时会包含该类型，MCP 工具调用会与普通函数调用分开标注。
+
+<Warning>
+工具调用按**名称**匹配。与你的某个服务器上的 MCP 工具同名的普通函数也会被标记为 `ToolCallType.MCP`。
+</Warning>
+
+<Tip>
+[`ToolCorrectnessMetric`](/docs/metrics-tool-correctness) 在匹配名称的同时也匹配类型，因此 `MCP` 工具调用不会因同名就被视为与预期的 `FUNCTION` 工具调用匹配。
+</Tip>
+
+✅ 完成。你现在可以使用 [MCP 指标](/docs/metrics-multi-turn-mcp-use)对基于 MCP 的应用运行评估了。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What does deepeval evaluate in an MCP-based application?">
+它评估你的应用如何使用 MCP 原语——工具、资源与提示词——方式是捕获对 MCP 服务器的调用，并用 MCP 专用指标打分，单轮与多轮交互皆可。
+</Accordion>
+<Accordion title="What are the three MCP primitives I can evaluate?">
+**工具**（模型可以调用的函数）、**资源**（服务器暴露的数据）与**提示词**（服务器提供的提示词模板）。每一种都会在运行时捕获，并格式化成 `deepeval` 的测试用例对象。
+</Accordion>
+<Accordion title="How do I attach MCP data to a test case?">
+单轮：在 `LLMTestCase` 上填充 MCP 调用参数。多轮：把你的 `MCPServer` 实例通过 `mcp_servers` 传入 `ConversationalTestCase`，并可选地在每个 `Turn` 上设置 `mcp_tools_called` 等逐轮调用。
+</Accordion>
+<Accordion title="Which metrics work with MCP test cases?">
+使用 [MCP 指标](/docs/metrics-multi-turn-mcp-use)（如 `MultiTurnMCPMetric`）为你的应用是否正确调用了工具、资源与提示词打分。
+</Accordion>
+<Accordion title="Can my team visualize MCP tool/resource calls on the cloud in a UI?">
+MCP 评估在本地运行。对于想跨运行检查调用了哪些工具、资源与提示词的团队，[Confident AI](https://www.confident-ai.com)（`deepeval` 团队的平台）可以在共享的云端界面中可视化 MCP 交互及其分数——可选，且不改变你的评估代码。
+</Accordion>
+</AccordionGroup>

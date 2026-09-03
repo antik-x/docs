@@ -150,7 +150,7 @@ def strip_fences(text):
     return split_fences(text)[0]
 
 
-_CALLUT_OPEN_RE = re.compile(r"^:::([a-z]+)(?:\[([^\]]*)\])?\s*$")
+_CALLUT_OPEN_RE = re.compile(r"^(:::+)([a-z]+)(?:\[([^\]]*)\])?\s*$")
 
 
 FENCE_LINE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})(.*)$")
@@ -217,7 +217,7 @@ def normalized_components(src_text):
     for m in body.split("\n"):
         cm = _CALLUT_OPEN_RE.match(m.strip())
         if cm:
-            add(CALLOUT_MAP[cm.group(1)], 1)
+            add(CALLOUT_MAP[cm.group(2)], 1)
     add("Note", len(re.findall(r"<NotImplemented\b", body)))
     # 块级 <Only id="typescript"> → <Info>（与转换器同口径：strip 后判断）
     for m in re.finditer(r'<Only\s+id="typescript"\s*>(.*?)</Only>', body, re.S):
@@ -236,7 +236,7 @@ def left_over_markers(dst_text):
         (r"<Term\b", "<Term 未转换"),
         (r"qas=\{\[", "FAQs 未转换"),
         (r"<FAQs\b", "<FAQs 未转换"),
-        (r"^:::[a-z]", "::: 指令未转换"),
+        (r"^::+[a-z]", "::: 指令未转换"),
         (r"ASSETS\.", "ASSETS 未解析"),
         (r"^import\s", "import 未删除"),
         (r"<Equation\b", "<Equation 未转换"),

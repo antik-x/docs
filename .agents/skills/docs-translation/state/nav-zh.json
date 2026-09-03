@@ -42,6 +42,8 @@
     "evaluation-introduction": "LLM 评估简介",
     "(concepts)/(test-cases)/evaluation-test-cases": "测试用例",
     "(concepts)/evaluation-datasets": "数据集",
-    "(concepts)/evaluation-prompts": "提示词"
+    "(concepts)/evaluation-prompts": "提示词",
+    "(concepts)/evaluation-llm-tracing": "LLM 追踪",
+    "(concepts)/evaluation-mcp": "MCP"
   }
 }

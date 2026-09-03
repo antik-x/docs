@@ -1,0 +1,850 @@
+---
+title: LLM 追踪
+---
+
+为你的 LLM 应用做追踪，会记录它从头到尾的完整执行过程。这使得评估 AI 智能体走过的完整轨迹、调试单个组件、以及监控任意 [LLM 交互](/docs/evaluation-test-cases#what-is-an-llm-interaction)成为可能——无论应用变得多复杂。
+
+## Quick Summary
+
+一条 LLM 追踪由多个独立的 span 组成。**Span** 是一个灵活的、用户自定义的评估或调试范围。你应用的完整**追踪**包含一个或多个 span。
+
+![LLM 追踪](https://deepeval-docs.s3.amazonaws.com/docs:llm-trace.png)
+
+最重要的是理解追踪与 span 如何映射到 `deepeval` 中的评估范围：
+
+- **追踪**捕获完整的运行。它的顶层 [`LLMTestCase`](/docs/evaluation-test-cases) 字段支持[端到端评估](/docs/evaluation-end-to-end-llm-evals)，而它的有序 span 树支持[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)。
+- **Span** 是[组件级评估](/docs/evaluation-component-level-llm-evals)的 `LLMTestCase`——参数相同，但描述的是**该组件内部**发生的事（一个检索器、一个工具、一次 LLM 调用、一个智能体步骤）。
+
+因此同一条追踪可以承载三种评估范围：可观察的结果、完整的智能体轨迹、以及选定的单个组件。你已用于单元式评估的原语（`LLMTestCase`、[指标](/docs/metrics-introduction)、金标）在这些范围之间通用。
+
+<details>
+
+<summary>Learn how deepeval's tracing is non-intrusive</summary>
+
+`deepeval` 的追踪是**非侵入的**，只需要**极少的代码改动**，也**不会给你的 LLM 应用增加延迟**。它还能：
+
+- **使用你已熟悉的概念**：为 LLM 应用中的一个组件做追踪平均只需 3 行代码，用的正是你已经熟悉的 `LLMTestCase` 与[指标](/docs/metrics-introduction)。
+
+- **不影响生产代码**：如果你担心追踪会影响生产中的 LLM 调用——不会的。因为你为追踪添加的 `@observe` 装饰器只有在评估期间被显式调用时才会执行。
+
+- **不强加观点**：`deepeval` 不在乎你认为什么算「组件」——事实上组件可以是任何东西、任何范围，只要你能在这个范围内设置 `LLMTestCase` 进行评估。
+
+追踪只在你希望它运行时才运行，只需 3 行代码：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python showLineNumbers {2,7,14}
+from deepeval.tracing import observe, update_current_span
+from deepeval.metrics import AnswerRelevancyMetric
+from openai import OpenAI
+
+client = OpenAI()
+
+@observe(metrics=[AnswerRelevancyMetric()])
+def get_res(query: str):
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": query}]
+    ).choices[0].message.content
+
+    update_current_span(input=query, output=response)
+    return response
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript showLineNumbers {3,7,17}
+import { observe, updateCurrentSpan } from "deepeval/tracing";
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import OpenAI from "openai";
+
+const client = new OpenAI();
+
+const getRes = observe({
+  metrics: [new AnswerRelevancyMetric()],
+  fn: async (query: string) => {
+    const response = (
+      await client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: query }],
+      })
+    ).choices[0].message.content;
+
+    updateCurrentSpan({ input: query, output: response });
+    return response;
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+</details>
+
+## 为什么需要追踪？
+
+追踪把本地评估循环——运行智能体、检查追踪、定位失败的 span、修补提示词或代码、再跑一次评估——变成你和编码智能体都能无需切换上下文即可驱动的东西。
+
+具体来说，为你的 LLM 应用做追踪让你可以：
+
+- **动态生成测试用例：**许多组件依赖上游输出。追踪让你可以在数据流经系统时，在运行时定义 `LLMTestCase`。
+
+- **精准调试：**确切看到失败发生在哪里、为什么——无论是工具调用、中间输出还是上下文检索步骤。
+
+- **对特定组件运行定向指标：**把 `LLMTestCase` 挂到智能体、工具、检索器或 LLM 上，并应用答案相关性、上下文精确率等指标——无需重构你的应用。
+
+- **评估完整的智能体轨迹：**把轨迹指标传给 `evals_iterator()`，分析计划、模型调用、工具、移交与中间步骤如何协同。
+
+- **用追踪数据运行端到端评估：**当你只需要给追踪的可观察输入与输出打分时，使用黑盒指标。
+
+<Info>
+
+**基于轨迹的评估必须使用追踪**
+
+仅凭输出无法判断智能体是否遵循了计划、选择了高效路径、或从失败的步骤中恢复。追踪会保留有序的执行路径，让[轨迹指标](/docs/evaluation-trajectory-based-llm-evals)能在运行结束后对它进行评估。
+</Info>
+
+## 设置你的第一条追踪
+
+要在你的 LLM 应用中设置追踪，你需要理解两个关键概念：
+
+- **追踪（Trace）**：应用的完整执行，其有序的 span 构成这次运行走过的轨迹。
+- **Span**：一个具体的组件或工作单元——比如一次 LLM 调用、一次工具调用或一次文档检索。
+
+你应当登录，以便在 Confident AI 上免费查看追踪：
+
+```bash
+deepeval login
+```
+
+最后，选择你希望如何为应用做埋点。`deepeval` 还为流行的智能体框架提供**一等公民集成**，`deepeval` 只需零或一行设置即可产生追踪。
+
+<Tabs>
+<Tab title="手动埋点">
+
+用 `@observe` 包装 LLM 应用中的任意函数——每次调用成为一个 **span**，最外层调用成为**追踪**。当被 `@observe` 包装的函数相互调用时，span 会自然嵌套。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers {2,4,9}
+from openai import OpenAI
+from deepeval.tracing import observe
+
+@observe()
+def retriever(query: str) -> list[str]:
+    # Your retrieval logic
+    return [f"Context for the given {query}"]
+
+@observe()
+def llm_app(query: str) -> str:
+    context = retriever(query)
+    return OpenAI().chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": f"{query}\n\n{context}"}],
+    ).choices[0].message.content
+
+llm_app("Who founded DeepEval?")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers {2,4,11}
+import { observe } from "deepeval/tracing";
+import OpenAI from "openai";
+
+const retriever = observe({
+  fn: async (query: string) => {
+    // Your retrieval logic
+    return [`Context for the given ${query}`];
+  },
+});
+
+const llmApp = observe({
+  fn: async (query: string) => {
+    const context = await retriever(query);
+    const response = await new OpenAI().chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: `${query}\n\n${context}` }],
+    });
+    return response.choices[0].message.content;
+  },
+});
+
+await llmApp("Who founded DeepEval?");
+```
+
+</Tab>
+
+</Tabs>
+
+`@observe` 接受若干可选参数：
+
+- [可选] `metrics`：要挂载的 `BaseMetric` 列表，用于[组件级评估](/docs/evaluation-component-level-llm-evals)。
+- [可选] `name`：该 span 在追踪树中的显示名称（默认为函数名）。
+- [可选] `type`：为 span 分类——见[按类型划分 span](#classify-spans-by-type)。
+- [可选] `metric_collection`：你保存在 Confident AI 上的某个指标集合的名称。
+
+</Tab>
+<Tab title="LangChain">
+
+用 `create_agent` 构建你的智能体，并把 `deepeval` 的 `CallbackHandler` 传给它的 `invoke` 方法。
+
+```python title="langchain_agent.py" showLineNumbers {1,3,15}
+from langchain.agents import create_agent
+from deepeval.integrations.langchain import CallbackHandler
+
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers."""
+    return a * b
+
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    tools=[multiply],
+    system_prompt="Be concise.",
+)
+
+agent.invoke(
+    {"messages": [{"role": "user", "content": "What is 3 * 12?"}]},
+    config={"callbacks": [CallbackHandler()]},
+)
+```
+
+完整用法见 [LangChain 集成](/integrations/frameworks/langchain)。
+
+</Tab>
+<Tab title="LangGraph">
+
+接好你的 `StateGraph`（LangGraph 的核心抽象），并把 `deepeval` 的 `CallbackHandler` 传给它的 `invoke` 方法。
+
+```python title="langgraph_agent.py" showLineNumbers {2,3,18}
+from langchain.chat_models import init_chat_model
+from langgraph.graph import StateGraph, MessagesState, START, END
+from deepeval.integrations.langchain import CallbackHandler
+
+llm = init_chat_model("openai:gpt-4o-mini")
+
+def chatbot(state: MessagesState):
+    return {"messages": [llm.invoke(state["messages"])]}
+
+graph = (
+    StateGraph(MessagesState)
+    .add_node(chatbot)
+    .add_edge(START, "chatbot")
+    .add_edge("chatbot", END)
+    .compile()
+)
+
+graph.invoke(
+    {"messages": [{"role": "user", "content": "What is 3 * 12?"}]},
+    config={"callbacks": [CallbackHandler()]},
+)
+```
+
+完整用法见 [LangGraph 集成](/integrations/frameworks/langgraph)。
+
+</Tab>
+<Tab title="OpenAI">
+
+把 `from openai import OpenAI` 直接替换为 `from deepeval.openai import OpenAI`。每次 `chat.completions.create(...)`、`chat.completions.parse(...)` 与 `responses.create(...)` 调用都会自动成为 LLM span。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="openai_app.py" showLineNumbers {1}
+from deepeval.openai import OpenAI
+
+client = OpenAI()
+client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="openai_app.ts" showLineNumbers {2,4}
+import { instrumentOpenAI } from "deepeval/openai";
+import OpenAI from "openai";
+
+const client = new OpenAI();
+instrumentOpenAI(client);
+await client.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello" }],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+完整用法（包括异步、流式与工具调用）见 [OpenAI 集成](/integrations/frameworks/openai)。
+
+</Tab>
+<Tab title="Pydantic AI">
+
+把 `DeepEvalInstrumentationSettings()` 传给你 `Agent` 的 `instrument` 关键字参数。
+
+```python title="pydanticai.py" showLineNumbers {2,7}
+from pydantic_ai import Agent
+from deepeval.integrations.pydantic_ai import DeepEvalInstrumentationSettings
+
+agent = Agent(
+    "openai:gpt-4.1",
+    system_prompt="Be concise.",
+    instrument=DeepEvalInstrumentationSettings(),
+)
+
+agent.run_sync("Greetings, AI Agent.")
+```
+
+完整用法见 [Pydantic AI 集成](/integrations/frameworks/pydanticai)。
+
+</Tab>
+<Tab title="AgentCore">
+
+在创建 AgentCore 应用之前调用 `instrument_agentcore()`。同一次调用也会对运行在 AgentCore 内的 [Strands](https://strandsagents.com/) 智能体做埋点。
+
+```python title="agentcore_agent.py" showLineNumbers {3,5}
+from bedrock_agentcore import BedrockAgentCoreApp
+from strands import Agent
+from deepeval.integrations.agentcore import instrument_agentcore
+
+instrument_agentcore()
+
+app = BedrockAgentCoreApp()
+agent = Agent(model="amazon.nova-lite-v1:0")
+
+@app.entrypoint
+def invoke(payload, context):
+    return {"result": str(agent(payload.get("prompt")))}
+```
+
+完整用法（包括 Strands 专属的 span）见 [AgentCore 集成](/integrations/frameworks/agentcore)。
+
+</Tab>
+<Tab title="Strands">
+
+在创建或调用你的 Strands 智能体之前调用 `instrument_strands()`。当你直接运行 Strands（脚本、服务、笔记本）时使用它；如果你的外层边界是 AgentCore 应用入口，请改用 AgentCore 标签页。
+
+```python title="strands_agent.py" showLineNumbers {4,6}
+from strands import Agent
+from strands.models.openai import OpenAIModel
+
+from deepeval.integrations.strands import instrument_strands
+
+instrument_strands()
+
+agent = Agent(
+    model=OpenAIModel(model_id="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant.",
+)
+
+agent("Help me return my order.")
+```
+
+完整用法见 [Strands 集成](/integrations/frameworks/strands)。
+
+</Tab>
+<Tab title="Anthropic">
+
+把 `from anthropic import Anthropic` 直接替换为 `from deepeval.anthropic import Anthropic`。每次 `messages.create(...)` 调用都会自动成为 LLM span。
+
+```python title="anthropic_app.py" showLineNumbers {1}
+from deepeval.anthropic import Anthropic
+
+client = Anthropic()
+client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+完整用法（包括异步、流式与工具使用）见 [Anthropic 集成](/integrations/frameworks/anthropic)。
+
+</Tab>
+<Tab title="LlamaIndex">
+
+把 `deepeval` 的事件处理器注册到 LlamaIndex 的 instrumentation 调度器上。
+
+```python title="llamaindex.py" showLineNumbers {6,8}
+import asyncio
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import FunctionAgent
+import llama_index.core.instrumentation as instrument
+
+from deepeval.integrations.llama_index import instrument_llama_index
+
+instrument_llama_index(instrument.get_dispatcher())
+
+def multiply(a: float, b: float) -> float:
+    return a * b
+
+agent = FunctionAgent(
+    tools=[multiply],
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="You are a helpful calculator.",
+)
+
+asyncio.run(agent.run("What is 8 multiplied by 6?"))
+```
+
+完整用法见 [LlamaIndex 集成](/integrations/frameworks/llamaindex)。
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+注册一次 `DeepEvalTracingProcessor`，然后用 `deepeval` 的 `Agent` 与 `function_tool` 垫片构建你的智能体。
+
+```python title="openai_agents.py" showLineNumbers {2,4}
+from agents import Runner, add_trace_processor
+from deepeval.openai_agents import Agent, DeepEvalTracingProcessor, function_tool
+
+add_trace_processor(DeepEvalTracingProcessor())
+
+@function_tool
+def get_weather(city: str) -> str:
+    return f"It's always sunny in {city}!"
+
+agent = Agent(
+    name="weather_agent",
+    instructions="Answer weather questions concisely.",
+    tools=[get_weather],
+)
+
+Runner.run_sync(agent, "What's the weather in Paris?")
+```
+
+完整用法见 [OpenAI Agents 集成](/integrations/frameworks/openai-agents)。
+
+</Tab>
+<Tab title="Google ADK">
+
+在构建 `LlmAgent` 之前调用一次 `instrument_google_adk()`。
+
+```python title="google_adk.py" showLineNumbers {6,8}
+import asyncio
+from google.adk.agents import LlmAgent
+from google.adk.runners import InMemoryRunner
+from google.genai import types
+
+from deepeval.integrations.google_adk import instrument_google_adk
+
+instrument_google_adk()
+
+agent = LlmAgent(model="gemini-2.0-flash", name="assistant", instruction="Be concise.")
+runner = InMemoryRunner(agent=agent, app_name="deepeval-quickstart")
+```
+
+完整用法见 [Google ADK 集成](/integrations/frameworks/google-adk)。
+
+</Tab>
+<Tab title="CrewAI">
+
+调用一次 `instrument_crewai()`，然后用 `deepeval` 的 `Crew`、`Agent` 与 `@tool` 垫片构建你的 crew。
+
+```python title="crewai.py" showLineNumbers {2,4}
+from crewai import Task
+from deepeval.integrations.crewai import instrument_crewai, Crew, Agent
+
+instrument_crewai()
+
+coder = Agent(
+    role="Consultant",
+    goal="Write a clear, concise explanation.",
+    backstory="An expert consultant with a keen eye for software trends.",
+)
+
+task = Task(
+    description="Explain the latest trends in AI.",
+    agent=coder,
+    expected_output="A clear and concise explanation.",
+)
+
+crew = Crew(agents=[coder], tasks=[task])
+crew.kickoff()
+```
+
+完整用法见 [CrewAI 集成](/integrations/frameworks/crewai)。
+
+</Tab>
+</Tabs>
+
+🎉🥳 **恭喜！**调用你做了埋点的应用现在会产生一条追踪。本页其余部分会介绍如何使用它——挂载测试用例、按类型划分 span、添加元数据。
+
+<Warning>
+本文档其余部分的示例展示了如何对手工埋点的 AI 智能体执行各种操作，但同样的能力对**所有集成**都可用。[点击这里](/integrations)了解如何在你选择的集成上实现。
+</Warning>
+
+## 在追踪与 span 上设置测试用例
+
+这是**本页最重要的概念**：追踪同时保留顶层测试用例与有序的 span 树，而每个 span 都可以携带自己的组件测试用例。
+
+- **追踪 = 端到端结果 + 智能体轨迹** —— 追踪级的 `LLMTestCase` 描述用户问了什么、应用最终产出了什么，而嵌套的 span 保留了两者之间走过的路径。前者用于[端到端评估](/docs/evaluation-end-to-end-llm-evals)，完整的有序追踪用于[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)。用 `update_current_trace` 设置追踪级字段。
+- **Span = 组件级 `LLMTestCase`** —— 参数相同，但范围限于**该组件内部**发生的事（一个检索器、一个工具、一次 LLM 调用）。用于[组件级评估](/docs/evaluation-component-level-llm-evals)。用 `update_current_span` 设置。
+
+两个函数接受**相同的** `LLMTestCase` 参数，并且都可以在你被 `@observe` 包装的代码中的任何位置调用。典型的模式是：在想单独打分的组件内设置 span 级测试用例，让追踪级数据从这些 span 中累积，并保留完整的 span 顺序供轨迹指标使用：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers {2,9,17,18}
+from openai import OpenAI
+from deepeval.tracing import observe, update_current_trace, update_current_span
+
+@observe()
+def retriever(query: str) -> list[str]:
+    chunks = ["List", "of", "text", "chunks"]
+    update_current_span(input=query, retrieval_context=chunks)   # span test case
+    update_current_trace(retrieval_context=chunks)               # contributes to trace test case
+    return chunks
+
+@observe()
+def llm_app(query: str) -> str:
+    chunks = retriever(query)
+    res = OpenAI().chat.completions.create(
+        model="gpt-4o", messages=[{"role": "user", "content": f"{query}\n\n{chunks}"}],
+    ).choices[0].message.content
+
+    update_current_span(input=query, output=res)       # span test case
+    update_current_trace(input=query, output=res)      # finishes trace test case
+    return res
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers {2,7,8,23,24}
+import {
+  observe,
+  updateCurrentTrace,
+  updateCurrentSpan,
+} from "deepeval/tracing";
+import OpenAI from "openai";
+
+const retriever = observe({
+  fn: async (query: string) => {
+    const chunks = ["List", "of", "text", "chunks"];
+    updateCurrentSpan({ input: query, retrievalContext: chunks });   // span test case
+    updateCurrentTrace({ retrievalContext: chunks });                // contributes to trace test case
+    return chunks;
+  },
+});
+
+const llmApp = observe({
+  fn: async (query: string) => {
+    const chunks = await retriever(query);
+    const res = (
+      await new OpenAI().chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: `${query}\n\n${chunks}` }],
+      })
+    ).choices[0].message.content;
+
+    updateCurrentSpan({ input: query, output: res });    // span test case
+    updateCurrentTrace({ input: query, output: res });   // finishes trace test case
+    return res;
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+你可以在不同 span 中**多次**调用任一函数——各次调用的值会合并，后调用的覆盖先调用的。
+
+这正是让追踪级测试用例随数据流经你的应用而逐步构建起来的机制：检索器 span 贡献 `retrieval_context`，生成器 span 贡献 `output`，运行结束时你会得到一个完整的 `LLMTestCase` 加上一条可评估的智能体轨迹。
+
+## 把测试用例参数映射到追踪与 span
+
+`update_current_trace` 与 `update_current_span` 接受同一组 `LLMTestCase` 参数，以关键字参数的形式展开。名称与 [`LLMTestCase`](/docs/evaluation-test-cases) 一一对应——唯一改名的是 `actual_output`，在追踪/span 上变为简单的 `output`（仍是同一个字段，只是更短）。
+
+| `LLMTestCase` parameter | `update_current_trace` / `update_current_span` |
+| ----------------------- | ---------------------------------------------- |
+| `input`                 | `input`                                        |
+| `actual_output`         | `output`                                       |
+| `expected_output`       | `expected_output`                              |
+| `retrieval_context`     | `retrieval_context`                            |
+| `context`               | `context`                                      |
+| `tools_called`          | `tools_called`                                 |
+| `expected_tools`        | `expected_tools`                               |
+| `tags`                  | `tags` _(trace only)_                          |
+| `metadata`              | `metadata`                                     |
+
+<Tip>
+
+**在评估中使用 `tags` 与 `metadata`**
+
+`tags` 与 `metadata` 不只是用来过滤与可视化——它们是真实的测试用例字段，[`GEval`](/docs/metrics-llm-evals) 等自定义指标可以读取。如果你的评估标准依赖用户层级或检索来源之类的信息，通过 `tags` / `metadata` 在追踪/span 上设置它们，并在 `GEval` 的 criteria 中引用。
+</Tip>
+
+## 为编码智能体美化追踪
+
+追踪不只有人类在读。当你在本地运行评估且某个指标失败时，失败的追踪也是 **Claude Code、Codex 与 Cursor** 等编码智能体加载进上下文的内容，用来找出究竟是哪个提示词、检索器或工具造成了回归。
+
+追踪树越能自我描述，智能体需要从函数名猜测的就越少——它也就越快提出真正的修复而不是泛泛而谈。
+
+### 追踪名称
+
+默认情况下追踪没有名称。在运行时用 `update_current_trace(name=...)` 设置一个，让失败的运行读起来是「客服流程在检索器处失败」而不是「`llm_app` 在 `retrieve` 失败」。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python showLineNumbers {5}
+from deepeval.tracing import observe, update_current_trace
+
+@observe()
+def llm_app(query: str):
+    update_current_trace(name="Customer support flow")
+    # ...
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript showLineNumbers {5}
+import { observe, updateCurrentTrace } from "deepeval/tracing";
+
+const llmApp = observe({
+  fn: async (query: string) => {
+    updateCurrentTrace({ name: "Customer support flow" });
+    // ...
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+Span 名称默认为它装饰的函数名，通常已足够描述——但当函数名不能反映 span 实际做什么时，你可以用 `update_current_span(name=...)` 覆盖。
+
+### Span 类型
+
+`@observe` 的 `type` 参数是一个**标签**，不是评估输入。它**不影响**打分——`metrics` 只关心 span 的范围。它的作用是把追踪树从一张普通的调用图变成一张带类型的图：编码智能体读到「这个 `retriever` span 对输入 `X` 返回了 0 个块」就能立即定位，而不必从函数名推断角色。
+
+有四种内置类型外加一个自定义回退。每种类型接受几个类型专属的关键字参数：
+
+| `type`                  | Purpose                              | Type-specific kwargs                                                                                                                  |
+| ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `"llm"`                 | A call to a language model           | `model`, `cost_per_input_token`, `cost_per_output_token` (decorator); `input_token_count`, `output_token_count` via `update_llm_span` |
+| `"retriever"`           | Fetches chunks from a vector store   | `embedder` (decorator); `top_k`, `chunk_size` via `update_retriever_span`                                                             |
+| `"tool"`                | A function the LLM/agent invokes     | `description`                                                                                                                         |
+| `"agent"`               | An autonomous decision-making step   | `available_tools`, `handoff_agents`                                                                                                   |
+| anything else (default) | Custom — grouping or general-purpose | —                                                                                                                                     |
+
+<Tabs>
+
+<Tab title="Python">
+
+```python showLineNumbers
+from deepeval.tracing import observe
+
+@observe(type="retriever", embedder="text-embedding-3-small")
+def retrieve(query: str) -> list[str]: ...
+
+@observe(type="llm", model="gpt-4o")
+def generate(prompt: str) -> str: ...
+
+@observe(type="tool", description="Search the web for a query.")
+def web_search(query: str) -> str: ...
+
+@observe(type="agent", available_tools=["search", "calculator"])
+def supervisor_agent(query: str) -> str: ...
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript showLineNumbers
+import { observe } from "deepeval/tracing";
+
+const retrieve = observe({
+  type: "retriever",
+  embedder: "text-embedding-3-small",
+  fn: async (query: string) => { /* ... */ },
+});
+
+const generate = observe({
+  type: "llm",
+  model: "gpt-4o",
+  fn: async (prompt: string) => { /* ... */ },
+});
+
+const webSearch = observe({
+  type: "tool",
+  description: "Search the web for a query.",
+  fn: async (query: string) => { /* ... */ },
+});
+
+const supervisorAgent = observe({
+  type: "agent",
+  availableTools: ["search", "calculator"],
+  fn: async (query: string) => { /* ... */ },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+<Tip>
+
+**与 Confident AI 是天生一对**
+
+如果你还把追踪推送到 [Confident AI](#visualize-and-monitor-on-confident-ai)，span 类型会在可观测性仪表盘中解锁定制化展示——模型与 token 成本渲染在 LLM span 上，chunk 大小与 top-k 渲染在检索器 span 上，工具描述渲染在工具 span 上。同样的 `type` 参数，零额外代码。
+</Tip>
+
+## 在运行时引用金标
+
+在 `deepeval` 中，**金标（golden）**是你的指标使用的参考测试用例，例如用来比较实际输出与预期输出。在评估期间，你可以读取当前生效的金标，并把它的 `expected_output` 传给 span 或追踪：
+
+```python showLineNumbers
+from deepeval.dataset import get_current_golden
+from deepeval.tracing import observe, update_current_span, update_current_trace
+
+@observe()
+def tool(input: str):
+    result = ...  # produce your model or tool output
+
+    golden = get_current_golden()                  # active golden for this test
+    expected = golden.expected_output if golden else None
+
+    # set on the span (component-level)
+    update_current_span(input=input, output=result, expected_output=expected)
+
+    # or set on the trace (end-to-end)
+    update_current_trace(input=input, output=result, expected_output=expected)
+    return result
+```
+
+如果你不想使用数据集的 `expected_output`，改为传入你自己的字符串即可。
+
+---
+
+## 环境变量
+
+如果你在 `evaluate()` 或 `assert_test()` 之外运行你被 `@observe` 装饰的 LLM 应用，你会注意到控制台出现一些日志。要完全禁用它们，只需设置以下环境变量：
+
+```bash
+CONFIDENT_TRACE_VERBOSE=0
+CONFIDENT_TRACE_FLUSH=0
+```
+
+---
+
+## 关停前刷新追踪
+
+追踪由后台工作线程发送，因此在上一次被追踪调用后立即销毁的进程，可能在追踪到达 Confident AI 之前就退出了。调用 `flush_traces()` 等待工作线程完成：
+
+```python title="main.py" showLineNumbers {6}
+import deepeval
+
+def main():
+    run_agent()
+
+    if not deepeval.flush_traces(timeout=30.0):
+        print("Some traces were not sent before shutdown")
+```
+
+当没有剩余待发送内容时它返回 `True`；如果 `timeout`（默认 30 秒）内仍有追踪未发送完毕则返回 `False`。在 `async` 代码中使用 `a_flush_traces()`，这样等待期间事件循环仍可运行：
+
+```python title="main.py" showLineNumbers {6}
+import deepeval
+
+async def main():
+    await run_agent()
+
+    await deepeval.a_flush_traces(timeout=30.0)
+```
+
+这对短生命周期的任务、serverless 处理器和按需销毁的沙箱是正确的工具。它与 `CONFIDENT_TRACE_FLUSH=1` 互补——后者只在解释器退出时刷新，且无法让你知道追踪是否已送达。
+
+如果你通过 OpenTelemetry 发送追踪，`ConfidentSpanExporter.force_flush()` 与 `ContextAwareSpanProcessor.force_flush()` 等待的是同一个队列，因此标准的 `TracerProvider.force_flush()` 调用同样能排空待发送的追踪。
+
+## 在 Confident AI 上可视化与监控
+
+以上一切完全在本地运行——这些都不需要账号。但当你的追踪开始携带真实数据（测试用例、span 类型、标签、元数据、token 成本）时，在终端里阅读它们就不再可扩展了。
+
+[Confident AI](https://www.confident-ai.com) 是 `deepeval` 的官方平台，它把你已经在产生的同一份追踪数据渲染到界面中：
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:traces.mp4"></video>
+  <figcaption>从你被 @observe 装饰的应用实时流入追踪。</figcaption>
+</figure>
+
+你只需登录即可获得这一切，**零额外代码**：
+
+```bash
+deepeval login
+```
+
+登录后，同一个被 `@observe` 装饰的应用还会实时流入追踪，让你对完整轨迹或单个 span 运行[在线评估](https://www.confident-ai.com/docs/llm-tracing/online-evals)、在 LLM span 上[记录提示词版本](https://www.confident-ai.com/docs/llm-tracing/features/log-prompts)，并可视化跨运行的 [token 成本](https://www.confident-ai.com/docs/llm-tracing/features/token-usage-cost)。
+
+## 下一步
+
+有了追踪之后，你可以评估可观察结果（端到端）、完整的智能体轨迹或单个组件。
+
+<CardGroup cols={2}>
+  <Card
+    icon="send-to-back"
+    title="End-to-End Evals"
+    description="把可观察的输入与输出当黑盒来打分。"
+    href="/docs/evaluation-end-to-end-llm-evals"
+  />
+  <Card
+    icon="workflow"
+    title="Trajectory-Based Evals"
+    description="为 AI 智能体走过的完整有序路径打分。"
+    href="/docs/evaluation-trajectory-based-llm-evals"
+  />
+  <Card
+    icon="arrow-down-wide-narrow"
+    title="Component-Level Evals"
+    description="为追踪内选定的 span 打分。"
+    href="/docs/evaluation-component-level-llm-evals"
+  />
+</CardGroup>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What is tracing and why would I use it for evals?">
+追踪把你的 LLM 应用的执行记录为一棵 span 树（检索器、工具、LLM 调用、智能体）。这棵有序的树支持对完整智能体路径的[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)，同时单个 span 支持[组件级评估](/docs/evaluation-component-level-llm-evals)——无需为冒泡中间值而重写代码。
+</Accordion>
+<Accordion title="How much code does it take to set up tracing?">
+通常每个组件一个 `@observe` 装饰器即可。你在函数内用 `update_current_span()` 添加指标与测试用例，其余交给 `deepeval`。
+</Accordion>
+<Accordion title="Do I have to use @observe, or does tracing work with my framework automatically?">
+两者皆可。除了手工的 `@observe` 埋点，`deepeval` 为 LangChain、LangGraph、LlamaIndex、Pydantic AI、CrewAI 等提供原生[集成](/integrations)，自动追踪你的框架产生的 span。这会同时保留完整轨迹及其各个组件，通常只需一次设置调用。
+</Accordion>
+<Accordion title="Does tracing run my metrics in production?">
+默认不会。当你在 `evaluate()` 或 `assert_test()` 之外运行被 `@observe` 装饰的应用时，指标不会运行。你可以用 `CONFIDENT_TRACE_VERBOSE=0` 与 `CONFIDENT_TRACE_FLUSH=0` 关闭本地追踪日志。
+</Accordion>
+<Accordion title="Do I need an account to use tracing?">
+不需要。一切——span、span 上的测试用例、span 类型、元数据、token 成本——都完全在本地运行。只有想把追踪流入云端并可视化时才需要账号。
+</Accordion>
+<Accordion title="Can my team visualize traces in a UI, keep them on the cloud, and monitor production?">
+一旦追踪携带了真实数据，在终端里阅读就不再可扩展。登录 [Confident AI](https://www.confident-ai.com)（`deepeval` 的官方平台）会把同一份追踪数据以零额外代码渲染到界面中——你的团队获得共享的云端视图、实时的生产追踪、[在线评估](https://www.confident-ai.com/docs/llm-tracing/online-evals)与 [token 成本](https://www.confident-ai.com/docs/llm-tracing/features/token-usage-cost)追踪。它是可选的；不使用它，本地追踪的行为完全一样。
+</Accordion>
+</AccordionGroup>

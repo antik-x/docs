@@ -1,0 +1,176 @@
+1	---
+2	title: LLM Tracing
+3	---
+5	Tracing your LLM application records its full execution from start to finish. This makes it possible to evaluate the complete trajectory taken by an AI agent, debug individual components, and monitor any [LLM interaction](/docs/evaluation-test-cases#what-is-an-llm-interaction) no matter how complex the application becomes.
+7	## Quick Summary
+9	An LLM trace is made up of multiple individual spans. A **span** is a flexible, user-defined scope for evaluation or debugging. A full **trace** of your application contains one or more spans.
+11	![LLM Trace](https://deepeval-docs.s3.amazonaws.com/docs:llm-trace.png)
+13	The most important thing to understand is how traces and spans map to evaluation scopes in `deepeval`:
+15	- A **trace** captures the complete run. Its top-level [`LLMTestCase`](/docs/evaluation-test-cases) fields support [end-to-end evals](/docs/evaluation-end-to-end-llm-evals), while its ordered tree of spans supports [trajectory-based evals](/docs/evaluation-trajectory-based-llm-evals).
+16	- A **span** is the `LLMTestCase` for [component-level evals](/docs/evaluation-component-level-llm-evals) — the same parameters apply, but they describe what happened **inside that one component** (a retriever, a tool, an LLM call, an agent step).
+18	The same trace can therefore carry three scopes of evaluation: the observable result, the complete agent trajectory, and selected individual components. The primitives (`LLMTestCase`, [metrics](/docs/metrics-introduction), goldens) you already use for unit-style evals work across these scopes.
+20	<details>
+22	<summary>Learn how deepeval's tracing is non-intrusive</summary>
+24	`deepeval`'s tracing is **non-intrusive**, it requires **minimal code changes** and **doesn't add latency** to your LLM application. It also:
+26	- **Uses concepts you already know**: Tracing a component in your LLM app takes on average 3 lines of code, which uses the same `LLMTestCase`s and [metrics](/docs/metrics-introduction) that you're already familiar with.
+28	- **Does not affect production code**: If you're worried that tracing will affect your LLM calls in production, it won't. This is because the `@observe` decorators that you add for tracing is only invoked if called explicitly during evaluation.
+30	- **Non-opinionated**: `deepeval` does not care what you consider a "component" - in fact a component can be anything, at any scope, as long as you're able to set your `LLMTestCase` within that scope for evaluation.
+32	Tracing only runs when you want it to run, and takes 3 lines of code:
+34	<Tabs>
+36	<Tab title="Python">
+56	</Tab>
+58	<Tab title="TypeScript">
+83	</Tab>
+85	</Tabs>
+87	</details>
+89	## Why Tracing?
+91	Tracing turns the local eval loop — run the agent, inspect the trace, identify the failing span, patch the prompt or code, run the eval again — into something both you and a coding agent can drive without any context switch:
+93	Concretely, tracing your LLM application lets you:
+95	- **Generate test cases dynamically:** Many components rely on upstream outputs. Tracing lets you define `LLMTestCase`s at runtime as data flows through the system.
+97	- **Debug with precision:** See exactly where and why things fail — whether it's tool calls, intermediate outputs, or context retrieval steps.
+99	- **Run targeted metrics on specific components:** Attach `LLMTestCase`s to agents, tools, retrievers, or LLMs and apply metrics like answer relevancy or context precision — without needing to restructure your app.
+101	- **Evaluate complete agent trajectories:** Pass trajectory metrics to `evals_iterator()` to analyze how plans, model calls, tools, handoffs, and intermediate steps work together.
+103	- **Run end-to-end evals with trace data:** Use black-box metrics when you only need to score the trace's observable input and output.
+105	<Info>
+107	**Tracing is required for trajectory-based evals**
+109	An output alone cannot show whether an agent followed its plan, chose an efficient path, or recovered from a failed step. Tracing preserves that ordered execution path so [trajectory metrics](/docs/evaluation-trajectory-based-llm-evals) can evaluate it after the run finishes.
+110	</Info>
+114	To set up tracing in your LLM app, you need to understand two key concepts:
+116	- **Trace**: The full execution of your app, whose ordered spans form the trajectory taken through the run.
+127	<Tabs>
+132	<Tabs>
+134	<Tab title="Python">
+156	</Tab>
+158	<Tab title="TypeScript">
+185	</Tab>
+187	</Tabs>
+189	`@observe` accepts a few optional parameters:
+191	- [Optional] `metrics`: a list of `BaseMetric`s to attach for [component-level evals](/docs/evaluation-component-level-llm-evals).
+196	</Tab>
+197	<Tab title="LangChain">
+223	</Tab>
+224	<Tab title="LangGraph">
+254	</Tab>
+255	<Tab title="OpenAI">
+259	<Tabs>
+261	<Tab title="Python">
+273	</Tab>
+275	<Tab title="TypeScript">
+289	</Tab>
+291	</Tabs>
+295	</Tab>
+296	<Tab title="Pydantic AI">
+315	</Tab>
+316	<Tab title="AgentCore">
+337	</Tab>
+338	<Tab title="Strands">
+360	</Tab>
+361	<Tab title="Anthropic">
+378	</Tab>
+379	<Tab title="LlamaIndex">
+407	</Tab>
+408	<Tab title="OpenAI Agents">
+433	</Tab>
+434	<Tab title="Google ADK">
+454	</Tab>
+455	<Tab title="CrewAI">
+483	</Tab>
+484	</Tabs>
+486	🎉🥳 **Congratulations!** Calling your instrumented app now produces a trace. The rest of this page covers what to do with it — attaching test cases, classifying spans by type, and adding metadata.
+488	<Warning>
+489	The examples on the rest of this documentation shows how to perform operations on manually instrumented AI agents, but the same is available for **all integrations.** [Click here](/integrations) to learn how to do it for your integration of choice.
+490	</Warning>
+494	This is the **most important concept on this page**: a trace preserves both the top-level test case and the ordered span tree, while every span can carry its own component test case.
+496	- **Trace = end-to-end result + agent trajectory** — the trace-level `LLMTestCase` describes what the user asked and what the app finally produced, while the nested spans preserve the path taken between them. Use the first for [end-to-end evals](/docs/evaluation-end-to-end-llm-evals) and the complete ordered trace for [trajectory-based evals](/docs/evaluation-trajectory-based-llm-evals). Set trace-level fields with `update_current_trace`.
+501	<Tabs>
+503	<Tab title="Python">
+528	</Tab>
+530	<Tab title="TypeScript">
+566	</Tab>
+568	</Tabs>
+578	| `LLMTestCase` parameter | `update_current_trace` / `update_current_span` |
+579	| ----------------------- | ---------------------------------------------- |
+580	| `input`                 | `input`                                        |
+581	| `actual_output`         | `output`                                       |
+582	| `expected_output`       | `expected_output`                              |
+583	| `retrieval_context`     | `retrieval_context`                            |
+584	| `context`               | `context`                                      |
+585	| `tools_called`          | `tools_called`                                 |
+586	| `expected_tools`        | `expected_tools`                               |
+587	| `tags`                  | `tags` _(trace only)_                          |
+588	| `metadata`              | `metadata`                                     |
+590	<Tip>
+594	`tags` and `metadata` aren't just for filtering and visualization — they're real test case fields that custom metrics like [`GEval`](/docs/metrics-llm-evals) can read. If your eval criteria depend on, say, the user tier or the retrieval source, set those on the trace/span via `tags` / `metadata` and reference them in your `GEval` criteria.
+595	</Tip>
+607	<Tabs>
+609	<Tab title="Python">
+620	</Tab>
+622	<Tab title="TypeScript">
+635	</Tab>
+637	</Tabs>
+647	| `type`                  | Purpose                              | Type-specific kwargs                                                                                                                  |
+648	| ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+649	| `"llm"`                 | A call to a language model           | `model`, `cost_per_input_token`, `cost_per_output_token` (decorator); `input_token_count`, `output_token_count` via `update_llm_span` |
+650	| `"retriever"`           | Fetches chunks from a vector store   | `embedder` (decorator); `top_k`, `chunk_size` via `update_retriever_span`                                                             |
+651	| `"tool"`                | A function the LLM/agent invokes     | `description`                                                                                                                         |
+652	| `"agent"`               | An autonomous decision-making step   | `available_tools`, `handoff_agents`                                                                                                   |
+653	| anything else (default) | Custom — grouping or general-purpose | —                                                                                                                                     |
+655	<Tabs>
+657	<Tab title="Python">
+675	</Tab>
+677	<Tab title="TypeScript">
+707	</Tab>
+709	</Tabs>
+711	<Tip>
+715	If you also push your traces to [Confident AI](#visualize-and-monitor-on-confident-ai), span types unlock tailored displays in the observability dashboard — model + token cost rendered on LLM spans, chunk size and top-k on retriever spans, tool descriptions on tool spans. Same `type` parameter, no extra code.
+716	</Tip>
+743	---
+745	## Environment Variables
+747	If you run your `@observe` decorated LLM application outside of `evaluate()` or `assert_test()`, you'll notice some logs appearing in your console. To disable them completely, just set the following environment variables:
+754	---
+756	## Flushing Traces Before Shutdown
+758	Traces are posted from a background worker thread, so a process that tears down immediately after its last traced call can exit before those traces reach Confident AI. Call `flush_traces()` to wait for the worker to finish:
+770	It returns `True` once nothing is left to send, and `False` if `timeout` (30 seconds by default) elapsed with traces still pending. Use `a_flush_traces()` from `async` code so the event loop keeps running while you wait:
+781	This is the right tool for short-lived jobs, serverless handlers, and sandboxes that are torn down on demand. It complements `CONFIDENT_TRACE_FLUSH=1`, which only flushes on interpreter exit and gives you no way to know whether the traces landed.
+783	If you send traces through OpenTelemetry, `ConfidentSpanExporter.force_flush()` and `ContextAwareSpanProcessor.force_flush()` wait on the same queue, so the standard `TracerProvider.force_flush()` call also drains pending traces.
+785	## Visualize and Monitor on Confident AI
+787	Everything above runs entirely locally — you don't need an account for any of it. But once your traces start carrying real data (test cases, span types, tags, metadata, token costs), reading them in a terminal stops scaling.
+789	[Confident AI](https://www.confident-ai.com) is the official platform for `deepeval` and renders the exact same trace data you're already producing into a UI:
+791	<figure>
+792	  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:traces.mp4"></video>
+794	</figure>
+796	You get this with **zero additional code** — just log in:
+802	Once logged in, the same `@observe`-decorated app will also stream traces in real-time, let you run [online evaluations](https://www.confident-ai.com/docs/llm-tracing/online-evals) on complete trajectories or individual spans, [log prompt versions](https://www.confident-ai.com/docs/llm-tracing/features/log-prompts) on LLM spans, and visualize [token costs](https://www.confident-ai.com/docs/llm-tracing/features/token-usage-cost) across runs.
+806	Now that you have your traces, you can evaluate the observable result end-to-end, the complete agent trajectory, or individual components.
+808	<CardGroup cols={2}>
+809	  <Card
+810	    icon="send-to-back"
+811	    title="End-to-End Evals"
+813	    href="/docs/evaluation-end-to-end-llm-evals"
+814	  />
+815	  <Card
+816	    icon="workflow"
+817	    title="Trajectory-Based Evals"
+819	    href="/docs/evaluation-trajectory-based-llm-evals"
+820	  />
+821	  <Card
+822	    icon="arrow-down-wide-narrow"
+823	    title="Component-Level Evals"
+825	    href="/docs/evaluation-component-level-llm-evals"
+826	  />
+827	</CardGroup>
+829	## FAQs
+831	<AccordionGroup>
+832	<Accordion title="What is tracing and why would I use it for evals?">
+834	</Accordion>
+835	<Accordion title="How much code does it take to set up tracing?">
+837	</Accordion>
+838	<Accordion title="Do I have to use @observe, or does tracing work with my framework automatically?">
+840	</Accordion>
+841	<Accordion title="Does tracing run my metrics in production?">
+843	</Accordion>
+844	<Accordion title="Do I need an account to use tracing?">
+846	</Accordion>
+847	<Accordion title="Can my team visualize traces in a UI, keep them on the cloud, and monitor production?">
+849	</Accordion>
+850	</AccordionGroup>
