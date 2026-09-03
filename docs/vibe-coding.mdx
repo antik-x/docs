@@ -1,0 +1,195 @@
+---
+title: 用 DeepEval 进行 Vibe Coding
+---
+
+虽然 DeepEval 作为 AI 质量验证套件非常出色——`pytest`（TypeScript 中为 `vitest`） 断言、回归把关、CI/CD 失败追踪——但这只是它用例的一半。
+
+另一半是在**开发过程中**使用同一批评估：你的编码智能体运行它们、读取失败的指标与追踪，并利用结果决定接下来对你的智能体、RAG 流水线或聊天机器人改什么。然后再重跑确认。
+
+简而言之：**DeepEval 帮你 vibe code 你的智能体，而不让你的智能体真的凭感觉乱来。**
+
+<Info>
+如果你只想安装 skill 并把起始提示词粘贴到 Cursor / Claude Code / Codex，直接跳到 [5 分钟 Vibe Coder 快速上手](/docs/vibe-coder-quickstart)。本页其余部分就是这个循环本身——实际运行的是什么、为什么有效、如何驱动它。
+</Info>
+
+## 这个循环
+
+用 DeepEval 做 vibe coding，是在你的评估套件与编码智能体之间建立一个反馈循环：
+
+1. 定义一个数据集，或让 DeepEval 从你的文档、追踪或现有示例生成一个。
+2. 添加一个评估套件，让智能体针对该数据集运行，并用你关心的指标对输出打分。
+3. 让你的编码智能体运行该套件、读取失败项，并对相关的提示词、检索逻辑、工具或应用代码做针对性修改。
+4. 重跑同样的评估，直到分数与指标原因表明行为已经改善。
+
+`deepeval test run` 产生的追踪给编码智能体的不只是一个通过/失败结果。它包含分数、span 级上下文与指标原因，因此失败可以回溯到产生它的系统部分。
+
+<Tabs>
+
+<Tab title="Python">
+
+</Tab>
+
+<Tab title="TypeScript">
+
+</Tab>
+
+</Tabs>
+
+例如，一次运行报告 `faithfulness 0.64`，智能体可以打开产生偏离原文断言的检索器 span，把检索收窄到有效的退款政策，然后重跑评估确认修复。这个工作流类似紧凑的单元测试循环，只不过断言是带打分的模型输出，运行者是你的编码智能体。
+
+## 幕后机制
+
+当 [Agent Skill](/docs/vibe-coder-quickstart#install-the-agent-skill) 已安装而你说 _"add evals to this repo and fix the failing ones"_ 时，你的编码智能体不会发明一套评估框架——它会转而调用 DeepEval 的 CLI。具体来说，每一轮迭代都会走这几个阶段，每个阶段都由 [CLI 参考](/docs/command-line-interface)中记录的一条命令支撑：
+
+### 1. 加载（或生成）数据集
+
+智能体首先在 `tests/evals/`、Confident AI 或 Hugging Face 数据集中寻找现有数据集。
+
+<Tabs>
+
+<Tab title="Python">
+
+如果不存在，它会用 [`deepeval generate`](/docs/command-line-interface#generate) 生成一个。这一条命令就能从你的文档、上下文、空白或已有金标（golden）合成金标——单轮或多轮——无需任何自定义 Python：
+
+```bash
+deepeval generate \
+  --method docs \
+  --variation single-turn \
+  --documents ./docs \
+  --output-dir ./tests/evals \
+  --file-name .dataset
+```
+
+生成的 `.dataset.json` 会提交进仓库。后续运行复用它；新的边界场景追加进去。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+<Note>
+**501 · TypeScript 暂未实现**
+
+`deepeval generate` 尚未在 TypeScript SDK 中提供，目前可在 Python 中使用，本节内容以 Python 为准。
+
+在它落地之前，提交一份手写的 `.dataset.json` 金标文件并用 `addGoldensFromJSON()` 加载，或者从 Confident AI 拉取数据集。无论哪种方式，循环的其余部分不变——它只需要磁盘上有金标。
+</Note>
+
+</Tab>
+
+</Tabs>
+
+### 2. 构建评估套件
+
+该 skill 自带针对四种常见形态的 [pytest 模板](https://github.com/confident-ai/deepeval/tree/main/skills/deepeval/templates)——单轮端到端、多轮端到端、单轮组件级，外加一个共享的 `conftest.py`。智能体挑选最接近的模板，填入占位符（数据集路径、应用入口、指标、阈值），写出一个纳入版本管理的文件，如 `tests/evals/test_<app>.py`。没有一次性脚本，没有隐藏的金标——这套件离开智能体也能重跑。
+
+它挑选的指标也不是凭空发明；它们来自 [50+ 指标目录](/docs/metrics-introduction)——`GEval`、`AnswerRelevancyMetric`、`FaithfulnessMetric`、`ToolCorrectnessMetric`、`ConversationalGEval` 等——每个都带默认阈值和一个智能体可读的 `reason` 字段。
+
+### 3. 运行套件
+
+现在到了循环的心脏：[test run](/docs/command-line-interface#test-run)。每一轮都是同一条命令，不会因为重跑 UI 而产生波动：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval test run tests/evals/test_<app>.py \
+  --identifier "iterating-on-retrieval-round-1" \
+  --num-processes 5 \
+  --ignore-errors \
+  --skip-on-missing-params
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval test run tests/evals/<app>.test.ts \
+  --identifier "iterating-on-retrieval-round-1" \
+  --ignore-errors \
+  --skip-on-missing-params
+```
+
+</Tab>
+
+</Tabs>
+
+CLI 会打印每个测试、每个指标的分数以及指标 `reason` 字符串——这就是智能体解析后决定下一步改什么的结构化输出。
+
+### 4. 定位失败
+
+如果开启了 `@observe`（TypeScript 中为 `observe()`），每个 span（`retriever`、`lookup_order`、`classify_intent`、`draft_response`）都带有自己的指标打分。一个失败的忠实度分数不再是"这个应用不行"——而是"`retrieve_policy_docs` span 得分 0.64，因为响应引用了一条已废弃的政策"。智能体会打开_那个_文件，而不是别的。
+
+这是让循环可付诸行动的关键。完整机制见[组件级评估](/docs/evaluation-component-level-llm-evals)。
+
+### 5. 修补并验证
+
+智能体会修改最有可能修复失败指标的最小对象——一句提示词、一个检索器过滤条件、一个工具参数 schema、一个解析器。然后重跑同一条 `deepeval test run` 命令。如果失败的指标转绿且没有其他回归，本轮结束；否则它选择下一个最小的修改。
+
+该 skill 的[迭代循环参考](https://github.com/confident-ai/deepeval/blob/main/skills/deepeval/references/iteration-loop.md)内置了智能体会自动遵循的护栏：不要为了消除失败而降低阈值，不要删除困难金标，未经询问不要更换模型或框架。
+
+## 为什么这招管用
+
+DeepEval 的三个特性使它成为编码智能体 uniquely 出色的信号源——这些正是把"跑了一次评估"变成"智能体知道该改什么"的东西：
+
+- **结构化输出。**每个指标返回数值分数、相对阈值的通过/失败判定，以及自然语言的 `reason`。智能体无需刮取日志即可解析。
+- **Span 级定位。**使用 `@observe(metrics=[...])`（TypeScript 中为 `observe({ metrics: [...] })`），失败会指向拥有该失败 span 的文件——而不是整个应用。
+- **单一可复现的 CLI。**同一条 `deepeval test run` 命令、同一数据集、同一批指标。智能体只需一条命令就能确认修复确实移动了分数。
+
+## 如何提示你的编码智能体
+
+最大的思维转变是：别再让编码智能体"装上 DeepEval 就完事"。要让它**驱动这个循环**。
+
+构建阶段的好提示词：
+
+- _"Run `deepeval test run tests/evals/` and fix the lowest-scoring metric. Don't change thresholds. Re-run to confirm."_
+- _"The Faithfulness metric is failing on cases 3, 7, and 12. Open the retriever span for each, find the common pattern, and patch the retriever — not the metric."_
+- _"Run 5 rounds of the iteration loop. Each round: run evals, pick one failing metric, edit the smallest thing that could fix it, re-run, summarize what changed."_
+
+最后一条提示词与 skill 强制执行的迭代循环直接对应。装好 skill 后，_"Use DeepEval to fix the refund agent — run 5 rounds"_ 就够了。
+
+## 连接 Confident AI
+
+DeepEval 是本地优先的，上面的循环完全离线可用。连接 [Confident AI](https://www.confident-ai.com) 可以把这个循环扩展到整个团队：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval login
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval login
+```
+
+</Tab>
+
+</Tabs>
+
+你的编码智能体发起的每次 `deepeval test run` 都会推送一份测试报告，评审者可以用 `deepeval view` 打开。生产监控会把新的失败用例直接送回数据集，让下一轮迭代自动纳入真实的回归。
+
+## 下一步
+
+现在去你自己的仓库上驱动这个循环吧——如果你想确切知道你的编码智能体在每个阶段运行哪条命令，CLI 参考有完整说明。
+
+<CardGroup cols={2}>
+  <Card
+    icon="rocket"
+    title="5 分钟 Vibe Coder 快速上手"
+    href="/docs/vibe-coder-quickstart"
+    description="安装 skill、粘贴起始提示词，把这个循环交给你的编码智能体。"
+  />
+  <Card
+    icon="terminal"
+    title="CLI 参考"
+    href="/docs/command-line-interface"
+    description="这个循环会用到的每一个开关，Python 与 TypeScript 双版本。"
+  />
+</CardGroup>

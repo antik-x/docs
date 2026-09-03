@@ -14,17 +14,31 @@ from verify_structure import check_pair, split_fences, frontmatter  # noqa: E402
 
 def mdx_safety(dst_text):
     issues = []
-    _, fences = split_fences(dst_text)
-    body = dst_text
-    for i, f in enumerate(fences):
-        body = body.replace(f, f"\x00F{i}\x00")
+    fenced = set()
+    in_fence = False
+    closer = None
+    for i, ln in enumerate(dst_text.split("\n"), 1):
+        m = re.match(r"^\s*(`{3,}|~{3,})", ln)
+        if m:
+            tick = m.group(1)[0]
+            if not in_fence:
+                in_fence, closer = True, tick
+                fenced.add(i)
+            elif tick == closer:
+                in_fence = False
+                fenced.add(i)
+        elif in_fence:
+            fenced.add(i)
+    lines = [ln for i, ln in enumerate(dst_text.split("\n"), 1)
+             if i not in fenced]
+    nb = "\n".join(lines)
     # $$...$$ 数学块内的花括号合法
-    body = re.sub(r"\$\$.*?\$\$", " ", body, flags=re.S)
-    _, nb = frontmatter(body)
+    nb = re.sub(r"\$\$.*?\$\$", " ", nb, flags=re.S)
+    _, nb = frontmatter(nb)
     # 多行 JSX 标签（<Card\n ...>）先移除，再查裸 <
     nb = re.sub(r"<[A-Za-z/][^>]*>", "", nb, flags=re.S)
     nb = re.sub(r"`[^`\n]+`", "", nb)
-    nb = re.sub(r"\{[^{}]*\}", "", nb)  # Map/JS 对象字面量已在 JSX 之外的合法场景
+    nb = re.sub(r"\{[^{}]*\}", "", nb)  # 平衡花括号（Map/JS 字面量等合法场景）
     bare = nb.count("{")
     lt = len(re.findall(r"<[a-zA-Z/]", nb))
     if bare:

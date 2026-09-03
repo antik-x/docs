@@ -1,0 +1,1144 @@
+---
+title: 聊天机器人评估快速上手
+---
+
+学习如何用 `deepeval` 评估任意多轮聊天机器人——包括 QA 智能体、客服聊天机器人，甚至群聊室。
+
+## 概述
+
+聊天机器人评估之所以不同于其他类型的评估，是因为与单轮任务不同，对话会跨越多个「轮次」发生。这意味着你的聊天机器人必须在整个对话中保持上下文感知，而不只是在单条回复上准确。
+
+**在这 10 分钟快速上手中，你将学会：**
+
+- 准备对话式测试用例
+- 评估聊天机器人对话
+- 模拟用户交互
+
+## 前置条件
+
+安装 `deepeval`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+pip install deepeval
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npm install deepeval
+```
+
+</Tab>
+
+</Tabs>
+
+你还需要一个 Confident AI API key（推荐）。在[这里](https://app.confident-ai.com)注册获取。
+
+<Info>
+Confident AI 让你查看并分享你的聊天机器人测试报告。在 CLI 中设置你的 API key：
+
+```bash
+CONFIDENT_API_KEY="confident_us..."
+```
+
+</Info>
+
+## 理解多轮评估
+
+多轮评估很棘手，因为对话是临时发生的。第 n 条 AI 输出取决于第 n-1 条用户输入，而后者又依赖于直到首条消息之前的所有轮次。
+
+因此，在为基准测试运行评估时，我们无法通过查看轮次来比较不同的对话。在 `deepeval` 中，多轮交互改用**场景（scenario）**来分组。如果两段对话发生在同一场景下，我们认为它们是相同的。
+
+![对话式测试用例](https://deepeval-docs.s3.amazonaws.com/docs:conversational-test-case.png)
+
+<Note>
+图中场景是可选的，因为并非所有用户的对话都带有标注好的场景。
+</Note>
+
+## 运行一次多轮评估
+
+在 `deepeval` 中，聊天机器人作为多轮**交互**来评估。在代码里，你需要把它们格式化成测试用例，其格式遵循 OpenAI 的 messages 格式。
+
+<Note>
+
+`deepeval` 提供了丰富的 LLM 模型选择，你可以轻松选用并运行评估。
+
+<Tabs>
+
+<Tab title="Python">
+
+<Tabs>
+<Tab title="OpenAI">
+
+要在 `deepeval` 的 LLM 指标中使用 OpenAI，请在 CLI 中提供你的 `OPENAI_API_KEY`：
+
+```bash
+export OPENAI_API_KEY=<your-openai-api-key>
+```
+
+或者，如果你在笔记本环境（Jupyter 或 Colab）中工作，请在单元格里设置 `OPENAI_API_KEY`：
+
+```bash
+%env OPENAI_API_KEY=<your-openai-api-key>
+```
+
+<Warning>
+在笔记本环境中设置 `API_KEYS` 作为环境变量时，请**不要加**引号。
+</Warning>
+
+</Tab>
+<Tab title="Azure OpenAI">
+
+`deepeval` 也允许你对使用 LLM 评估的指标使用 Azure OpenAI。在 CLI 中运行以下命令，把 `deepeval` 环境配置为对**所有**基于 LLM 的指标使用 Azure OpenAI。
+
+```bash
+deepeval set-azure-openai \
+    --base-url=<endpoint> \ # e.g. https://example-resource.azure.openai.com/
+    --model=<model_name> \ # e.g. gpt-4.1
+    --deployment-name=<deployment_name> \  # e.g. Test Deployment
+    --api-version=<api_version> \ # e.g. 2025-01-01-preview
+    --model-version=<model_version> # e.g. 2024-11-20
+```
+
+<Info>
+你的 OpenAI API 版本必须至少是 `2024-08-01-preview`，即结构化输出发布之时。
+</Info>
+
+注意 `model-version` 是**可选的**。如果你以后想停用 Azure OpenAI、换回常规 OpenAI，运行：
+
+```bash
+deepeval unset-azure-openai
+```
+
+</Tab>
+<Tab title="Ollama">
+
+<Note>
+开始之前，请确认你的 [Ollama 模型](https://ollama.com/search)已安装并正在运行。点击前述链接可以查看可用模型的完整列表。
+
+```bash
+ollama run deepseek-r1:1.5b
+```
+
+</Note>
+
+要在你的指标中使用 **Ollama** 模型，在 CLI 中运行 `deepeval set-ollama --model=<model>`。例如：
+
+```bash
+deepeval set-ollama --model=deepseek-r1:1.5b
+```
+
+可选地，如果你定义了自定义端口，可以指定本地 Ollama 模型实例的**基础 URL**。默认基础 URL 为 `http://localhost:11434`。
+
+```bash
+deepeval set-ollama --model=deepseek-r1:1.5b \
+    --base-url="http://localhost:11434"
+```
+
+要停用本地 Ollama 模型、换回 OpenAI，运行：
+
+```bash
+deepeval unset-ollama
+```
+
+<Warning>
+`deepeval set-ollama` 命令专用于配置 LLM 模型。如果你想在合成器中使用 Ollama 的自定义嵌入模型，请[参阅指南的这一节](/guides/guides-using-custom-embedding-models)。
+</Warning>
+
+</Tab>
+<Tab title="Gemini">
+
+要在 `deepeval` 中使用 Gemini 模型，在 CLI 中运行以下命令。
+
+```bash
+deepeval set-gemini \
+    --model=<model_name> # e.g. "gemini-2.0-flash-001"
+```
+
+</Tab>
+<Tab title="自定义 LLM 示例">
+
+`deepeval` 允许你使用**任意**自定义 LLM 做评估。包括来自 langchain 聊天模型集成的 LLM、Hugging Face 的 `transformers` 库，甚至 GGML 格式的 LLM。
+
+这包括你喜欢的任何模型，例如：
+
+- Azure OpenAI
+- Claude via AWS Bedrock
+- Google Vertex AI
+- Mistral 7B
+
+所有示例都[在这里](/guides/guides-using-custom-llms#more-examples)，下面是通过 langchain 的 `AzureChatOpenAI` 模块接入自定义 Azure OpenAI 模型做评估的快速示例：
+
+```python
+from langchain_openai import AzureChatOpenAI
+from deepeval.models.base_model import DeepEvalBaseLLM
+
+class AzureOpenAI(DeepEvalBaseLLM):
+    def __init__(
+        self,
+        model
+    ):
+        self.model = model
+
+    def load_model(self):
+        return self.model
+
+    def generate(self, prompt: str) -> str:
+        chat_model = self.load_model()
+        return chat_model.invoke(prompt).content
+
+    async def a_generate(self, prompt: str) -> str:
+        chat_model = self.load_model()
+        res = await chat_model.ainvoke(prompt)
+        return res.content
+
+    def get_model_name(self):
+        return "Custom Azure OpenAI Model"
+
+# Replace these with real values
+custom_model = AzureChatOpenAI(
+    openai_api_version=api_version,
+    azure_deployment=azure_deployment,
+    azure_endpoint=azure_endpoint,
+    openai_api_key=openai_api_key,
+)
+azure_openai = AzureOpenAI(model=custom_model)
+print(azure_openai.generate("Write me a joke"))
+```
+
+创建自定义 LLM 评估模型时，你应当**始终**：
+
+- 继承 `DeepEvalBaseLLM`。
+- 实现 `get_model_name()` 方法，它只返回一个表示你自定义模型名称的字符串。
+- 实现 `load_model()` 方法，它负责返回一个模型对象。
+- 实现 `generate()` 方法，它有**且只有一个**字符串类型参数，作为你的自定义 LLM 的提示词。
+- `generate()` 方法应返回你的自定义 LLM 的最终输出字符串。注意在本例中我们用 `chat_model.invoke(prompt).content` 访问模型生成结果，但具体取决于你的自定义模型对象的实现，可能有所不同。
+- 实现 `a_generate()` 方法，函数签名与 `generate()` 相同。**注意这是一个异步方法**。本例中我们用了 `await chat_model.ainvoke(prompt)`，它是 LangChain 聊天模型提供的异步包装。
+
+<Tip>
+当你异步执行指标 / 运行评估时，`deepeval` 会用 `a_generate()` 方法生成 LLM 输出。
+
+如果你的自定义模型对象没有异步接口，直接复用 `generate()` 的代码即可（往下翻到 `Mistral7B` 示例查看更多细节）。但这会让 `a_generate()` 变成阻塞过程，无论你是否为指标开启了 `async_mode`。
+</Tip>
+
+最后，把它用于 LLM-Eval 评估：
+
+```python
+from deepeval.metrics import AnswerRelevancyMetric
+...
+
+metric = AnswerRelevancyMetric(model=azure_openai)
+```
+
+<Note>
+虽然 Azure OpenAI 命令把 `deepeval` 配置为对所有 LLM-Eval 全局使用 Azure OpenAI，但自定义 LLM 必须在每次实例化指标时单独设置。记得通过 `model` 参数为你想用它的指标提供自定义 LLM 实例。
+</Note>
+
+<Warning>
+我们**无法**保证使用自定义模型时评估会如期工作。这是因为评估需要高水平的推理能力以及遵循指令的能力，例如以合法 JSON 格式输出响应。[**要让自定义 LLM 更好地输出合法 JSON，请阅读本指南**](/guides/guides-using-custom-llms)。
+
+另外，如果你经常遇到 JSON 错误并想忽略它，可以在[测试运行时使用 `-c` 和 `-i` 开关](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)：
+
+```bash
+deepeval test run test_example.py -i -c
+```
+
+`-i` 开关会忽略错误，`-c` 开关利用本地 `deepeval` 缓存，这样部分成功的测试运行不必重跑没有出错的测试用例。
+
+</Warning>
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+<Tabs>
+<Tab title="OpenAI">
+
+要在 `deepeval` 的 LLM 指标中使用 OpenAI，请在 CLI 中提供你的 `OPENAI_API_KEY`：
+
+```bash
+export OPENAI_API_KEY=<your-openai-api-key>
+```
+
+另外，`deepeval` 会在导入时依次自动加载 `.env.local` 和 `.env`，因此你可以完全不把密钥放进 shell：
+
+```bash
+# .env.local
+OPENAI_API_KEY=<your-openai-api-key>
+```
+
+</Tab>
+<Tab title="Vercel AI SDK">
+
+[Vercel AI SDK](/integrations/models/ai-sdk) 通过代码而非 `set-*` 命令配置：把任意 AI SDK `LanguageModel` 包进一个 `AISDKModel`。先安装 AI SDK 核心包与你想用的提供商包：
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+每个 AI SDK 提供商按其自身约定从环境中读取自己的 API key：
+
+```bash
+# .env.local
+OPENAI_API_KEY=<your-openai-api-key>
+```
+
+然后把包装好的模型传给任意指标：
+
+```typescript
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { AISDKModel } from "deepeval/models";
+import { openai } from "@ai-sdk/openai";
+
+const model = new AISDKModel({ model: openai("gpt-4o"), temperature: 0 });
+const answerRelevancy = new AnswerRelevancyMetric({ model });
+```
+
+<Tip>
+`deepeval` 为 OpenAI、Anthropic、Gemini 等少数提供商提供了现成的模型类，但并非覆盖所有提供商。如果你想用的裁判模型不在其中——Mistral、Cohere、Groq、Together——安装其 AI SDK 包并包进 `AISDKModel` 即可使用。
+</Tip>
+
+</Tab>
+<Tab title="Anthropic">
+
+要在 `deepeval` 的 LLM 指标中使用 Anthropic 模型，请在 CLI 中提供你的 `ANTHROPIC_API_KEY`：
+
+```bash
+export ANTHROPIC_API_KEY=<your-anthropic-api-key>
+```
+
+然后为**所有**基于 LLM 的指标选择你想用的 Claude 裁判模型：
+
+```bash
+npx deepeval set-anthropic --model=claude-sonnet-4-6
+```
+
+要停用 Anthropic、换回 OpenAI，运行：
+
+```bash
+npx deepeval unset-anthropic
+```
+
+</Tab>
+<Tab title="Azure OpenAI">
+
+`deepeval` 也允许你对使用 LLM 评估的指标使用 Azure OpenAI。在 CLI 中运行以下命令，把 `deepeval` 环境配置为对**所有**基于 LLM 的指标使用 Azure OpenAI。
+
+```bash
+npx deepeval set-azure-openai \
+    --base-url=<endpoint> \ # e.g. https://example-resource.azure.openai.com/
+    --model=<model_name> \ # e.g. gpt-4.1
+    --deployment-name=<deployment_name> \  # e.g. Test Deployment
+    --api-version=<api_version> \ # e.g. 2025-01-01-preview
+    --model-version=<model_version> # e.g. 2024-11-20
+```
+
+<Info>
+你的 OpenAI API 版本必须至少是 `2024-08-01-preview`，即结构化输出发布之时。
+</Info>
+
+注意 `model-version` 是**可选的**。如果你以后想停用 Azure OpenAI、换回常规 OpenAI，运行：
+
+```bash
+npx deepeval unset-azure-openai
+```
+
+</Tab>
+<Tab title="Ollama">
+
+<Note>
+开始之前，请确认你的 [Ollama 模型](https://ollama.com/search)已安装并正在运行。点击前述链接可以查看可用模型的完整列表。
+
+```bash
+ollama run deepseek-r1:1.5b
+```
+
+</Note>
+
+要在你的指标中使用 **Ollama** 模型，在 CLI 中运行 `npx deepeval set-ollama --model=<model>`。例如：
+
+```bash
+npx deepeval set-ollama --model=deepseek-r1:1.5b
+```
+
+可选地，如果你定义了自定义端口，可以指定本地 Ollama 模型实例的**基础 URL**。默认基础 URL 为 `http://localhost:11434`。
+
+```bash
+npx deepeval set-ollama --model=deepseek-r1:1.5b \
+    --base-url="http://localhost:11434"
+```
+
+要停用本地 Ollama 模型、换回 OpenAI，运行：
+
+```bash
+npx deepeval unset-ollama
+```
+
+</Tab>
+<Tab title="自定义 LLM 示例">
+
+`deepeval` 允许你使用**任意**自定义 LLM 做评估。包括来自 LangChain 聊天模型集成的 LLM、通过 Vercel AI SDK 可达的任何提供商，或你自己托管的模型。
+
+这包括你喜欢的任何模型，例如：
+
+- Azure OpenAI
+- Claude via AWS Bedrock
+- Google Vertex AI
+- Mistral 7B
+
+所有示例都[在这里](/guides/guides-using-custom-llms#more-examples)，下面是通过 LangChain 的 `AzureChatOpenAI` 模块接入自定义 Azure OpenAI 模型做评估的快速示例：
+
+```typescript
+import { DeepEvalBaseLLM, type GenerationResult } from "deepeval/models";
+import { AzureChatOpenAI } from "@langchain/openai";
+import type { ZodType } from "zod";
+
+class AzureOpenAI extends DeepEvalBaseLLM {
+  constructor(private model: AzureChatOpenAI) {
+    super();
+  }
+
+  async generate<T = string>(
+    prompt: string,
+    schema?: ZodType<T>,
+  ): Promise<GenerationResult<T>> {
+    // A schema is passed whenever the metric needs structured output
+    if (schema) {
+      const structured = this.model.withStructuredOutput(schema);
+      return { output: (await structured.invoke(prompt)) as T, cost: null };
+    }
+    const response = await this.model.invoke(prompt);
+    return { output: String(response.content) as T, cost: null };
+  }
+
+  getModelName(): string {
+    return "Custom Azure OpenAI Model";
+  }
+}
+
+// Replace these with real values
+const customModel = new AzureChatOpenAI({
+  azureOpenAIApiVersion: apiVersion,
+  azureOpenAIApiDeploymentName: azureDeployment,
+  azureOpenAIEndpoint: azureEndpoint,
+  azureOpenAIApiKey: openaiApiKey,
+});
+const azureOpenAI = new AzureOpenAI(customModel);
+console.log(await azureOpenAI.generate("Write me a joke"));
+```
+
+创建自定义 LLM 评估模型时，你应当**始终**：
+
+- 继承 `DeepEvalBaseLLM`。
+- 实现 `getModelName()` 方法，它只返回一个表示你自定义模型名称的字符串。
+- 实现 `generate()` 方法，它始终是 `async`——没有需要对应的 `generate()` / `a_generate()` 之分，也没有要实现的 `loadModel()`。
+- 从 `generate()` 返回 `{ output, cost }`，其中 `cost` 在你的提供商不上报时可以是 `null`。
+- 遵循可选的 `schema` 参数。指标需要结构化输出时会传一个 zod schema，并期望 `output` 是解析后的对象而非字符串。
+
+<Tip>
+如果你的提供商无法原生产出结构化输出，就在提示词里要求 JSON，并自己把响应跑一遍 `schema.parse()`——这正是 `deepeval` 内置模型的做法。
+</Tip>
+
+最后，把它用于 LLM-Eval 评估：
+
+```typescript
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+// ...
+
+const metric = new AnswerRelevancyMetric({ model: azureOpenAI });
+```
+
+<Note>
+虽然 Azure OpenAI 命令把 `deepeval` 配置为对所有 LLM-Eval 全局使用 Azure OpenAI，但自定义 LLM 必须在每次实例化指标时单独设置。记得通过 `model` 参数为你想用它的指标提供自定义 LLM 实例。
+</Note>
+
+<Warning>
+我们**无法**保证使用自定义模型时评估会如期工作。这是因为评估需要高水平的推理能力以及遵循指令的能力，例如以合法 JSON 格式输出响应。[**要让自定义 LLM 更好地输出合法 JSON，请阅读本指南**](/guides/guides-using-custom-llms)。
+
+另外，如果你经常遇到 JSON 错误并想忽略它，可以在[测试运行时使用 `-c` 和 `-i` 开关](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)：
+
+```bash
+npx deepeval test run chatbot.test.ts -i -c
+```
+
+`-i` 开关会忽略错误，`-c` 开关利用本地 `deepeval` 缓存，这样部分成功的测试运行不必重跑没有出错的测试用例。
+
+</Warning>
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+</Tabs>
+
+</Note>
+
+<Steps>
+<Step>
+### 创建测试用例
+
+通过传入一段现有对话的 `Turn` 列表（类似 OpenAI 的消息格式）来创建 `ConversationalTestCase`。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers={true}
+from deepeval.test_case import ConversationalTestCase, Turn
+
+test_case = ConversationalTestCase(
+    turns=[
+        Turn(role="user", content="Hello, how are you?"),
+        Turn(role="assistant", content="I'm doing well, thank you!"),
+        Turn(role="user", content="How can I help you today?"),
+        Turn(role="assistant", content="I'd like to buy a ticket to a Coldplay concert."),
+    ]
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers={true}
+import { ConversationalTestCase, Turn } from "deepeval/test-case";
+
+const testCase = new ConversationalTestCase({
+  turns: [
+    new Turn({ role: "user", content: "Hello, how are you?" }),
+    new Turn({ role: "assistant", content: "I'm doing well, thank you!" }),
+    new Turn({ role: "user", content: "How can I help you today?" }),
+    new Turn({
+      role: "assistant",
+      content: "I'd like to buy a ticket to a Coldplay concert.",
+    }),
+  ],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+`Turn` 的数据模型见[这里](/docs/evaluation-multiturn-test-cases#turns)。
+
+</Step>
+<Step>
+### 运行一次评估
+
+用 `deepeval` 的多轮指标对该测试用例运行评估，或用[对话式 G-Eval](/docs/metrics-conversational-g-eval) 创建你自己的指标。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import TurnRelevancyMetric, KnowledgeRetentionMetric
+from deepeval import evaluate
+...
+
+evaluate(test_cases=[test_case], metrics=[TurnRelevancyMetric(), KnowledgeRetentionMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import {
+  KnowledgeRetentionMetric,
+  TurnRelevancyMetric,
+} from "deepeval/metrics";
+import { evaluate } from "deepeval";
+...
+
+await evaluate([testCase], [
+  new TurnRelevancyMetric(),
+  new KnowledgeRetentionMetric(),
+]);
+```
+
+</Tab>
+
+</Tabs>
+
+最后运行你的文件：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+python main.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx tsx main.ts
+```
+
+</Tab>
+
+</Tabs>
+
+🎉🥳 **恭喜！**你刚完成了第一次多轮评估。以下是发生的具体过程：
+
+- 当你调用 `evaluate()` 时，`deepeval` 会对你所有的测试用例运行你的所有指标
+- 每个指标输出一个介于 `0-1` 之间的分数，`threshold` 默认为 `0.5`
+- 只有所有指标都通过，测试用例才算通过
+
+这会创建一次测试运行，即你的多轮聊天机器人在任意时间点的「快照」/基准。
+
+</Step>
+<Step>
+### 在 Confident AI 上查看（推荐）
+
+如果你设置好了 `CONFIDENT_API_KEY`，测试运行会自动出现在 [Confident AI](https://app.confident-ai.com) 上，`deepeval` 与之原生集成。
+
+<figure>
+  <video controls src="https://deepeval-docs.s3.us-east-1.amazonaws.com/getting-started%3Aconversation-test-report.mp4"></video>
+  <figcaption>查看完整对话及其指标分数与原因。</figcaption>
+</figure>
+
+<Tip>
+如果你还没有登录，仍然可以从本地缓存把测试运行上传到 Confident AI：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval view
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval view
+```
+
+</Tab>
+
+</Tabs>
+
+</Tip>
+
+</Step>
+</Steps>
+
+## 使用数据集
+
+虽然我们在上一节运行了一次评估，但它远非标准化基准，用处有限。要为评估创建标准化基准，请使用 `deepeval` 的数据集：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.dataset import EvaluationDataset, ConversationalGolden
+
+dataset = EvaluationDataset(
+  goldens=[
+    ConversationalGolden(scenario="Angry user asking for a refund"),
+    ConversationalGolden(scenario="Couple booking two VIP Coldplay tickets")
+  ]
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { ConversationalGolden, EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({
+  goldens: [
+    new ConversationalGolden({ scenario: "Angry user asking for a refund" }),
+    new ConversationalGolden({
+      scenario: "Couple booking two VIP Coldplay tickets",
+    }),
+  ],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+数据集是 `deepeval` 中金标（golden）的集合；在多轮语境下，它们由 `ConversationalGolden` 表示。
+
+![评估数据集](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:evaluation-dataset.png)
+
+思路很简单——我们为每个金标准备一组标准化的 `scenario`，并在评估时模拟轮次，以获得更稳健的评估。
+
+## 为评估模拟轮次
+
+用[模拟轮次](/docs/getting-started-chatbots#evaluate-chatbots-from-simulations)来评估你的聊天机器人是**最好的**多轮评估方式，因为它：
+
+- 把你的测试台标准化，不同于临时起意的评估
+- 把可能耗费数小时的手工提示过程自动化
+
+这两点都可以用 `deepeval` 的 `ConversationSimulator` 解决。
+
+<Steps>
+<Step>
+### 创建金标数据集
+
+通过提供用户是谁、场景以及预期结果，为你想模拟的对话创建一个 `ConversationalGolden`。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.dataset import EvaluationDataset, ConversationalGolden, Persona
+
+golden = ConversationalGolden(
+    scenario="Andy Byron wants to purchase a VIP ticket to a Coldplay concert.",
+    expected_outcome="Successful purchase of a ticket.",
+    persona=Persona(characteristics="Andy Byron is the CEO of Astronomer."),
+)
+
+dataset = EvaluationDataset(goldens=[golden])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import {
+  ConversationalGolden,
+  EvaluationDataset,
+  Persona,
+} from "deepeval/dataset";
+
+const golden = new ConversationalGolden({
+  scenario: "Andy Byron wants to purchase a VIP ticket to a Coldplay concert.",
+  expectedOutcome: "Successful purchase of a ticket.",
+  persona: new Persona({
+    characteristics: "Andy Byron is the CEO of Astronomer.",
+  }),
+});
+
+const dataset = new EvaluationDataset({ goldens: [golden] });
+```
+
+</Tab>
+
+</Tabs>
+
+如果你正确设置了 `CONFIDENT_API_KEY`，可以把它们保存到平台上与团队协作：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+dataset.push(alias="A new multi-turn dataset")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+await dataset.push({ alias: "A new multi-turn dataset" });
+```
+
+</Tab>
+
+</Tabs>
+
+<figure>
+  <video controls src="https://deepeval-docs.s3.us-east-1.amazonaws.com/getting-started%3Achatbot-evals%3Amultiturn-dataset.mp4"></video>
+  <figcaption>把对话式金标推送到平台并与团队一起编辑。</figcaption>
+</figure>
+
+</Step>
+<Step>
+### 用回调包装聊天机器人
+
+定义一个回调函数，在给定对话历史的情况下生成对话中的**下一条聊天机器人回复**。
+
+<Tabs>
+
+<Tab title="Python">
+
+<Tabs>
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers={true}
+from typing import List
+from deepeval.test_case import Turn
+
+async def model_callback(input: str, turns: List[Turn], thread_id: str) -> Turn:
+    response = await your_chatbot(input, turns, thread_id)
+    return Turn(role="assistant", content=response)
+```
+
+</Tab>
+<Tab title="OpenAI">
+
+```python title="main.py" showLineNumbers={true} {6}
+from typing import List
+from deepeval.test_case import Turn
+from openai import OpenAI
+
+client = OpenAI()
+
+async def model_callback(input: str, turns: List[Turn]) -> Turn:
+    messages = [
+        {"role": "system", "content": "You are a ticket purchasing assistant"},
+        *[{"role": t.role, "content": t.content} for t in turns],
+        {"role": "user", "content": input},
+    ]
+    response = await client.chat.completions.create(model="gpt-4.1", messages=messages)
+    return Turn(role="assistant", content=response.choices[0].message.content)
+```
+
+</Tab>
+<Tab title="LangChain">
+
+```python title="main.py" showLineNumbers={true} {10,13}
+from langchain.agents import create_agent
+from langgraph.checkpoint.memory import InMemorySaver
+from deepeval.test_case import Turn
+
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    system_prompt="You are a ticket purchasing assistant.",
+    checkpointer=InMemorySaver(),
+)
+
+async def model_callback(input: str, thread_id: str) -> Turn:
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": input}]},
+        config={"configurable": {"thread_id": thread_id}},
+    )
+    return Turn(role="assistant", content=result["messages"][-1].content)
+```
+
+</Tab>
+<Tab title="LlamaIndex">
+
+```python title="main.py" showLineNumbers={true} {9}
+from llama_index.core.storage.chat_store import SimpleChatStore
+from llama_index.llms.openai import OpenAI
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from deepeval.test_case import Turn
+
+chat_store = SimpleChatStore()
+llm = OpenAI(model="gpt-4")
+
+async def model_callback(input: str, thread_id: str) -> Turn:
+    memory = ChatMemoryBuffer.from_defaults(chat_store=chat_store, chat_store_key=thread_id)
+    chat_engine = SimpleChatEngine.from_defaults(llm=llm, memory=memory)
+    response = chat_engine.chat(input)
+    return Turn(role="assistant", content=response.response)
+```
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+```python title="main.py" showLineNumbers={true} {6}
+from agents import Agent, Runner, SQLiteSession
+from deepeval.test_case import Turn
+
+sessions = {}
+agent = Agent(name="Test Assistant", instructions="You are a helpful assistant that answers questions concisely.")
+
+async def model_callback(input: str, thread_id: str) -> Turn:
+    if thread_id not in sessions:
+        sessions[thread_id] = SQLiteSession(thread_id)
+    session = sessions[thread_id]
+    result = await Runner.run(agent, input, session=session)
+    return Turn(role="assistant", content=result.final_output)
+```
+
+</Tab>
+<Tab title="Pydantic">
+
+```python title="main.py" showLineNumbers={true} {9}
+from typing import List
+from datetime import datetime
+from pydantic_ai import Agent
+from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
+from deepeval.test_case import Turn
+
+agent = Agent('openai:gpt-4', system_prompt="You are a helpful assistant that answers questions concisely.")
+
+async def model_callback(input: str, turns: List[Turn]) -> Turn:
+    message_history = []
+    for turn in turns:
+        if turn.role == "user":
+            message_history.append(ModelRequest(parts=[UserPromptPart(content=turn.content, timestamp=datetime.now())], kind='request'))
+        elif turn.role == "assistant":
+            message_history.append(ModelResponse(parts=[TextPart(content=turn.content)], model_name='gpt-4', timestamp=datetime.now(), kind='response'))
+    result = await agent.run(input, message_history=message_history)
+    return Turn(role="assistant", content=result.output)
+```
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+<Tabs>
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers={true}
+import { Turn } from "deepeval/test-case";
+
+export const modelCallback = async ({
+  input,
+  turns,
+  threadId,
+}: {
+  input: string;
+  turns: Turn[];
+  threadId: string;
+}): Promise<Turn> => {
+  const response = await yourChatbot(input, turns, threadId);
+  return new Turn({ role: "assistant", content: response });
+};
+```
+
+</Tab>
+<Tab title="OpenAI">
+
+```typescript title="main.ts" showLineNumbers={true} {16}
+import OpenAI from "openai";
+import { Turn } from "deepeval/test-case";
+
+const client = new OpenAI();
+
+export const modelCallback = async ({
+  input,
+  turns,
+}: {
+  input: string;
+  turns: Turn[];
+}): Promise<Turn> => {
+  const messages = [
+    { role: "system" as const, content: "You are a ticket purchasing assistant" },
+    ...turns.map((t) => ({ role: t.role as "user" | "assistant", content: t.content })),
+    { role: "user" as const, content: input },
+  ];
+  const response = await client.chat.completions.create({ model: "gpt-4.1", messages });
+  return new Turn({
+    role: "assistant",
+    content: response.choices[0].message.content ?? "",
+  });
+};
+```
+
+</Tab>
+<Tab title="LangChain">
+
+```typescript title="main.ts" showLineNumbers={true} {18-21}
+import { createAgent } from "langchain";
+import { MemorySaver } from "@langchain/langgraph";
+import { Turn } from "deepeval/test-case";
+
+const agent = createAgent({
+  model: "openai:gpt-4o-mini",
+  systemPrompt: "You are a ticket purchasing assistant.",
+  checkpointer: new MemorySaver(),
+});
+
+export const modelCallback = async ({
+  input,
+  threadId,
+}: {
+  input: string;
+  threadId: string;
+}): Promise<Turn> => {
+  const result = await agent.invoke(
+    { messages: [{ role: "user", content: input }] },
+    { configurable: { thread_id: threadId } },
+  );
+  const last = result.messages[result.messages.length - 1];
+  return new Turn({ role: "assistant", content: String(last.content) });
+};
+```
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+</Tabs>
+
+<Info>
+你的模型回调会拿到 `input`、目前的 `turns` 以及一个稳定的 `thread_id`——只取你需要的即可。它应当返回一个 `Turn` 对象。
+</Info>
+
+</Step>
+<Step>
+### 模拟轮次
+
+使用 `deepeval` 的 `ConversationSimulator`，基于你数据集中的金标模拟轮次：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval.simulator import ConversationSimulator
+
+simulator = ConversationSimulator(model_callback=model_callback)
+conversational_test_cases = simulator.simulate(
+    conversational_goldens=dataset.goldens,
+    max_user_simulations=10,
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import { ConversationalGolden } from "deepeval/dataset";
+import { ConversationSimulator } from "deepeval";
+
+const simulator = new ConversationSimulator({ modelCallback });
+const conversationalTestCases = await simulator.simulate({
+  conversationalGoldens: dataset.goldens as ConversationalGolden[],
+  maxUserSimulations: 10,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+这里我们只有 1 个测试用例，但实际中你应当至少从 20 个金标开始模拟。
+
+<details>
+<summary>点击查看一个模拟出的测试用例示例</summary>
+
+你生成的测试用例应当填入模拟出的 `Turn`，以及对话金标中的 `scenario` 与 `expected_outcome`。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+ConversationalTestCase(
+    scenario="Andy Byron wants to purchase a VIP ticket to a Coldplay concert.",
+    expected_outcome="Successful purchase of a ticket.",
+    turns=[
+        Turn(role="user", content="Hello, how are you?"),
+        Turn(role="assistant", content="I'm doing well, thank you!"),
+        Turn(role="user", content="How can I help you today?"),
+        Turn(role="assistant", content="I'd like to buy a ticket to a Coldplay concert."),
+    ]
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+new ConversationalTestCase({
+  scenario: "Andy Byron wants to purchase a VIP ticket to a Coldplay concert.",
+  expectedOutcome: "Successful purchase of a ticket.",
+  turns: [
+    new Turn({ role: "user", content: "Hello, how are you?" }),
+    new Turn({ role: "assistant", content: "I'm doing well, thank you!" }),
+    new Turn({ role: "user", content: "How can I help you today?" }),
+    new Turn({
+      role: "assistant",
+      content: "I'd like to buy a ticket to a Coldplay concert.",
+    }),
+  ],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+</details>
+
+</Step>
+
+<Step>
+### 运行一次评估
+
+像你在上一节学到的那样运行评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import TurnRelevancyMetric
+from deepeval import evaluate
+...
+
+evaluate(conversational_test_cases, metrics=[TurnRelevancyMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { TurnRelevancyMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+...
+
+await evaluate(conversationalTestCases, [new TurnRelevancyMetric()]);
+```
+
+</Tab>
+
+</Tabs>
+
+✅ 完成。你已成功学会如何为你的聊天机器人做基准测试。
+
+<figure>
+  <video controls src="https://deepeval-docs.s3.us-east-1.amazonaws.com/getting-started%3Aconversation-test-report.mp4"></video>
+  <figcaption>查看完整对话及其指标分数与原因。</figcaption>
+</figure>
+
+</Step>
+
+</Steps>
+
+## 下一步
+
+现在你已经运行了第一次聊天机器人评估，接下来应当：
+
+1. **自定义你的指标**：根据你的使用场景更新[指标列表](/docs/metrics-introduction)。
+2. **设置追踪**：它帮助你在生产环境中[记录多轮](https://www.confident-ai.com/docs/llm-tracing/advanced-features/threads)交互。
+3. **在生产中启用评估**：在 Confident AI 上[使用你定义的指标](https://www.confident-ai.com/docs/llm-tracing/evaluations#offline-evaluations)持续监控表现。
+
+这样你就能在**线程**层面分析随时间变化的性能，并把它们加回你的评估数据集做进一步评估。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:threads.mp4"></video>
+  <figcaption>把追踪分组为线程，以评估实时对话。</figcaption>
+</figure>

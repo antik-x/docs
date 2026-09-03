@@ -32,6 +32,12 @@
     "introduction": "简介",
     "introduction-design-philosophy": "设计哲学",
     "introduction-comparisons": "对比",
-    "getting-started": "快速上手"
+    "getting-started": "快速上手",
+    "vibe-coder-quickstart": "Vibe Coder 快速上手",
+    "vibe-coding": "Vibe Coding",
+    "(use-cases)/getting-started-agents": "AI 智能体",
+    "(use-cases)/getting-started-chatbots": "聊天机器人",
+    "(use-cases)/getting-started-rag": "RAG",
+    "(use-cases)/getting-started-mcp": "MCP"
   }
 }

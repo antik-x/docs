@@ -62,22 +62,22 @@
       },
       {
         "page": "docs/vibe-coder-quickstart",
-        "title": "Vibe Coder 5-min Quickstart"
+        "title": "Vibe Coder 快速上手"
       },
       {
         "page": "docs/vibe-coding",
-        "title": "Vibe Coding with DeepEval"
+        "title": "Vibe Coding"
       },
       {
         "group": "使用场景",
         "pages": [
           {
             "page": "docs/(use-cases)/getting-started-agents",
-            "title": "AI Agents"
+            "title": "AI 智能体"
           },
           {
             "page": "docs/(use-cases)/getting-started-chatbots",
-            "title": "Chatbots"
+            "title": "聊天机器人"
           },
           {
             "page": "docs/(use-cases)/getting-started-rag",

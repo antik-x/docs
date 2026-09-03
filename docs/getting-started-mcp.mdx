@@ -1,0 +1,1035 @@
+---
+title: MCP 评估快速上手
+---
+
+学习如何用 `deepeval` 评估基于模型上下文协议（MCP）的应用，单轮与多轮场景皆可。
+
+## 概述
+
+MCP 评估之所以不同于其他评估，是因为你可以根据应用的设计与架构，选择创建单轮测试用例或多轮测试用例。
+
+**在这 10 分钟快速上手中，你将学会：**
+
+- 追踪你的 MCP 交互
+- 为你的应用创建测试用例
+- 使用 MCP 指标评估基于 MCP 的应用
+
+## 前置条件
+
+- 安装 `deepeval`、一个 MCP 客户端，以及你的宿主调用的任意 LLM SDK
+- 一个 Confident AI API key（推荐）。在[这里](https://app.confident-ai.com)注册获取
+
+本快速上手中的宿主通过可流式 HTTP 与其服务器通信，并调用 Anthropic：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+pip install -U deepeval mcp anthropic
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npm install --save-dev deepeval
+npm install @modelcontextprotocol/sdk @anthropic-ai/sdk
+```
+
+</Tab>
+
+</Tabs>
+
+<Info>
+Confident AI 让你查看并分享你的测试报告。在 CLI 中设置你的 API key：
+
+```bash
+CONFIDENT_API_KEY="confident_us..."
+```
+
+</Info>
+
+## 理解 MCP 评估
+
+**模型上下文协议（MCP）**是由 **Anthropic** 开发的开源框架，用于标准化 AI 系统（尤其是大语言模型（LLM））与外部工具及数据源的交互方式。
+MCP 架构由三个主要组件组成：
+
+- **宿主（Host）** —— 协调并管理一个或多个 MCP 客户端的 AI 应用
+- **客户端（Client）** —— 与服务器保持一对一连接，并从服务器检索上下文供宿主使用
+- **服务器（Server）** —— 与单个客户端配对，提供客户端传递给宿主的上下文
+
+![MCP 架构图](https://deepeval-docs.s3.amazonaws.com/mcp-architecture.png)
+
+`deepeval` 允许你按多种标准评估 MCP 宿主，例如其原语（primitive）使用、参数生成与任务完成度。
+
+## 运行你的第一次 MCP 评估
+
+在 `deepeval` 中，MCP 评估既可以用单轮测试用例，也可以用多轮测试用例。在代码里，你需要追踪所有 MCP 交互，并在应用执行完成后创建测试用例。
+
+MCP 指标使用 LLM 裁判，默认为 OpenAI。你也可以改用 `deepeval` 支持的任意模型：
+
+<Tabs>
+
+<Tab title="Python">
+
+<Tabs>
+<Tab title="OpenAI">
+
+要在 `deepeval` 的 LLM 指标中使用 OpenAI，请在 CLI 中提供你的 `OPENAI_API_KEY`：
+
+```bash
+export OPENAI_API_KEY=<your-openai-api-key>
+```
+
+或者，如果你在笔记本环境（Jupyter 或 Colab）中工作，请在单元格里设置 `OPENAI_API_KEY`：
+
+```bash
+%env OPENAI_API_KEY=<your-openai-api-key>
+```
+
+<Warning>
+在笔记本环境中设置 `API_KEYS` 作为环境变量时，请**不要加**引号。
+</Warning>
+
+</Tab>
+<Tab title="Azure OpenAI">
+
+`deepeval` 也允许你对使用 LLM 评估的指标使用 Azure OpenAI。在 CLI 中运行以下命令，把 `deepeval` 环境配置为对**所有**基于 LLM 的指标使用 Azure OpenAI。
+
+```bash
+deepeval set-azure-openai \
+    --base-url=<endpoint> \ # e.g. https://example-resource.azure.openai.com/
+    --model=<model_name> \ # e.g. gpt-4.1
+    --deployment-name=<deployment_name> \  # e.g. Test Deployment
+    --api-version=<api_version> \ # e.g. 2025-01-01-preview
+    --model-version=<model_version> # e.g. 2024-11-20
+```
+
+<Info>
+你的 OpenAI API 版本必须至少是 `2024-08-01-preview`，即结构化输出发布之时。
+</Info>
+
+注意 `model-version` 是**可选的**。如果你以后想停用 Azure OpenAI、换回常规 OpenAI，运行：
+
+```bash
+deepeval unset-azure-openai
+```
+
+</Tab>
+<Tab title="Ollama">
+
+<Note>
+开始之前，请确认你的 [Ollama 模型](https://ollama.com/search)已安装并正在运行。点击前述链接可以查看可用模型的完整列表。
+
+```bash
+ollama run deepseek-r1:1.5b
+```
+
+</Note>
+
+要在你的指标中使用 **Ollama** 模型，在 CLI 中运行 `deepeval set-ollama --model=<model>`。例如：
+
+```bash
+deepeval set-ollama --model=deepseek-r1:1.5b
+```
+
+可选地，如果你定义了自定义端口，可以指定本地 Ollama 模型实例的**基础 URL**。默认基础 URL 为 `http://localhost:11434`。
+
+```bash
+deepeval set-ollama --model=deepseek-r1:1.5b \
+    --base-url="http://localhost:11434"
+```
+
+要停用本地 Ollama 模型、换回 OpenAI，运行：
+
+```bash
+deepeval unset-ollama
+```
+
+<Warning>
+`deepeval set-ollama` 命令专用于配置 LLM 模型。如果你想在合成器中使用 Ollama 的自定义嵌入模型，请[参阅指南的这一节](/guides/guides-using-custom-embedding-models)。
+</Warning>
+
+</Tab>
+<Tab title="Gemini">
+
+要在 `deepeval` 中使用 Gemini 模型，在 CLI 中运行以下命令。
+
+```bash
+deepeval set-gemini \
+    --model=<model_name> # e.g. "gemini-2.0-flash-001"
+```
+
+</Tab>
+<Tab title="自定义 LLM 示例">
+
+`deepeval` 允许你使用**任意**自定义 LLM 做评估。包括来自 langchain 聊天模型集成的 LLM、Hugging Face 的 `transformers` 库，甚至 GGML 格式的 LLM。
+
+这包括你喜欢的任何模型，例如：
+
+- Azure OpenAI
+- Claude via AWS Bedrock
+- Google Vertex AI
+- Mistral 7B
+
+所有示例都[在这里](/guides/guides-using-custom-llms#more-examples)，下面是通过 langchain 的 `AzureChatOpenAI` 模块接入自定义 Azure OpenAI 模型做评估的快速示例：
+
+```python
+from langchain_openai import AzureChatOpenAI
+from deepeval.models.base_model import DeepEvalBaseLLM
+
+class AzureOpenAI(DeepEvalBaseLLM):
+    def __init__(
+        self,
+        model
+    ):
+        self.model = model
+
+    def load_model(self):
+        return self.model
+
+    def generate(self, prompt: str) -> str:
+        chat_model = self.load_model()
+        return chat_model.invoke(prompt).content
+
+    async def a_generate(self, prompt: str) -> str:
+        chat_model = self.load_model()
+        res = await chat_model.ainvoke(prompt)
+        return res.content
+
+    def get_model_name(self):
+        return "Custom Azure OpenAI Model"
+
+# Replace these with real values
+custom_model = AzureChatOpenAI(
+    openai_api_version=api_version,
+    azure_deployment=azure_deployment,
+    azure_endpoint=azure_endpoint,
+    openai_api_key=openai_api_key,
+)
+azure_openai = AzureOpenAI(model=custom_model)
+print(azure_openai.generate("Write me a joke"))
+```
+
+创建自定义 LLM 评估模型时，你应当**始终**：
+
+- 继承 `DeepEvalBaseLLM`。
+- 实现 `get_model_name()` 方法，它只返回一个表示你自定义模型名称的字符串。
+- 实现 `load_model()` 方法，它负责返回一个模型对象。
+- 实现 `generate()` 方法，它有**且只有一个**字符串类型参数，作为你的自定义 LLM 的提示词。
+- `generate()` 方法应返回你的自定义 LLM 的最终输出字符串。注意在本例中我们用 `chat_model.invoke(prompt).content` 访问模型生成结果，但具体取决于你的自定义模型对象的实现，可能有所不同。
+- 实现 `a_generate()` 方法，函数签名与 `generate()` 相同。**注意这是一个异步方法**。本例中我们用了 `await chat_model.ainvoke(prompt)`，它是 LangChain 聊天模型提供的异步包装。
+
+<Tip>
+当你异步执行指标 / 运行评估时，`deepeval` 会用 `a_generate()` 方法生成 LLM 输出。
+
+如果你的自定义模型对象没有异步接口，直接复用 `generate()` 的代码即可（往下翻到 `Mistral7B` 示例查看更多细节）。但这会让 `a_generate()` 变成阻塞过程，无论你是否为指标开启了 `async_mode`。
+</Tip>
+
+最后，把它用于 LLM-Eval 评估：
+
+```python
+from deepeval.metrics import AnswerRelevancyMetric
+...
+
+metric = AnswerRelevancyMetric(model=azure_openai)
+```
+
+<Note>
+虽然 Azure OpenAI 命令把 `deepeval` 配置为对所有 LLM-Eval 全局使用 Azure OpenAI，但自定义 LLM 必须在每次实例化指标时单独设置。记得通过 `model` 参数为你想用它的指标提供自定义 LLM 实例。
+</Note>
+
+<Warning>
+我们**无法**保证使用自定义模型时评估会如期工作。这是因为评估需要高水平的推理能力以及遵循指令的能力，例如以合法 JSON 格式输出响应。[**要让自定义 LLM 更好地输出合法 JSON，请阅读本指南**](/guides/guides-using-custom-llms)。
+
+另外，如果你经常遇到 JSON 错误并想忽略它，可以在[测试运行时使用 `-c` 和 `-i` 开关](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)：
+
+```bash
+deepeval test run test_example.py -i -c
+```
+
+`-i` 开关会忽略错误，`-c` 开关利用本地 `deepeval` 缓存，这样部分成功的测试运行不必重跑没有出错的测试用例。
+
+</Warning>
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+<Tabs>
+<Tab title="OpenAI">
+
+要在 `deepeval` 的 LLM 指标中使用 OpenAI，请在 CLI 中提供你的 `OPENAI_API_KEY`：
+
+```bash
+export OPENAI_API_KEY=<your-openai-api-key>
+```
+
+另外，`deepeval` 会在导入时依次自动加载 `.env.local` 和 `.env`，因此你可以完全不把密钥放进 shell：
+
+```bash
+# .env.local
+OPENAI_API_KEY=<your-openai-api-key>
+```
+
+</Tab>
+<Tab title="Vercel AI SDK">
+
+[Vercel AI SDK](/integrations/models/ai-sdk) 通过代码而非 `set-*` 命令配置：把任意 AI SDK `LanguageModel` 包进一个 `AISDKModel`。先安装 AI SDK 核心包与你想用的提供商包：
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+每个 AI SDK 提供商按其自身约定从环境中读取自己的 API key：
+
+```bash
+# .env.local
+OPENAI_API_KEY=<your-openai-api-key>
+```
+
+然后把包装好的模型传给任意指标：
+
+```typescript
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { AISDKModel } from "deepeval/models";
+import { openai } from "@ai-sdk/openai";
+
+const model = new AISDKModel({ model: openai("gpt-4o"), temperature: 0 });
+const answerRelevancy = new AnswerRelevancyMetric({ model });
+```
+
+<Tip>
+`deepeval` 为 OpenAI、Anthropic、Gemini 等少数提供商提供了现成的模型类，但并非覆盖所有提供商。如果你想用的裁判模型不在其中——Mistral、Cohere、Groq、Together——安装其 AI SDK 包并包进 `AISDKModel` 即可使用。
+</Tip>
+
+</Tab>
+<Tab title="Anthropic">
+
+要在 `deepeval` 的 LLM 指标中使用 Anthropic 模型，请在 CLI 中提供你的 `ANTHROPIC_API_KEY`：
+
+```bash
+export ANTHROPIC_API_KEY=<your-anthropic-api-key>
+```
+
+然后为**所有**基于 LLM 的指标选择你想用的 Claude 裁判模型：
+
+```bash
+npx deepeval set-anthropic --model=claude-sonnet-4-6
+```
+
+要停用 Anthropic、换回 OpenAI，运行：
+
+```bash
+npx deepeval unset-anthropic
+```
+
+</Tab>
+<Tab title="Azure OpenAI">
+
+`deepeval` 也允许你对使用 LLM 评估的指标使用 Azure OpenAI。在 CLI 中运行以下命令，把 `deepeval` 环境配置为对**所有**基于 LLM 的指标使用 Azure OpenAI。
+
+```bash
+npx deepeval set-azure-openai \
+    --base-url=<endpoint> \ # e.g. https://example-resource.azure.openai.com/
+    --model=<model_name> \ # e.g. gpt-4.1
+    --deployment-name=<deployment_name> \  # e.g. Test Deployment
+    --api-version=<api_version> \ # e.g. 2025-01-01-preview
+    --model-version=<model_version> # e.g. 2024-11-20
+```
+
+<Info>
+你的 OpenAI API 版本必须至少是 `2024-08-01-preview`，即结构化输出发布之时。
+</Info>
+
+注意 `model-version` 是**可选的**。如果你以后想停用 Azure OpenAI、换回常规 OpenAI，运行：
+
+```bash
+npx deepeval unset-azure-openai
+```
+
+</Tab>
+<Tab title="Ollama">
+
+<Note>
+开始之前，请确认你的 [Ollama 模型](https://ollama.com/search)已安装并正在运行。点击前述链接可以查看可用模型的完整列表。
+
+```bash
+ollama run deepseek-r1:1.5b
+```
+
+</Note>
+
+要在你的指标中使用 **Ollama** 模型，在 CLI 中运行 `npx deepeval set-ollama --model=<model>`。例如：
+
+```bash
+npx deepeval set-ollama --model=deepseek-r1:1.5b
+```
+
+可选地，如果你定义了自定义端口，可以指定本地 Ollama 模型实例的**基础 URL**。默认基础 URL 为 `http://localhost:11434`。
+
+```bash
+npx deepeval set-ollama --model=deepseek-r1:1.5b \
+    --base-url="http://localhost:11434"
+```
+
+要停用本地 Ollama 模型、换回 OpenAI，运行：
+
+```bash
+npx deepeval unset-ollama
+```
+
+</Tab>
+<Tab title="自定义 LLM 示例">
+
+`deepeval` 允许你使用**任意**自定义 LLM 做评估。包括来自 LangChain 聊天模型集成的 LLM、通过 Vercel AI SDK 可达的任何提供商，或你自己托管的模型。
+
+这包括你喜欢的任何模型，例如：
+
+- Azure OpenAI
+- Claude via AWS Bedrock
+- Google Vertex AI
+- Mistral 7B
+
+所有示例都[在这里](/guides/guides-using-custom-llms#more-examples)，下面是通过 LangChain 的 `AzureChatOpenAI` 模块接入自定义 Azure OpenAI 模型做评估的快速示例：
+
+```typescript
+import { DeepEvalBaseLLM, type GenerationResult } from "deepeval/models";
+import { AzureChatOpenAI } from "@langchain/openai";
+import type { ZodType } from "zod";
+
+class AzureOpenAI extends DeepEvalBaseLLM {
+  constructor(private model: AzureChatOpenAI) {
+    super();
+  }
+
+  async generate<T = string>(
+    prompt: string,
+    schema?: ZodType<T>,
+  ): Promise<GenerationResult<T>> {
+    // A schema is passed whenever the metric needs structured output
+    if (schema) {
+      const structured = this.model.withStructuredOutput(schema);
+      return { output: (await structured.invoke(prompt)) as T, cost: null };
+    }
+    const response = await this.model.invoke(prompt);
+    return { output: String(response.content) as T, cost: null };
+  }
+
+  getModelName(): string {
+    return "Custom Azure OpenAI Model";
+  }
+}
+
+// Replace these with real values
+const customModel = new AzureChatOpenAI({
+  azureOpenAIApiVersion: apiVersion,
+  azureOpenAIApiDeploymentName: azureDeployment,
+  azureOpenAIEndpoint: azureEndpoint,
+  azureOpenAIApiKey: openaiApiKey,
+});
+const azureOpenAI = new AzureOpenAI(customModel);
+console.log(await azureOpenAI.generate("Write me a joke"));
+```
+
+创建自定义 LLM 评估模型时，你应当**始终**：
+
+- 继承 `DeepEvalBaseLLM`。
+- 实现 `getModelName()` 方法，它只返回一个表示你自定义模型名称的字符串。
+- 实现 `generate()` 方法，它始终是 `async`——没有需要对应的 `generate()` / `a_generate()` 之分，也没有要实现的 `loadModel()`。
+- 从 `generate()` 返回 `{ output, cost }`，其中 `cost` 在你的提供商不上报时可以是 `null`。
+- 遵循可选的 `schema` 参数。指标需要结构化输出时会传一个 zod schema，并期望 `output` 是解析后的对象而非字符串。
+
+<Tip>
+如果你的提供商无法原生产出结构化输出，就在提示词里要求 JSON，并自己把响应跑一遍 `schema.parse()`——这正是 `deepeval` 内置模型的做法。
+</Tip>
+
+最后，把它用于 LLM-Eval 评估：
+
+```typescript
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+// ...
+
+const metric = new AnswerRelevancyMetric({ model: azureOpenAI });
+```
+
+<Note>
+虽然 Azure OpenAI 命令把 `deepeval` 配置为对所有 LLM-Eval 全局使用 Azure OpenAI，但自定义 LLM 必须在每次实例化指标时单独设置。记得通过 `model` 参数为你想用它的指标提供自定义 LLM 实例。
+</Note>
+
+<Warning>
+我们**无法**保证使用自定义模型时评估会如期工作。这是因为评估需要高水平的推理能力以及遵循指令的能力，例如以合法 JSON 格式输出响应。[**要让自定义 LLM 更好地输出合法 JSON，请阅读本指南**](/guides/guides-using-custom-llms)。
+
+另外，如果你经常遇到 JSON 错误并想忽略它，可以在[测试运行时使用 `-c` 和 `-i` 开关](/docs/evaluation-flags-and-configs#flags-for-deepeval-test-run)：
+
+```bash
+npx deepeval test run chatbot.test.ts -i -c
+```
+
+`-i` 开关会忽略错误，`-c` 开关利用本地 `deepeval` 缓存，这样部分成功的测试运行不必重跑没有出错的测试用例。
+
+</Warning>
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+</Tabs>
+
+<Steps>
+<Step>
+### 创建 MCP 服务器
+
+把你的应用连接到 MCP 服务器，并为你使用的所有 MCP 服务器创建 `MCPServer` 对象。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers {6,19-23}
+import mcp
+
+from contextlib import AsyncExitStack
+from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+from deepeval.test_case import MCPServer
+
+url = "https://example.com/mcp"
+
+mcp_servers = []
+tools_called = []
+
+async def main():
+    read, write, _  = await AsyncExitStack().enter_async_context(streamablehttp_client(url))
+    session = await AsyncExitStack().enter_async_context(ClientSession(read, write))
+    await session.initialize()
+
+    tool_list = await session.list_tools()
+
+    mcp_servers.append(MCPServer(
+        server_name=url,
+        transport="streamable-http",
+        available_tools=tool_list.tools,
+    ))
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers {3,19-23}
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { MCPServer, MCPToolCall } from "deepeval/test-case";
+
+const url = "https://example.com/mcp";
+
+const mcpServers: MCPServer[] = [];
+const toolsCalled: MCPToolCall[] = [];
+
+async function main() {
+  const session = new Client({ name: "my-mcp-client", version: "1.0.0" });
+  await session.connect(new StreamableHTTPClientTransport(new URL(url)));
+
+  const toolList = await session.listTools();
+
+  mcpServers.push(
+    new MCPServer({
+      serverName: url,
+      transport: "streamable-http",
+      availableTools: toolList.tools,
+    }),
+  );
+}
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+<Step>
+### 追踪你的 MCP 交互
+
+在你 MCP 应用的主文件中，你需要在运行时追踪所有 MCP 交互。包括在宿主使用 `tools_called`、`resources_called` 和 `prompts_called` 时把它们加上。
+
+![MCP 交互追踪](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:evaluation-mcp-tools.png)
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers {1,20-24}
+from deepeval.test_case import MCPToolCall
+
+available_tools = [
+    {"name": tool.name, "description": tool.description, "input_schema": tool.inputSchema}
+    for tool in tool_list
+]
+
+response = self.anthropic.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    messages=messages,
+    tools=available_tools,
+)
+
+for content in response.content:
+    if content.type == "tool_use":
+        tool_name = content.name
+        tool_args = content.input
+        result = await session.call_tool(tool_name, tool_args)
+
+        tools_called.append(MCPToolCall(
+            name=tool_name,
+            args=tool_args,
+            result=result
+        ))
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers {1,22-26}
+import { MCPToolCall } from "deepeval/test-case";
+
+const availableTools = toolList.tools.map((tool) => ({
+  name: tool.name,
+  description: tool.description,
+  input_schema: tool.inputSchema,
+}));
+
+const response = await this.anthropic.messages.create({
+  model: "claude-3-5-sonnet-20241022",
+  messages,
+  tools: availableTools,
+  max_tokens: 1024,
+});
+
+for (const content of response.content) {
+  if (content.type === "tool_use") {
+    const toolName = content.name;
+    const toolArgs = content.input as Record<string, unknown>;
+    const result = await session.callTool({
+      name: toolName,
+      arguments: toolArgs,
+    });
+
+    toolsCalled.push(
+      new MCPToolCall({ name: toolName, args: toolArgs, result }),
+    );
+  }
+}
+```
+
+</Tab>
+
+</Tabs>
+
+如果你用到了[资源（resources）](https://www.deepeval.com/docs/evaluation-mcp#resources)或[提示词（prompts）](https://www.deepeval.com/docs/evaluation-mcp#prompts)，也可以一并追踪。现在你已经在应用运行期间追踪了所有 MCP 交互。
+
+</Step>
+<Step>
+### 创建测试用例
+
+现在你可以使用上述交互为你的 MCP 应用创建测试用例了。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase
+...
+
+test_case = LLMTestCase(
+    input=query,
+    actual_output=response,
+    mcp_servers=mcp_servers,
+    mcp_tools_called=tools_called,
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase } from "deepeval/test-case";
+// ...
+
+const testCase = new LLMTestCase({
+  input: query,
+  actualOutput: response,
+  mcpServers,
+  mcpToolsCalled: toolsCalled,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+测试用例必须在应用执行完成之后创建。
+
+点击[这里](https://github.com/confident-ai/deepeval/blob/main/examples/mcp_evaluation/mcp_eval_single_turn.py)查看如何为 MCP 评估创建单轮测试用例的完整示例。
+
+<Tip>
+你可以让你的 `main()` 函数返回服务器与你追踪到的交互。这便于你在任何地方导入 MCP 应用，并在不同测试文件中轻松创建测试用例。
+</Tip>
+
+</Step>
+<Step>
+### 定义指标
+
+现在你可以使用 [`MCPUseMetric`](/docs/metrics-mcp-use) 对你的单轮测试用例运行评估。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import MCPUseMetric
+
+mcp_use_metric = MCPUseMetric()
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { MCPUseMetric } from "deepeval/metrics";
+
+const mcpUseMetric = new MCPUseMetric();
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+<Step>
+### 运行一次评估
+
+使用上面定义的指标，对你先前创建的测试用例运行评估。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval import evaluate
+
+evaluate([test_case], [mcp_use_metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate([testCase], [mcpUseMetric]);
+```
+
+</Tab>
+
+</Tabs>
+
+🎉🥳 **恭喜！**你刚完成了第一次单轮 MCP 评估。发生的具体过程如下：
+
+- 当你调用 `evaluate()` 时，`deepeval` 会对你所有的 `test_cases` 运行你的所有 `metrics`
+- 所有 `metrics` 输出一个介于 `0-1` 之间的分数，`threshold` 默认为 `0.5`
+- `MCPUseMetric` 首先按原语使用评估你的测试用例，看你的应用对交给它的 MCP 能力利用得如何
+- 接着评估参数正确性，看为原语使用生成的输入对任务而言是否正确且准确
+- 最后 `MCPUseMetric` 取两个分数中的较小者，作为测试用例的最终分数
+
+</Step>
+
+<Step>
+### 在 Confident AI 上查看（推荐）
+
+如果你设置好了 `CONFIDENT_API_KEY`，测试运行会自动出现在 [Confident AI](https://app.confident-ai.com) 上，`deepeval` 与之原生集成。
+
+<figure>
+  <video controls src="https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:getting-started-mcp-single-turn.mp4"></video>
+  <figcaption>逐个测试用例检查 MCP 评估结果。</figcaption>
+</figure>
+
+<Tip>
+如果你还没有登录，仍然可以从本地缓存把测试运行上传到 Confident AI：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval view
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval view
+```
+
+</Tab>
+
+</Tabs>
+
+</Tip>
+
+</Step>
+
+</Steps>
+
+## 多轮 MCP 评估
+
+对于多轮 MCP 评估，你需要在助手每个轮次的 `Turn` 对象中加入 `mcp_tools_called`、`mcp_resources_called` 和 `mcp_prompts_called`（如果有的话）。
+
+<Steps>
+<Step>
+### 追踪你的 MCP 交互
+
+在应用的交互会话期间，你需要追踪所有 MCP 交互。包括在宿主使用 `tools_called`、`resources_called` 和 `prompts_called` 时把它们加上。
+
+![MCP 交互追踪](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:evaluation-mcp-tools.png)
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" {7,13}
+from deepeval.test_case import MCPToolCall, Turn
+
+async def main():
+    ...
+
+    result = await session.call_tool(tool_name, tool_args)
+    tool_called = MCPToolCall(name=tool_name, args=tool_args, result=result)
+
+    turns.append(
+        Turn(
+            role="assistant",
+            content=f"Tool call: {tool_name} with args {tool_args}",
+            mcp_tools_called=[tool_called],
+        )
+    )
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" {9,16}
+import { MCPToolCall, Turn } from "deepeval/test-case";
+
+async function main() {
+  // ...
+
+  const result = await session.callTool({
+    name: toolName,
+    arguments: toolArgs,
+  });
+  const toolCalled = new MCPToolCall({
+    name: toolName,
+    args: toolArgs,
+    result,
+  });
+
+  turns.push(
+    new Turn({
+      role: "assistant",
+      content: `Tool call: ${toolName} with args ${JSON.stringify(toolArgs)}`,
+      mcpToolsCalled: [toolCalled],
+    }),
+  );
+}
+```
+
+</Tab>
+
+</Tabs>
+
+如果你用到了[资源（resources）](https://www.deepeval.com/docs/evaluation-mcp#resources)或[提示词（prompts）](https://www.deepeval.com/docs/evaluation-mcp#prompts)，也可以一并追踪。现在你已经在应用运行期间追踪了所有 MCP 交互。
+
+</Step>
+<Step>
+### 创建测试用例
+
+现在你可以使用上述 `turns` 与 `mcp_servers` 为你的 MCP 应用创建测试用例了。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import ConversationalTestCase
+
+convo_test_case = ConversationalTestCase(
+    turns=turns,
+    mcp_servers=mcp_servers
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { ConversationalTestCase } from "deepeval/test-case";
+
+const convoTestCase = new ConversationalTestCase({
+  turns,
+  mcpServers,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+测试用例必须在应用执行完成之后创建。
+
+点击[这里](https://github.com/confident-ai/deepeval/blob/main/examples/mcp_evaluation/mcp_eval_multi_turn.py)查看如何为 MCP 评估创建多轮测试用例的完整示例。
+
+<Tip>
+你可以让你的 `main()` 函数返回 `turns` 与 `mcp_servers`。这便于你在任何地方导入 MCP 应用，并在不同测试文件中轻松创建测试用例。
+</Tip>
+
+</Step>
+<Step>
+### 定义指标
+
+现在你可以使用 [MCP 指标](/docs/metrics-multi-turn-mcp-use)对你的测试用例运行评估。支持 MCP 评估的多轮测试用例指标有两个。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import MultiTurnMCPUseMetric, MCPTaskCompletionMetric
+
+mcp_use_metric = MultiTurnMCPUseMetric()
+mcp_task_completion = MCPTaskCompletionMetric()
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import {
+  MCPTaskCompletionMetric,
+  MultiTurnMCPUseMetric,
+} from "deepeval/metrics";
+
+const mcpUseMetric = new MultiTurnMCPUseMetric();
+const mcpTaskCompletion = new MCPTaskCompletionMetric();
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+<Step>
+### 运行一次评估
+
+使用上面定义的指标，对你先前创建的测试用例运行评估。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval import evaluate
+
+evaluate([convo_test_case], [mcp_use_metric, mcp_task_completion])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { evaluate } from "deepeval";
+
+await evaluate([convoTestCase], [mcpUseMetric, mcpTaskCompletion]);
+```
+
+</Tab>
+
+</Tabs>
+
+🎉🥳 **恭喜！**你刚完成了第一次多轮 MCP 评估。发生的具体过程如下：
+
+- 当你调用 `evaluate()` 时，`deepeval` 会对你所有的 `test_cases` 运行你的所有 `metrics`
+- 所有 `metrics` 输出一个介于 `0-1` 之间的分数，`threshold` 默认为 `0.5`
+- 你使用了 `MultiTurnMCPUseMetric` 与 `MCPTaskCompletionMetric` 来测试你的 MCP 应用
+- `MultiTurnMCPUseMetric` 评估应用在原语使用与参数生成上的能力，得出最终分数
+- `MCPTaskCompletionMetric` 评估你的应用是否在用户与助手的全部交互中完成了给定任务
+
+</Step>
+<Step>
+### 在 Confident AI 上查看（推荐）
+
+如果你设置好了 `CONFIDENT_API_KEY`，测试运行会自动出现在 [Confident AI](https://app.confident-ai.com) 上，`deepeval` 与之原生集成。
+
+<figure>
+  <video controls src="https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:getting-started-mcp-multi-turn.mp4"></video>
+  <figcaption>评估 MCP 客户端与服务器之间的完整对话。</figcaption>
+</figure>
+
+<Tip>
+如果你还没有登录，仍然可以从本地缓存把测试运行上传到 Confident AI：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval view
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval view
+```
+
+</Tab>
+
+</Tabs>
+
+</Tip>
+
+</Step>
+</Steps>
+
+## 下一步
+
+现在你已经运行了第一次 MCP 评估，接下来应当：
+
+1. **自定义你的指标**：你可以调紧指标的阈值，使其更贴合你的使用场景。
+2. **准备数据集**：如果还没有，[生成一个](/docs/golden-synthesizer)作为起点，把你的输入存为金标（golden）。
+3. **设置追踪**：如果你创建了自定义 MCP 服务器，可以[为你的工具定义设置追踪](https://documentation.confident-ai.com/docs/llm-tracing/tracing-features/span-types)。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:spans.mp4"></video>
+  <figcaption>评估每条追踪内的单个 MCP 工具调用。</figcaption>
+</figure>
+
+你可以[在这里进一步了解 MCP](/docs/evaluation-mcp)。

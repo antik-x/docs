@@ -1,0 +1,916 @@
+---
+title: RAG 评估快速上手
+---
+
+学习如何用 `deepeval` 评估检索增强生成（RAG）流水线与系统，例如 RAG 问答、摘要器和客服聊天机器人。
+
+## 概述
+
+RAG 评估把检索器与生成器作为相互独立的组件分别评估。这是因为在 RAG 流水线中，最终输出好不好，取决于你喂给 LLM 的上下文。
+
+**在这 5 分钟快速上手中，你将学会：**
+
+- 端到端评估你的 RAG 流水线
+- 把检索器与生成器作为独立组件分别测试
+- 评估多轮 RAG
+
+## 工作原理
+
+## 安装
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+pip install -U deepeval[inspect]
+```
+
+<details>
+
+<summary>Do I need the `[inspect]` sub-module?</summary>
+
+`[inspect]` 子模块是可选的，会显著增大 `deepeval` 的包体积，因此我们强烈建议不要在开发环境之外用 `[inspect]` 安装 `deepeval`。
+
+</details>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npm install --save-dev deepeval
+```
+
+<details>
+
+<summary>Do I need anything extra for `inspect`?</summary>
+
+不需要。追踪树 TUI 基于 [Ink](https://github.com/vadimdemedes/ink) 构建，声明为可选依赖，`npm install` 默认会安装。如果你用了 `--omit=optional` 安装，用 `npm install ink react` 补装即可。
+
+</details>
+
+</Tab>
+
+</Tabs>
+
+你还应当运行 `deepeval login`：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval login
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval login
+```
+
+</Tab>
+
+</Tabs>
+
+它会把你连接到 [Confident AI](https://www.confident-ai.com/)，让你可以在云端保存结果、做标注并检查已评估的智能体追踪。
+
+## 在 CI/CD 中对 RAG 做单元测试
+
+The fastest way to start evaluating RAG is to unit test it. `deepeval` plugs into `pytest`（TypeScript 中为 `vitest`） via `assert_test()`（TypeScript 中为 `expect(testCase).toPass()`） and the `deepeval test run` command, so failing metrics fail the build — locally in development, and on every push or PR.
+
+<Steps>
+<Step>
+
+### 创建数据集
+
+`deepeval` 中的[数据集](/docs/evaluation-datasets)存储 [`Golden`](/docs/evaluation-datasets#what-are-goldens)——即测试时用来调用 RAG 流水线的输入：
+
+<Tabs>
+<Tab title="在代码中">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import Golden, EvaluationDataset
+
+goldens = [
+    Golden(input="What is your name?"),
+    Golden(input="Choose a number between 1 and 100"),
+    # ...
+]
+
+dataset = EvaluationDataset(goldens=goldens)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+
+const goldens = [
+  new Golden({ input: "What is your name?" }),
+  new Golden({ input: "Choose a number between 1 and 100" }),
+  // ...
+];
+
+const dataset = new EvaluationDataset({ goldens });
+```
+
+</Tab>
+
+</Tabs>
+
+数据集只在本次运行中存在——不推送、不保存。适合快速上手与一次性评估。
+
+</Tab>
+<Tab title="从 Confident AI 拉取">
+
+你可以用一行代码把整个数据集从 Confident AI 的云端加载。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.pull(alias="My Evals Dataset")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.pull({ alias: "My Evals Dataset" });
+```
+
+</Tab>
+
+</Tabs>
+
+非技术的领域专家可以在 Confident AI 上**创建、标注与评论**数据集。你还可以用 CSV 格式上传数据集，或用一行代码把在 `deepeval` 中创建的合成数据集推送到 Confident AI。
+
+更多信息请访问 [Confident AI 数据集板块](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens)。
+
+</Tab>
+<Tab title="从 CSV 加载">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.add_goldens_from_csv_file(
+    file_path="example.csv",
+    input_col_name="query",
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.addGoldensFromCSV({
+  filePath: "example.csv",
+  keys: { input: "query" },
+});
+```
+
+列名默认采用 `deepeval` 自己的命名，因此 `keys` 只需列出不同的那些。
+
+</Tab>
+
+</Tabs>
+
+更多高级选项（例如加载 `context` 与 `tools_called` 列或重命名所有列）见[加载数据集](/docs/evaluation-datasets#load-dataset)。
+
+</Tab>
+<Tab title="从 JSON 加载">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.add_goldens_from_json_file(
+    file_path="example.json",
+    input_key_name="query",
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.addGoldensFromJSON({
+  filePath: "example.json",
+  keys: { input: "query" },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+更多高级选项（例如加载 `context` 与 `tools_called` 键，或从 `.jsonl` 文件逐行读取金标）见[加载数据集](/docs/evaluation-datasets#load-dataset)。
+
+</Tab>
+</Tabs>
+
+<Note>
+一个 `EvaluationDataset` 只容纳单轮或多轮金标中的一种，不能混用。混有两种的文件会抛出错误。
+</Note>
+
+</Step>
+<Step>
+
+### 编写测试文件
+
+根据你能否修改 RAG 流水线的代码来选择：
+
+- **无追踪** —— 你在测试已部署的黑盒系统（例如作为 QA 工程师）。用流水线的输出自行构建 `LLMTestCase`。
+- **有追踪** —— 代码归你所有。做一次埋点，`deepeval` 就会从追踪自动构建测试用例，每个测试用例附带完整追踪。
+
+<Tabs>
+<Tab title="无追踪">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_rag.py" showLineNumbers
+import pytest
+from deepeval import assert_test
+from deepeval.dataset import Golden
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric
+from your_app import rag_pipeline  # returns (answer, retrieved_chunks)
+
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_rag(golden: Golden):
+    answer, retrieved_chunks = rag_pipeline(golden.input)
+    test_case = LLMTestCase(
+        input=golden.input,
+        actual_output=answer,
+        retrieval_context=retrieved_chunks,
+    )
+    assert_test(test_case=test_case, metrics=[AnswerRelevancyMetric(), FaithfulnessMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="rag.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { AnswerRelevancyMetric, FaithfulnessMetric } from "deepeval/metrics";
+import { LLMTestCase } from "deepeval/test-case";
+import { Golden } from "deepeval/dataset";
+import { ragPipeline } from "./your-app"; // returns { answer, retrievedChunks }
+import "deepeval/vitest";
+
+it.each(dataset.goldens as Golden[])(
+  "answers grounded in what it retrieved #%$",
+  async (golden) => {
+    const { answer, retrievedChunks } = await ragPipeline(golden.input);
+    const testCase = new LLMTestCase({
+      input: golden.input,
+      actualOutput: answer,
+      retrievalContext: retrievedChunks,
+    });
+    await expect(testCase).toPass([
+      new AnswerRelevancyMetric(),
+      new FaithfulnessMetric(),
+    ]);
+  },
+);
+```
+
+</Tab>
+
+</Tabs>
+
+`retrieval_context` 至关重要——`FaithfulnessMetric` 等 RAG 指标是针对评估时检索到的文本块来打分的。
+
+</Tab>
+<Tab title="有追踪">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_rag.py" showLineNumbers
+import pytest
+from deepeval import assert_test
+from deepeval.dataset import Golden
+from deepeval.tracing import observe, update_current_trace
+from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric
+
+@observe()
+def rag_pipeline(query: str) -> str:
+    chunks = retrieve(query)  # your retrieval logic, @observe optional
+    answer = generate(query, chunks)  # your LLM call, @observe optional
+    update_current_trace(input=query, output=answer, retrieval_context=chunks)
+    return answer
+
+@pytest.mark.parametrize("golden", dataset.goldens)
+def test_rag(golden: Golden):
+    rag_pipeline(golden.input)
+    assert_test(golden=golden, metrics=[AnswerRelevancyMetric(), FaithfulnessMetric()])
+```
+
+`assert_test()` 只需要金标——测试用例从捕获的追踪自动构建。这套设置同时也解锁了下面的[检索器与生成器评估](#evaluate-retriever--generator)。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="rag.test.ts" showLineNumbers
+import { it, expect } from "vitest";
+import { AnswerRelevancyMetric, FaithfulnessMetric } from "deepeval/metrics";
+import { observe, updateCurrentTrace } from "deepeval/tracing";
+import { Golden } from "deepeval/dataset";
+import "deepeval/vitest";
+
+const ragPipeline = observe({
+  fn: async (query: string): Promise<string> => {
+    const chunks = await retrieve(query); // your retrieval logic, observe optional
+    const answer = await generate(query, chunks); // your LLM call, observe optional
+    updateCurrentTrace({
+      input: query,
+      output: answer,
+      retrievalContext: chunks,
+    });
+    return answer;
+  },
+});
+
+it.each(dataset.goldens as Golden[])(
+  "answers grounded in what it retrieved #%$",
+  async (golden) => {
+    await ragPipeline(golden.input);
+    await expect(golden).toPass([
+      new AnswerRelevancyMetric(),
+      new FaithfulnessMetric(),
+    ]);
+  },
+);
+```
+
+`toPass()` 只需要金标——测试用例从捕获的追踪自动构建。这套设置同时也解锁了下面的[检索器与生成器评估](#evaluate-retriever--generator)。
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+### 运行你的测试文件
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval test run test_rag.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval test run rag.test.ts
+```
+
+</Tab>
+
+</Tabs>
+
+- 把这条命令放进 `.yml`，即可在每次推送或 PR 时运行——完整流水线示例见[CI/CD 中的单元测试](/docs/evaluation-unit-testing-in-ci-cd#yaml-file-for-cicd-evals)。
+- 测试运行会保存在本地——`deepeval inspect` 会在追踪树 TUI 中打开它们，含每个 span 的分数与指标原因。
+
+</Step>
+</Steps>
+
+## 用 `evaluate()` 评估 RAG
+
+Prefer a script or notebook over `pytest`（TypeScript 中为 `vitest`）? `evaluate()` is the same engine as `assert_test()`（TypeScript 中为 `expect(testCase).toPass()`）, exposed as a function call — and since you build the test cases yourself, it requires **zero instrumentation** of your RAG pipeline. Ideal for evaluating deployed, black-box systems.
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers
+from deepeval import evaluate
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric
+from your_app import rag_pipeline  # returns (answer, retrieved_chunks)
+...
+
+test_cases = []
+for golden in dataset.goldens:
+    answer, retrieved_chunks = rag_pipeline(golden.input)
+    test_cases.append(
+        LLMTestCase(
+            input=golden.input,
+            actual_output=answer,
+            retrieval_context=retrieved_chunks,
+        )
+    )
+
+evaluate(test_cases=test_cases, metrics=[AnswerRelevancyMetric(), FaithfulnessMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers
+import { AnswerRelevancyMetric, FaithfulnessMetric } from "deepeval/metrics";
+import { LLMTestCase } from "deepeval/test-case";
+import { Golden } from "deepeval/dataset";
+import { ragPipeline } from "./your-app"; // returns { answer, retrievedChunks }
+import { evaluate } from "deepeval";
+...
+
+const testCases: LLMTestCase[] = [];
+for (const golden of dataset.goldens as Golden[]) {
+  const { answer, retrievedChunks } = await ragPipeline(golden.input);
+  testCases.push(
+    new LLMTestCase({
+      input: golden.input,
+      actualOutput: answer,
+      retrievalContext: retrievedChunks,
+    }),
+  );
+}
+
+await evaluate(testCases, [
+  new AnswerRelevancyMetric(),
+  new FaithfulnessMetric(),
+]);
+```
+
+</Tab>
+
+</Tabs>
+
+✅ 完成。每个测试用例都会对每个指标打分，结果汇总为一次测试运行——即你的 RAG 流水线在此刻质量的快照。
+
+<details>
+<summary>Which RAG metrics should I use?</summary>
+
+`deepeval` 提供 5 个 RAG 指标——面向生成器的：
+
+- [答案相关性](/docs/metrics-answer-relevancy)
+- [忠实度](/docs/metrics-faithfulness)
+
+以及面向检索器的：
+
+- [上下文相关性](/docs/metrics-contextual-relevancy)
+- [上下文精确率](/docs/metrics-contextual-precision)
+- [上下文召回率](/docs/metrics-contextual-recall)
+
+上下文精确率与召回率还需要测试用例带 `expected_output`。如何取舍见 [RAG 评估指南](/guides/guides-rag-evaluation)。
+
+</details>
+
+## Evaluate Retriever & Generator
+
+单一的端到端分数无法告诉你糟糕的答案究竟来自糟糕的检索还是糟糕的生成。如果代码归你所有，就对流水线的组件做追踪并把指标直接挂上去：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.tracing import observe, update_current_span
+from deepeval.metrics import ContextualRelevancyMetric, AnswerRelevancyMetric
+
+@observe(metrics=[ContextualRelevancyMetric()])
+def retriever(query: str) -> list[str]:
+    chunks = ["..."]  # your retrieval logic here
+    update_current_span(input=query, retrieval_context=chunks)
+    return chunks
+
+@observe(metrics=[AnswerRelevancyMetric()])
+def generator(query: str, chunks: list[str]) -> str:
+    answer = "..."  # your LLM call here
+    update_current_span(input=query, output=answer)
+    return answer
+
+@observe()
+def rag_pipeline(query: str) -> str:
+    chunks = retriever(query)
+    return generator(query, chunks)
+
+dataset = EvaluationDataset(goldens=[Golden(input="How do I reset my password?")])
+
+for golden in dataset.evals_iterator():
+    rag_pipeline(golden.input)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers
+import {
+  AnswerRelevancyMetric,
+  ContextualRelevancyMetric,
+} from "deepeval/metrics";
+import { observe, updateCurrentSpan } from "deepeval/tracing";
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+
+const retriever = observe({
+  type: "retriever",
+  metrics: [new ContextualRelevancyMetric()],
+  fn: async (query: string): Promise<string[]> => {
+    const chunks = ["..."]; // your retrieval logic here
+    updateCurrentSpan({ input: query, retrievalContext: chunks });
+    return chunks;
+  },
+});
+
+const generator = observe({
+  type: "llm",
+  metrics: [new AnswerRelevancyMetric()],
+  fn: async (query: string, chunks: string[]): Promise<string> => {
+    const answer = "..."; // your LLM call here
+    updateCurrentSpan({ input: query, output: answer });
+    return answer;
+  },
+});
+
+const ragPipeline = observe({
+  fn: async (query: string): Promise<string> => {
+    const chunks = await retriever(query);
+    return generator(query, chunks);
+  },
+});
+
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "How do I reset my password?" })],
+});
+
+for await (const golden of dataset.evalsIterator()) {
+  await ragPipeline((golden as Golden).input);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+✅ 完成。一个普通循环就够了：
+
+- **检索器 span** —— 由 `ContextualRelevancyMetric` 等检索器指标针对其 `retrieval_context` 打分。
+- **生成器 span** —— 由 `AnswerRelevancyMetric` 等生成器指标针对其 `actual_output` 打分。
+- **Want end-to-end too?** Pass `metrics=[...]`（TypeScript 中为 `metrics: [...]`） to `evals_iterator()` — trace and span scores coexist in one test run.
+- **In CI/CD?** Swap the loop for `assert_test(golden=golden)`（TypeScript 中为 `expect(golden).toPass()`） inside a `pytest`（TypeScript 中为 `vitest`） test — metrics stay on the spans.
+
+完整用法（包括框架集成）见[组件级评估](/docs/evaluation-component-level-llm-evals)。
+
+## Evaluate Multi-Turn RAG
+
+对于依赖 RAG 的聊天机器人——比如客服机器人——评估单元是整段对话，且助手每个轮次都带有自己的 `retrieval_context`。
+
+<Steps>
+<Step>
+
+### 创建数据集
+
+多轮数据集存储 [`ConversationalGolden`](/docs/evaluation-datasets)——待模拟的场景，而不是预先写好的轮次：
+
+<Tabs>
+<Tab title="在代码中">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import ConversationalGolden, EvaluationDataset, Persona
+
+goldens = [
+    ConversationalGolden(
+        scenario="Andy Byron wants to purchase a VIP ticket to a Coldplay concert.",
+        expected_outcome="Successful purchase of a ticket.",
+        persona=Persona(characteristics="Andy Byron is the CEO of Astronomer."),
+    ),
+    # ...
+]
+
+dataset = EvaluationDataset(goldens=goldens)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import {
+  ConversationalGolden,
+  EvaluationDataset,
+  Persona,
+} from "deepeval/dataset";
+
+const goldens = [
+  new ConversationalGolden({
+    scenario:
+      "Andy Byron wants to purchase a VIP ticket to a Coldplay concert.",
+    expectedOutcome: "Successful purchase of a ticket.",
+    persona: new Persona({
+      characteristics: "Andy Byron is the CEO of Astronomer.",
+    }),
+  }),
+  // ...
+];
+
+const dataset = new EvaluationDataset({ goldens });
+```
+
+</Tab>
+
+</Tabs>
+
+多轮金标描述的是待模拟的场景，而不是预先写好的轮次。
+
+</Tab>
+<Tab title="从 Confident AI 拉取">
+
+你可以用一行代码把整个数据集从 Confident AI 的云端加载。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.pull(alias="My Multi-Turn Dataset")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.pull({ alias: "My Multi-Turn Dataset" });
+```
+
+</Tab>
+
+</Tabs>
+
+非技术的领域专家可以在 Confident AI 上**创建、标注与评论**数据集。你还可以用 CSV 格式上传数据集，或用一行代码把在 `deepeval` 中创建的合成数据集推送到 Confident AI。
+
+更多信息请访问 [Confident AI 数据集板块](https://www.confident-ai.com/docs/llm-evaluation/dataset-management/create-goldens)。
+
+</Tab>
+<Tab title="从 CSV 加载">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.add_goldens_from_csv_file(
+    file_path="conversations.csv",
+    scenario_col_name="scenario",
+    expected_outcome_col_name="expected_outcome",
+    user_description_col_name="user_description",
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.addGoldensFromCSV({ filePath: "conversations.csv" });
+```
+
+带 `scenario` 列的行会成为 `ConversationalGolden`，因此当你的列已使用 `deepeval` 的命名时，无需 `keys` 覆盖。
+
+</Tab>
+
+</Tabs>
+
+更多高级选项（例如加载 `turns` 与 `context` 列或重命名所有列）见[加载数据集](/docs/evaluation-datasets#load-dataset)。
+
+</Tab>
+<Tab title="从 JSON 加载">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset
+
+dataset = EvaluationDataset()
+dataset.add_goldens_from_json_file(
+    file_path="conversations.json",
+    scenario_key_name="scenario",
+    expected_outcome_key_name="expected_outcome",
+    persona_key_name="persona",
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset();
+await dataset.addGoldensFromJSON({ filePath: "conversations.json" });
+```
+
+</Tab>
+
+</Tabs>
+
+更多高级选项（例如加载 `turns` 与 `context` 键，或从 `.jsonl` 文件逐行读取金标）见[加载数据集](/docs/evaluation-datasets#load-dataset)。
+
+</Tab>
+</Tabs>
+
+<Note>
+一个 `EvaluationDataset` 只容纳单轮或多轮金标中的一种，不能混用。混有两种的文件会抛出错误。
+</Note>
+
+</Step>
+<Step>
+
+### 模拟对话
+
+把你的 RAG 聊天机器人包装在一个 `model_callback` 中，它把每条回复作为一个 `Turn` 返回——**包括其 `retrieval_context`**——然后让 `ConversationSimulator` 生成对话：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py" showLineNumbers
+from typing import List
+from deepeval.test_case import Turn
+from deepeval.simulator import ConversationSimulator
+
+async def model_callback(input: str, turns: List[Turn], thread_id: str) -> Turn:
+    # Replace with your RAG chatbot; returns (answer, retrieved_chunks)
+    answer, retrieved_chunks = await your_rag_chatbot(input, turns, thread_id)
+    return Turn(role="assistant", content=answer, retrieval_context=retrieved_chunks)
+
+simulator = ConversationSimulator(model_callback=model_callback)
+test_cases = simulator.simulate(
+    conversational_goldens=dataset.goldens,
+    max_user_simulations=10,
+)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts" showLineNumbers
+import { ConversationalGolden } from "deepeval/dataset";
+import { ConversationSimulator } from "deepeval";
+import { Turn } from "deepeval/test-case";
+
+const simulator = new ConversationSimulator({
+  modelCallback: async ({ input, turns, threadId }): Promise<Turn> => {
+    // Replace with your RAG chatbot; returns { answer, retrievedChunks }
+    const { answer, retrievedChunks } = await yourRagChatbot(
+      input,
+      turns,
+      threadId,
+    );
+    return new Turn({
+      role: "assistant",
+      content: answer,
+      retrievalContext: retrievedChunks,
+    });
+  },
+});
+
+const testCases = await simulator.simulate({
+  conversationalGoldens: dataset.goldens as ConversationalGolden[],
+  maxUserSimulations: 10,
+});
+```
+
+</Tab>
+
+</Tabs>
+
+助手每个轮次上的 `retrieval_context` 让 RAG 指标能够逐轮检查内容的依据。
+
+</Step>
+<Step>
+
+### 运行一次评估
+
+用多轮 RAG 指标为模拟出的对话打分：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="main.py"
+from deepeval import evaluate
+from deepeval.metrics import TurnFaithfulnessMetric, TurnContextualRelevancyMetric
+...
+
+evaluate(test_cases=test_cases, metrics=[TurnFaithfulnessMetric(), TurnContextualRelevancyMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="main.ts"
+import {
+  TurnContextualRelevancyMetric,
+  TurnFaithfulnessMetric,
+} from "deepeval/metrics";
+import { evaluate } from "deepeval";
+...
+
+await evaluate(testCases, [
+  new TurnFaithfulnessMetric(),
+  new TurnContextualRelevancyMetric(),
+]);
+```
+
+</Tab>
+
+</Tabs>
+
+✅ 完成。助手的每个轮次都会针对它检索到的文本块被评估：
+
+- `TurnFaithfulnessMetric` —— 每条回复是否忠实于其 `retrieval_context`？
+- `TurnContextualRelevancyMetric` —— 检索到的文本块与对话中该时点相关吗？
+- 也可以加上 `TurnRelevancyMetric` 等通用对话指标——完整多轮能力见[聊天机器人快速上手](/docs/getting-started-chatbots)。
+
+</Step>
+</Steps>
+
+## 下一步
+
+现在你已经运行了第一次 RAG 评估，接下来应当：
+
+1. **自定义你的指标**：根据你的使用场景纳入全部 5 个 [RAG 指标](/docs/metrics-introduction)。
+2. **准备数据集**：如果还没有，[生成一个](/docs/golden-synthesizer)作为起点。
+3. **Enable evals in production**: Just replace `metrics` in `@observe`（TypeScript 中为 `observe()`） with a [`metric_collection`](https://www.confident-ai.com/docs/llm-tracing/evaluations#online-evaluations) string on Confident AI.
+
+这样你就能在**线程**层面分析随时间变化的性能，并把它们加回你的评估数据集做进一步评估。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:traces.mp4"></video>
+  <figcaption>对检索与生成做追踪，并在实时流量上运行评估。</figcaption>
+</figure>
