@@ -1,10 +1,10 @@
 ---
-title: Multi-Turn Test Case
+title: 多轮测试用例
 ---
 
 ## Quick Summary
 
-A **multi-turn test case** is a blueprint provided by `deepeval` to unit test a series of LLM interactions. A multi-turn test case in `deepeval` is represented by a `ConversationalTestCase`, and has **FIVE** parameters:
+**多轮测试用例**是 `deepeval` 提供的蓝图，用于对一系列 LLM 交互做单元测试。`deepeval` 中的多轮测试用例由 `ConversationalTestCase` 表示，有**五个**参数：
 
 - `turns`
 - [Optional] `scenario`
@@ -13,10 +13,10 @@ A **multi-turn test case** is a blueprint provided by `deepeval` to unit test a 
 - [Optional] `chatbot_role`
 
 <Note>
-`deepeval` makes the assumption that a multi-turn use case are mainly conversational chatbots. Agents on the other hand, should be evaluated via [component-level evaluation](/docs/evaluation-component-level-llm-evals) instead, where each component in your agentic workflow is assessed individually.
+`deepeval` 假设多轮使用场景主要是对话式聊天机器人。而智能体应当改用[组件级评估](/docs/evaluation-component-level-llm-evals)来评估，对你的智能体工作流中的每个组件单独评估。
 </Note>
 
-Here's an example implementation of a `ConversationalTestCase`:
+下面是一个 `ConversationalTestCase` 的示例实现：
 
 <Tabs>
 
@@ -56,19 +56,19 @@ const testCase = new ConversationalTestCase({
 
 </Tabs>
 
-## Multi-Turn LLM Interaction
+## 多轮 LLM 交互
 
-Different from a [single-turn LLM interaction](/docs/evaluation-test-cases#what-is-an-llm-interaction), a multi-turn LLM interaction encapsulates exchanges between a user and a conversational agent/chatbot, which is represented by a `ConversationalTestCase` in `deepeval`.
+与[单轮 LLM 交互](/docs/evaluation-test-cases#what-is-an-llm-interaction)不同，多轮 LLM 交互封装了用户与对话式智能体/聊天机器人之间的多次交换，在 `deepeval` 中由 `ConversationalTestCase` 表示。
 
 ![对话式测试用例](https://deepeval-docs.s3.amazonaws.com/docs:conversational-test-case.png)
 
-The `turns` parameter in a conversational test case is vital to specifying the roles and content of a conversation (in OpenAI API format), and allows you to supply any optional `tools_called` and `retrieval_context`. Additional optional parameters such as `scenario` and `expected outcome` is best suited for users converting [`ConversationalGolden`s](/docs/evaluation-datasets#goldens-data-model) to test cases at evaluation time.
+对话式测试用例中的 `turns` 参数对指定对话的角色与内容（OpenAI API 格式）至关重要，并允许你提供可选的 `tools_called` 与 `retrieval_context`。其他可选参数如 `scenario` 与 `expected outcome` 最适合在评估时把 [`ConversationalGolden`](/docs/evaluation-datasets#goldens-data-model) 转换为测试用例的用户。
 
 ## Conversational Test Case
 
-While a [single-turn test case](/docs/evaluation-test-cases) represents an individual LLM system interaction, a `ConversationalTestCase` encapsulates a series of `Turn`s that make up an LLM-based conversation. This is particular useful if you're looking to for example evaluate a conversation between a user and an LLM-based chatbot.
+[单轮测试用例](/docs/evaluation-test-cases)表示单次 LLM 系统交互，而 `ConversationalTestCase` 封装了构成一次基于 LLM 的对话的一系列 `Turn`。当你想评估例如用户与基于 LLM 的聊天机器人之间的对话时，这特别有用。
 
-A `ConversationalTestCase` can only be evaluated using **conversational metrics.**
+`ConversationalTestCase` 只能用**对话式指标**来评估。
 
 <Tabs>
 
@@ -105,12 +105,12 @@ const testCase = new ConversationalTestCase({ turns });
 </Tabs>
 
 <Note>
-Similar to how the term 'test case' refers to an `LLMTestCase` if not explicitly specified, the term 'metrics' also refer to non-conversational metrics throughout `deepeval`.
+正如未明确说明时「测试用例」一词指 `LLMTestCase`，在 `deepeval` 全文中「指标」一词也指非对话式指标。
 </Note>
 
 ### Turns
 
-The `turns` parameter is a list of `Turn`s and is basically a list of messages/exchanges in a user-LLM conversation. If you're using [`ConversationalGEval`](/docs/metrics-conversational-g-eval), you might also want to supply different parameters to a `Turn`. A `Turn` is made up of the following parameters:
+`turns` 参数是 `Turn` 的列表，基本上就是用户与 LLM 对话中的消息/交换列表。如果你使用 [`ConversationalGEval`](/docs/metrics-conversational-g-eval)，可能还想为 `Turn` 提供不同的参数。`Turn` 由以下参数组成：
 
 ```python
 class Turn:
@@ -122,7 +122,7 @@ class Turn:
 ```
 
 <Info>
-You should only provide the `retrieval_context` and `tools_called` parameter if the `role` is `"assistant"`.
+只有当 `role` 为 `"assistant"` 时，你才应提供 `retrieval_context` 与 `tools_called` 参数。
 </Info>
 
 <Note>
@@ -135,9 +135,9 @@ class RetrievedContextData(BaseModel):
     source: str
 ```
 
-The `role` parameter specifies whether a particular turn is by the `"user"` (end user) or `"assistant"` (LLM). This is similar to OpenAI's API.
+`role` 参数指定某个轮次是 `"user"`（最终用户）还是 `"assistant"`（LLM）发出的。这与 OpenAI 的 API 类似。
 
-For **voice conversations**, a `Turn` carries additional fields that record what was actually spoken, when, and whether the reply was cut short:
+对于**语音对话**，`Turn` 还携带额外字段，记录实际说了什么、何时说的、以及回复是否被打断：
 
 ```python
 class Turn:
@@ -147,15 +147,15 @@ class Turn:
     interrupted: Optional[bool] = None
 ```
 
-- **`audio`** — the spoken audio for that turn as an [`Audio`](/docs/evaluation-voice#audio-data-model) object (clip length is `Audio.duration`).
-- **`latency_ms`** — how long the assistant took to start speaking after the user finished (assistant turns).
-- **`interrupted`** — `True` if a user barge-in cut this assistant reply short; `None` otherwise.
+- **`audio`** —— 该轮次的语音音频，为 [`Audio`](/docs/evaluation-voice#audio-data-model) 对象（片段时长为 `Audio.duration`）。
+- **`latency_ms`** —— 用户说完后助手过了多久才开始说话（助手轮次）。
+- **`interrupted`** —— 如果用户插话打断了这条助手回复则为 `True`；否则为 `None`。
 
-A `ConversationalTestCase` whose turns carry audio has its `voice` flag set to `True` automatically. See [Voice](/docs/evaluation-voice) for what these fields mean in a simulation.
+轮次携带音频的 `ConversationalTestCase` 会自动把 `voice` 标志设为 `True`。这些字段在模拟中的含义见[语音](/docs/evaluation-voice)。
 
 ### Scenario
 
-The `scenario` parameter is an **optional** parameter that specifies the circumstances of which a conversation is taking place in.
+`scenario` 参数是一个**可选**参数，指定对话发生的情境。
 
 <Tabs>
 
@@ -186,7 +186,7 @@ const testCase = new ConversationalTestCase({
 
 ### Expected Outcome
 
-The `expected_outcome` parameter is an **optional** parameter that specifies the expected outcome of a given `scenario`.
+`expected_outcome` 参数是一个**可选**参数，指定给定 `scenario` 的预期结果。
 
 <Tabs>
 
@@ -222,7 +222,7 @@ const testCase = new ConversationalTestCase({
 
 ### Chatbot Role
 
-The `chatbot_role` parameter is an **optional** parameter that specifies what role the chatbot is supposed to play. This is currently only required for the `RoleAdherenceMetric`, where it is particularly useful for a role-playing evaluation use case.
+`chatbot_role` 参数是一个**可选**参数，指定聊天机器人应当扮演的角色。目前只有 `RoleAdherenceMetric` 需要它，在角色扮演评估场景中特别有用。
 
 <Tabs>
 
@@ -286,7 +286,7 @@ const testCase = new ConversationalTestCase({
 </Tabs>
 
 <Info>
-A single-turn `LLMTestCase` also contains `context`.
+单轮 `LLMTestCase` 也包含 `context`。
 </Info>
 
 ## Including Images
@@ -338,10 +338,10 @@ const testCase = new ConversationalTestCase({
 </Tabs>
 
 <Info>
-Multimodal test cases are automatically detected when you include `MLLMImage` objects in your inputs or outputs. You can use them with almost all the `deepeval` metrics.
+当你在输入或输出中包含 `MLLMImage` 对象时，多模态测试用例会被自动识别。你可以将它们与几乎所有 `deepeval` 指标一起使用。
 </Info>
 
-### `MLLMImage` Data Model
+### `MLLMImage` 数据模型
 
 以下是 `deepeval` 中 `MLLMImage` 的数据模型：
 
@@ -354,7 +354,7 @@ class MLLMImage:
     filename: Optional[str] = None
 ```
 
-You **MUST** either provide `url` or `dataBase64` and `mimeType` parameters when initializing an `MLLMImage`. The `local` attribute should be set to `True` for locally stored images and `False` for images hosted online (default is `False`).
+初始化 `MLLMImage` 时，你**必须**提供 `url` 或同时提供 `dataBase64` 与 `mimeType` 参数。本地存储的图片 `local` 属性应设为 `True`，在线托管的图片设为 `False`（默认为 `False`）。
 
 <Note>
 
@@ -436,9 +436,9 @@ print(convert_to_multi_modal_array(test_case.turns[0].content))
 
 </Note>
 
-## Mark Test Cases As Flaky
+## 把测试用例标记为 Flaky
 
-The `flaky` is an **optional** parameter of type boolean (defaulted to `False`) that marks a `ConversationalTestCase` as flaky. A flaky test case's results are still computed, recorded, and reported as normal, but its failures won't block your CI/CD pipeline — when a flaky test case fails, `assert_test()` prints a warning instead of raising an `AssertionError`.
+`flaky` 是一个**可选**的布尔参数（默认 `False`），用于把 `ConversationalTestCase` 标记为 flaky。flaky 测试用例的结果仍会正常计算、记录与报告，但它的失败不会阻塞你的 CI/CD 流水线——当 flaky 测试用例失败时，`assert_test()` 会打印警告而不是抛出 `AssertionError`。
 
 ```python
 from deepeval.test_case import Turn, ConversationalTestCase
@@ -449,15 +449,15 @@ test_case = ConversationalTestCase(
 )
 ```
 
-This is most useful for conversations you know are noisy — for example simulated conversations with borderline scores that flip between passing and failing across runs — that you still want to keep evaluating and tracking without letting them gate deployments. The `flaky` status is also logged on Confident AI so you can monitor how often flaky test cases actually fail.
+这最适合那些你明知有噪声的对话——例如分数处于临界、多次运行在通过与失败之间来回摆动的模拟对话，但你仍想继续评估与追踪、又不想让它们阻塞部署。`flaky` 状态也会记录在 Confident AI 上，方便你监控 flaky 测试用例实际的失败频率。
 
 <Info>
-A single-turn `LLMTestCase` can also be marked `flaky`, and so can metrics — a flaky **metric's** failure never decides its test case's pass/fail status.
+单轮 `LLMTestCase` 也可以被标记为 `flaky`，指标也可以——flaky **指标**的失败永远不会决定其测试用例的通过/失败状态。
 </Info>
 
-## Label Test Cases For Confident AI
+## 为 Confident AI 标记测试用例
 
-If you're using Confident AI, these are some additional parameters to help manage your test cases.
+如果你在使用 Confident AI，以下是一些帮助你管理测试用例的额外参数。
 
 ### Name
 
@@ -500,34 +500,34 @@ from deepeval.test_case import ConversationalTestCase
 test_case = ConversationalTestCase(tags=["Topic 1", "Topic 3"], ...)
 ```
 
-## Using Test Cases For Evals
+## 用测试用例进行评估
 
-You can create test cases for two types of evaluation:
+你可以为两种类型的评估创建测试用例：
 
-- [End-to-end](/docs/evaluation-end-to-end-llm-evals) - Treats your multi-turn LLM app as a black-box, and evaluates the overall conversation by considering each turn's inputs and outputs.
+- [端到端](/docs/evaluation-end-to-end-llm-evals) - 把你的多轮 LLM 应用当作黑盒，综合考虑每个轮次的输入与输出来评估整体对话。
 - 一次性独立评估 - 在单个测试用例上执行单个指标，用于调试或自定义评估流水线
 
-Unlike for single-turn test cases, the concept of component-level evaluation does not exist for multi-turn use cases.
+与单轮测试用例不同，多轮场景不存在组件级评估的概念。
 
 ## FAQs
 
 <AccordionGroup>
-<Accordion title="What's the difference between a ConversationalTestCase and an LLMTestCase?">
-A `ConversationalTestCase` represents an entire multi-turn conversation through a list of `Turn` s, while an [LLMTestCase](/docs/evaluation-test-cases) represents a single atomic interaction. Use the conversational one for chatbots and assistants where context spans multiple turns.
+<Accordion title="ConversationalTestCase 与 LLMTestCase 有什么区别？">
+`ConversationalTestCase` 通过一系列 `Turn` 表示完整的多轮对话，而 [`LLMTestCase`](/docs/evaluation-test-cases) 表示单次原子化的交互。当上下文跨越多个轮次（例如聊天机器人与助手）时，使用对话式的那个。
 </Accordion>
-<Accordion title="What does a Turn contain?">
-Each `Turn` has a `role` ( `user` or `assistant` ) and `content` , and can optionally carry retrieval context, tools called, and MCP primitives so per-turn behavior can be evaluated.
+<Accordion title="一个 Turn 包含什么？">
+每个 `Turn` 有一个 `role`（ `user` 或 `assistant` ）与 `content`，并可选地携带检索上下文、工具调用与 MCP 原语，以便对逐轮行为进行评估。
 </Accordion>
-<Accordion title="What are scenario and expected_outcome for?">
-They describe the conversation at a high level: `scenario` sets up the situation the user is in, and `expected_outcome` describes what a successful conversation should achieve. They're especially useful for simulating turns and for outcome-based conversational metrics.
+<Accordion title="scenario 和 expected_outcome 是做什么用的？">
+它们从高层描述对话：`scenario` 设定用户所处的情境，`expected_outcome` 描述一次成功的对话应当达成什么。它们对模拟轮次以及基于结果的对话式指标尤其有用。
 </Accordion>
-<Accordion title="Do I have to write every turn by hand?">
-No. You can author turns manually, or generate them automatically with the [conversation simulator](/docs/conversation-simulator) from a `ConversationalGolden` 's scenario and user persona.
+<Accordion title="每一轮都必须手写吗？">
+不需要。你可以手工编写轮次，也可以用[对话模拟器](/docs/conversation-simulator)基于 `ConversationalGolden` 的场景与用户人设自动生成它们。
 </Accordion>
-<Accordion title="Can multi-turn test cases include images?">
-Yes. You can embed `MLLMImage` objects inside a turn's content to evaluate multimodal conversations.
+<Accordion title="多轮测试用例可以包含图片吗？">
+可以。你可以在轮次的内容中嵌入 `MLLMImage` 对象，以评估多模态对话。
 </Accordion>
-<Accordion title="How can my team share multi-turn conversations and visualize them in a UI?">
-Conversations run fully locally, but reading long multi-turn transcripts in a terminal doesn't scale. Logging into [Confident AI](https://www.confident-ai.com) (the platform from the `deepeval` team) renders the same conversations and their per-turn scores into a shared cloud UI, so a team can review, annotate, and track them over time — with no change to your test case code. It's entirely optional.
+<Accordion title="我的团队如何在云端共享多轮对话并在界面中可视化？">
+对话完全在本地运行，但在终端里阅读冗长的多轮转写不太可扩展。登录 [Confident AI](https://www.confident-ai.com)（`deepeval` 团队的平台）会把同样的对话及其逐轮分数渲染到共享的云端界面中，团队可以审阅、标注并追踪其随时间的变化——无需改动你的测试用例代码。它完全是可选的。
 </Accordion>
 </AccordionGroup>

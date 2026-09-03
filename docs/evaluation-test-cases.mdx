@@ -948,7 +948,7 @@ test_case = LLMTestCase(tags=["Topic 1", "Topic 3"], ...)
 `context` 是一个输入的理想、静态基准真值（通常来自你的数据集），而 `retrieval_context` 是你的 RAG 流水线在运行时实际检索到的内容。比较两者正是衡量检索器质量的方法。
 </Accordion>
 <Accordion title="When should I use a single-turn test case vs a multi-turn one?">
-单次、原子化的交互（一问一答）用 `LLMTestCase`。需要评估跨越多个轮次的往返对话时，用 [ConversationalTestCase](/docs/evaluation-multiturn-test-cases)。
+单次、原子化的交互（一问一答）用 `LLMTestCase`。需要评估跨越多个轮次的往返对话时，用 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases)。
 </Accordion>
 <Accordion title="Can I evaluate precomputed outputs instead of generating them live?">
 可以。你可以提前填充 `actual_output`（以及 `retrieval_context`、`tools_called` 等）稍后评估，也可以在评估时通过在测试文件中调用你的应用动态生成它们。

@@ -1,16 +1,16 @@
 ---
-title: Arena Test Case
+title: 竞技场测试用例
 ---
 
 ## Quick Summary
 
-An **arena test case** is a blueprint provided by `deepeval` for you to compare which iteration of your LLM app performed better. It works by comparing each contestants's `LLMTestCase` to run comparisons, and currently only supports the `LLMTestCase` for single-turn, text-based comparisons.
+**竞技场测试用例**是 `deepeval` 提供的蓝图，用于比较你的 LLM 应用的哪个迭代表现更好。它通过把每个参赛者的 `LLMTestCase` 进行对比运行比较来工作，目前仅支持基于单轮文本比较的 `LLMTestCase`。
 
 <Info>
-Support for `ConversationalTestCase` is coming soon.
+对 `ConversationalTestCase` 的支持即将推出。
 </Info>
 
-The `ArenaTestCase` currently only runs with the `ArenaGEval` metric, and all that is required is to provide a list of `Contestant`s:
+`ArenaTestCase` 目前只能与 `ArenaGEval` 指标一起运行，所需的一切就是提供一个 `Contestant` 列表：
 
 <Tabs>
 
@@ -88,17 +88,17 @@ const testCase = new ArenaTestCase({
 
 </Tabs>
 
-Note that all `input`s and `expected_output`s you provide across contestants **MUST** match.
+注意，你在各参赛者之间提供的所有 `input` 与 `expected_output` **必须**完全一致。
 
 <Tip>
-For those wondering why we took the choice to include multiple duplicated `input`s in `LLMTestCase` instead of moving it to the `ArenaTestCase` class, it is because an `LLMTestCase` integrates nicely with the existing ecosystem.
+对于好奇我们为什么选择在 `LLMTestCase` 中包含多个重复的 `input`、而不是把它移到 `ArenaTestCase` 类上的人：这是因为 `LLMTestCase` 能与现有生态很好地集成。
 
-You also shouldn't worry about unexpected errors because `deepeval` will throw an error if `input`s or `expected_output`s aren't matching.
+你也不必担心意外错误，因为如果 `input` 或 `expected_output` 不一致，`deepeval` 会抛出错误。
 </Tip>
 
 ## Arena Test Case
 
-The `ArenaTestCase` takes a simple `contestants` argument, which is a list of `Contestant`s.
+`ArenaTestCase` 接受一个简单的 `contestants` 参数，即一个 `Contestant` 列表。
 
 <Tabs>
 
@@ -178,7 +178,7 @@ const testCase = new ArenaTestCase({
 
 ### Contestant
 
-A `Contestant` represents a single unit of [llm interaction](/docs/evaluation-test-cases#what-is-an-llm-interaction) from a specific version of your LLM app. It accepts a `test_case`, a `name` to identify the LLM app version that was used to generate the test case, and optionally any `hyperparameters` associated with the LLM version.
+`Contestant` 表示来自你的 LLM 应用特定版本的单个 [LLM 交互](/docs/evaluation-test-cases#what-is-an-llm-interaction)单元。它接受一个 `test_case`、一个用于标识生成该测试用例的 LLM 应用版本的 `name`，以及可选的与该 LLM 版本相关的 `hyperparameters`。
 
 ```python
 from deepeval.test_case import Contestant, LLMTestCase
@@ -271,10 +271,10 @@ const testCase = new ArenaTestCase({
 </Tabs>
 
 <Info>
-Multimodal test cases are automatically detected when you include `MLLMImage` objects in your inputs or outputs of your `LLMTestCase`s. You can use the [`ArenaGEval`](/docs/metrics-arena-g-eval) metric to run evaluations for your multimodal test cases as usual.
+当你在 `LLMTestCase` 的输入或输出中包含 `MLLMImage` 对象时，多模态测试用例会被自动识别。你可以照常使用 [`ArenaGEval`](/docs/metrics-arena-g-eval) 指标为你的多模态测试用例运行评估。
 </Info>
 
-### `MLLMImage` Data Model
+### `MLLMImage` 数据模型
 
 以下是 `deepeval` 中 `MLLMImage` 的数据模型：
 
@@ -287,7 +287,7 @@ class MLLMImage:
     filename: Optional[str] = None
 ```
 
-You **MUST** either provide `url` or `dataBase64` and `mimeType` parameters when initializing an `MLLMImage`. The `local` attribute should be set to `True` for locally stored images and `False` for images hosted online (default is `False`).
+初始化 `MLLMImage` 时，你**必须**提供 `url` 或同时提供 `dataBase64` 与 `mimeType` 参数。本地存储的图片 `local` 属性应设为 `True`，在线托管的图片设为 `False`（默认为 `False`）。
 
 <Note>
 
@@ -364,9 +364,9 @@ print(convert_to_multi_modal_array(test_case.input))
 
 </Note>
 
-## Using Test Cases For Evals
+## 用测试用例进行评估
 
-The [`ArenaGEval` metric](/docs/metrics-arena-g-eval) is the only metric that uses an `ArenaTestCase`, which picks a "winner" out of the list of contestants:
+[`ArenaGEval` 指标](/docs/metrics-arena-g-eval)是唯一使用 `ArenaTestCase` 的指标，它会从参赛者列表中挑出一名「赢家」：
 
 <Tabs>
 
@@ -412,27 +412,27 @@ await compare([testCase], arenaGEval);
 
 </Tabs>
 
-The `ArenaTestCase` streamlines the evaluation by automatically masking contestant names (to ensure unbiased judging) and randomizing their order.
+`ArenaTestCase` 通过自动遮蔽参赛者名称（确保评判无偏）并随机化其顺序来简化评估。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="What is an ArenaTestCase used for?">
-It compares multiple candidates (contestants) for the same input and picks a winner, instead of scoring a single output in isolation. It's ideal for choosing between models, prompts, or configurations head to head.
+它对同一个输入比较多个候选（参赛者）并挑选赢家，而不是孤立地为单个输出打分。它适合在模型、提示词或配置之间做正面比较。
 </Accordion>
 <Accordion title="Which metric works with an ArenaTestCase?">
-The [ArenaGEval](/docs/metrics-arena-g-eval) metric is the only metric that consumes an `ArenaTestCase` . It uses your `criteria` to pick the winning contestant via `compare()` .
+[`ArenaGEval`](/docs/metrics-arena-g-eval) 指标是唯一消费 `ArenaTestCase` 的指标。它会使用你的 `criteria` 并通过 `compare()` 挑出获胜的参赛者：
 </Accordion>
 <Accordion title="How does deepeval prevent bias toward a particular contestant?">
-The ArenaTestCase automatically masks contestant names and randomizes their order before judging, so the judge can't be influenced by naming or position.
+ArenaTestCase 会自动遮蔽参赛者名称并随机化其顺序。
 </Accordion>
 <Accordion title="What's the difference between arena and regular single-turn evals?">
-A regular `LLMTestCase` scores one output against a metric threshold (absolute scoring). An arena test case is relative — it asks which candidate is best for the same input rather than whether a single output passes.
+普通的 `LLMTestCase` 用指标阈值给单个输出打分（绝对打分）。竞技场测试用例是相对的——它追问的是对同一输入哪个候选最好，而不是单个输出是否通过。
 </Accordion>
 <Accordion title="Can arena test cases include images?">
-Yes. Each contestant can include `MLLMImage` objects, so you can run head-to-head comparisons on multimodal outputs.
+可以。每个参赛者都可以包含 `MLLMImage` 对象，因此你可以对多模态输出进行正面比较。
 </Accordion>
 <Accordion title="Can my team run these comparisons on the cloud and visualize the winners in a UI?">
-Arena comparisons run locally out of the box. If your team wants a shared, cloud-hosted view of which candidate won and why, [Confident AI](https://www.confident-ai.com) (built by the `deepeval` team) can visualize comparison results in a UI for collaborative review — optional, and your `compare()` runs work the same without it.
+竞技场比较开箱即在本地运行。如果你的团队想要一个共享的、云端托管的视图来看哪个候选获胜及其原因，[Confident AI](https://www.confident-ai.com)（由 `deepeval` 团队打造）可以在界面中可视化比较结果供协作评审——可选，且没有它你的 `compare()` 运行也完全一样。
 </Accordion>
 </AccordionGroup>

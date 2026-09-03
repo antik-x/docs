@@ -244,7 +244,7 @@ def jsx_to_md(inner, path="FAQ"):
                 break
             open_tag = inner[i:gt + 1]
             hm = re.search(r'href="([^"]+)"', open_tag)
-            label = inner[gt + 1:e]
+            label = re.sub(r"<code>(.*?)</code>", r"`\1`", inner[gt + 1:e], flags=re.S)
             if hm:
                 out.append("[%s](%s)" % (
                     re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", label)).strip(),

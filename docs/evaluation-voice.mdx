@@ -1,36 +1,36 @@
 ---
-title: Voice
+title: 语音
 ---
 
-**Voice agents** are conversational AI systems you talk to instead of type at — phone support lines, restaurant booking bots, in-app voice assistants. Evaluating them means evaluating a _spoken_ conversation, which has strictly more to it than a text one:
+**语音智能体**是你用说话而非打字来交互的对话式 AI 系统——电话客服热线、餐厅预订机器人、应用内语音助手。评估它们意味着评估一段_口头的_对话，它比文本对话要多出严格更多的东西：
 
-- **What was said** — the transcript, which regular multi-turn metrics like `TurnRelevancyMetric` can judge.
-- **How it sounded** — the actual audio on both sides of the call.
-- **When it happened** — response latency and turn-taking behavior.
+- **说了什么** —— 转写文本，`TurnRelevancyMetric` 等常规多轮指标可以评判。
+- **听起来如何** —— 通话双方的实际音频。
+- **何时发生** —— 响应延迟与轮次切换行为。
 
-`deepeval` treats voice as a first-class modality, and it changes **how conversations are produced, not how they are evaluated**: the pipeline you already know — goldens in, test cases out, metrics on top — is untouched. A simulated voice conversation produces a standard `ConversationalTestCase` whose `Turn`s carry audio and timing alongside the transcript, so your existing LLM-as-a-judge metrics keep working while the audio and timing data is preserved for voice-specific analysis.
+`deepeval` 把语音当作一等公民模态，这改变的是**对话如何产生，而不是如何评估**：你已熟知的流水线——金标进、测试用例出、指标加持——原封不动。一次模拟的语音对话产生一个标准的 `ConversationalTestCase`，其 `Turn` 在转写文本之外还携带音频与时间信息，因此你现有的 LLM-as-a-judge 指标继续有效，同时音频与时间数据被保留下来供语音专项分析使用。
 
-Three pieces make that possible: a TTS model speaks for the simulated caller, an STT model transcribes the agent's replies, and a connector bridges `deepeval` to your deployed voice agent. This page explains how those pieces fit together, how voice data appears on test cases, and how turn-taking changes when interruptions are enabled. To actually run voice simulations, see [Voice Mode](/docs/conversation-simulator-voice-mode) on the `ConversationSimulator`.
+三个部件使之成为可能：一个 TTS 模型为模拟来电者发声，一个 STT 模型转写智能体的回复，一个连接器把 `deepeval` 与你部署的语音智能体桥接起来。本页解释这些部件如何配合、语音数据如何呈现在测试用例上，以及启用打断后轮次切换有何变化。要真正运行语音模拟，请参见 `ConversationSimulator` 上的 [语音模式](/docs/conversation-simulator-voice-mode)。
 
-## Why Voice Is Different
+## 语音有何不同
 
-A text chatbot is a function: you call it with a message and it returns one. A deployed voice agent is a **live call**: audio streams in both directions over a real transport, the agent runs its own speech recognition and speech synthesis internally, and "when a turn ends" is a judgment call based on silence and timing rather than a return statement.
+文本聊天机器人是一个函数：你传入一条消息，它返回一条。部署后的语音智能体则是一次**实时通话**：音频通过真实的传输协议双向流动，智能体内部运行自己的语音识别与语音合成，「一轮何时结束」是基于静默与时间的判断而非一个 return 语句。
 
-This has two consequences for evaluation:
+这对评估有两点影响：
 
-1. **You need speech models of your own.** To simulate a user, `deepeval` must _speak_ messages to your agent (text-to-speech) and _listen_ to its replies (speech-to-text). These sit outside your agent — they are the simulated caller's mouth and ears.
-2. **You need a bridge to your agent.** There is no universal API for "send this audio to my agent"; agents are reachable over different protocols depending on where they're deployed. A `deepeval` connector opens that live session and carries audio between the simulator and your agent.
+1. **你需要自己的语音模型。**为了模拟用户，`deepeval` 必须_说出_消息给你的智能体（语音转文字的反向：文字转语音）并_听_它的回复（语音转文字）。它们在你的智能体之外——是模拟来电者的嘴和耳朵。
+2. **你需要通往智能体的桥。**「把这段音频发给我的智能体」没有通用 API；智能体因部署位置不同而通过不同协议可达。`deepeval` 连接器会打开这条实时会话，并在模拟器与你的智能体之间搬运音频。
 
-## How Voice Evals Work
+## 语音评估如何运作
 
-Evaluating a voice agent follows the same loop as evaluating a text chatbot — a simulated user talks to your application until the conversation ends, and the result is scored. The voice version inserts two speech steps into that loop and swaps the function call for a live connection:
+评估语音智能体的循环与评估文本聊天机器人相同——一个模拟用户与你的应用对话直到对话结束，然后对结果打分。语音版本在该循环中插入两个语音步骤，并把函数调用换成实时连接：
 
-1. **Generate a user message.** The simulator model role-plays the user from the [`ConversationalGolden`](/docs/evaluation-datasets)'s `scenario` and [`persona`](/docs/conversation-simulator-voice-personas) — exactly as in a text simulation.
-2. **Speak it** _(voice only)_. The TTS model synthesizes the message into audio: this is the simulated caller's voice.
-3. **Play it to your agent and record the reply** _(voice only)_. The connector streams the audio over the live transport, waits for your agent to finish speaking, and captures the reply audio along with `latency_ms`.
-4. **Transcribe the reply** _(voice only)_. The STT model turns the agent's audio into the assistant turn's `content`.
-5. **Decide whether to continue.** [Stopping logic](/docs/conversation-simulator-stopping-logic) checks the conversation against the golden's `expected_outcome` — exactly as in text.
-6. **Score the conversation.** The finished `ConversationalTestCase` — transcript plus audio and timing — is evaluated with the same [multi-turn metrics](/docs/metrics-introduction) you'd use on a text conversation.
+1. **生成用户消息。**模拟器模型根据 [`ConversationalGolden`](/docs/evaluation-datasets) 的 `scenario` 与 [`persona`](/docs/conversation-simulator-voice-personas) 扮演用户——与文本模拟完全一致。
+2. **说出来** _（仅语音）_。TTS 模型把消息合成为音频：这就是模拟来电者的声音。
+3. **播放给你的智能体并录下回复** _（仅语音）_。连接器通过实时传输流式发送音频，等待你的智能体说完，并连同 `latency_ms` 一起捕获回复音频。
+4. **转写回复** _（仅语音）_。STT 模型把智能体的音频变成助手轮次的 `content`。
+5. **决定是否继续。**[停止逻辑](/docs/conversation-simulator-stopping-logic)根据金标的 `expected_outcome` 检查对话——与文本完全一致。
+6. **给对话打分。**完成的 `ConversationalTestCase` —— 转写加音频与时间——用你在文本对话上使用的同一批[多轮指标](/docs/metrics-introduction)评估。
 
 ```mermaid
 sequenceDiagram
@@ -51,73 +51,73 @@ sequenceDiagram
 ```
 
 <Info>
-Step 4 is skipped when the platform already provides a transcript: some connectors (like ElevenLabs) receive the agent's own transcript alongside its audio, and `deepeval` uses it directly.
+当平台已经提供转写时会跳过第 4 步：一些连接器（如 ElevenLabs）会在音频之外收到智能体自己的转写，`deepeval` 会直接使用它。
 </Info>
 
 <Warning>
-Steps 2–4 are where the pipeline can distort what you measure. Know the trade-offs:
+第 2 到 4 步是流水线可能扭曲你所测内容的地方。请了解这些权衡：
 
-- **No interruptions by default** — the simulated caller waits for the agent to finish before replying, so barge-in isn't exercised unless the persona asks for it. See [Interruptions](#interruptions).
-- **An idealized caller by default** — TTS speech is clean and studio-quality: no background noise, muffled mics, or hesitations. A [persona](/docs/conversation-simulator-voice-personas) can add ambient noise and a different voice, but passing still proves conversational competence more than audio robustness.
-- **STT errors look like agent errors** — transcription accuracy is the ceiling on evaluation accuracy, so the STT model is the most quality-critical choice in the pipeline.
-- **End-of-turn is a heuristic** — silence thresholds can clip long pauses and pad `latency_ms`, which is why latencies only compare within a protocol.
+- **默认不打断** —— 模拟来电者会等智能体说完再回复，因此除非人设要求，否则不会触发插话。见[打断](#interruptions)。
+- **默认是理想化的来电者** —— TTS 语音干净、录音棚级：没有背景噪音、闷麦或犹豫。[人设](/docs/conversation-simulator-voice-personas)可以添加环境噪声与不同的声音，但通过测试更多证明的是对话能力而非音频鲁棒性。
+- **STT 错误看起来像智能体错误** —— 转写准确率是评估准确率的上限，因此 STT 模型是流水线中对质量最关键的选择。
+- **轮次结束是一种启发式** —— 静默阈值可能削掉长停顿并虚增 `latency_ms`，这就是为什么延迟只在同一协议内可比。
 </Warning>
 
-## Voice Metrics
+## 语音指标
 
-Voice metrics follow the same three-part model as the test case:
+语音指标遵循与测试用例相同的三段模型：
 
-- **What was said** remains the responsibility of existing conversational metrics such as [`TurnRelevancyMetric`](/docs/metrics-turn-relevancy), [`GoalAccuracyMetric`](/docs/metrics-goal-accuracy), and [`ToolUseMetric`](/docs/metrics-tool-use).
-- **How it sounded** is evaluated by [`VoiceNaturalnessMetric`](/docs/metrics-voice-naturalness), [`SpeechIntelligibilityMetric`](/docs/metrics-speech-intelligibility), [`VoiceConsistencyMetric`](/docs/metrics-voice-consistency), and [`AudioIntegrityMetric`](/docs/metrics-audio-integrity).
-- **When it happened** is evaluated by [`TurnTakingNaturalnessMetric`](/docs/metrics-turn-taking-naturalness) and [`AgentResponsivenessMetric`](/docs/metrics-agent-responsiveness).
+- **说了什么** 仍由 [`TurnRelevancyMetric`](/docs/metrics-turn-relevancy)、[`GoalAccuracyMetric`](/docs/metrics-goal-accuracy) 与 [`ToolUseMetric`](/docs/metrics-tool-use) 等现有对话式指标负责。
+- **听起来如何** 由 [`VoiceNaturalnessMetric`](/docs/metrics-voice-naturalness)、[`SpeechIntelligibilityMetric`](/docs/metrics-speech-intelligibility)、[`VoiceConsistencyMetric`](/docs/metrics-voice-consistency) 与 [`AudioIntegrityMetric`](/docs/metrics-audio-integrity) 评估。
+- **何时发生** 由 [`TurnTakingNaturalnessMetric`](/docs/metrics-turn-taking-naturalness) 与 [`AgentResponsivenessMetric`](/docs/metrics-agent-responsiveness) 评估。
 
-[`VoiceReliabilityMetric`](/docs/metrics-voice-reliability) is the optional operational summary. It combines the responsiveness and audio-integrity checks, but a critical failure such as missing agent audio or a complete failure to respond always forces its score to zero. Minor checks cannot average away a catastrophic failure.
+[`VoiceReliabilityMetric`](/docs/metrics-voice-reliability) 是可选的运维汇总指标。它组合了响应性与音频完整性检查，但诸如缺少智能体音频或完全无响应的严重故障总是会把它的分数强制归零。轻微检查无法平均掉一场灾难。
 
-All seven voice metrics return a score from 0 to 1, where higher is better. Measurements such as latency, loudness, clipping rate, pause duration, and speaking rate appear in metric reasons and breakdowns as diagnostic evidence. They are not universal quality scores: whether a pause or response delay sounds natural depends on what was happening in the conversation.
+全部七个语音指标返回 0 到 1 的分数，越高越好。延迟、响度、削波率、停顿时长、语速等测量值作为诊断证据出现在指标原因与明细中。它们不是通用的质量分数：一个停顿或响应延迟听起来是否自然，取决于对话中正在发生什么。
 
-The metrics use different parts of the same `ConversationalTestCase`:
+这些指标使用同一个 `ConversationalTestCase` 的不同部分：
 
-- `VoiceNaturalnessMetric`, `SpeechIntelligibilityMetric`, and `AudioIntegrityMetric` analyze each assistant `Turn.audio`.
-- `VoiceConsistencyMetric` compares assistant audio across multiple turns.
-- `TurnTakingNaturalnessMetric` reconstructs the call timeline from each `Turn.audio.start_time` and `Audio.duration`, using `Turn.role` to identify the speaker.
-- `AgentResponsivenessMetric` examines the ordered transcript and audio turns for missing responses and reprompts.
+- `VoiceNaturalnessMetric`、`SpeechIntelligibilityMetric` 与 `AudioIntegrityMetric` 分析每个助手 `Turn.audio`。
+- `VoiceConsistencyMetric` 跨多个轮次比较助手音频。
+- `TurnTakingNaturalnessMetric` 从每个 `Turn.audio.start_time` 与 `Audio.duration` 重建通话时间线，并用 `Turn.role` 识别说话者。
+- `AgentResponsivenessMetric` 检查有序的转写与音频轮次，寻找缺失回复与重复提示。
 
-An audio clip without `start_time` can still be evaluated for how it sounded. It cannot be used to infer silence or overlap honestly, so timing metrics skip test cases whose audio has no call-relative placement.
+没有 `start_time` 的音频片段仍可评估「听起来如何」。它无法诚实地推断静默或重叠，因此时间类指标会跳过没有通话相对位置的音频的测试用例。
 
-## Speech Models
+## 语音模型
 
-Text-to-speech (TTS) and speech-to-text (STT) are separate model families from LLMs, with largely separate providers. Because they are genuinely different model types, `deepeval` gives them their own base classes — `DeepEvalBaseTTS` and `DeepEvalBaseSTT` — rather than bolting `synthesize`/`transcribe` methods onto `DeepEvalBaseLLM`. In a voice simulation the two play opposite roles, and their quality matters asymmetrically.
+文字转语音（TTS）与语音转文字（STT）是不同于 LLM 的模型家族，提供商也大致独立。因为它们确实是不同的模型类型，`deepeval` 为它们提供了各自的基类——`DeepEvalBaseTTS` 与 `DeepEvalBaseSTT`——而不是把 `synthesize`/`transcribe` 方法硬塞进 `DeepEvalBaseLLM`。在语音模拟中两者扮演对立角色，其质量的重要性并不对称。
 
-`deepeval` currently uses OpenAI's TTS and STT models by default. To use another provider, supply custom speech models; see [Voice Mode](/docs/conversation-simulator-voice-mode#tts-and-stt-models) for the required methods.
+`deepeval` 目前默认使用 OpenAI 的 TTS 与 STT 模型。要使用其他提供商，请提供自定义语音模型；所需方法见 [语音模式](/docs/conversation-simulator-voice-mode#tts-and-stt-models)。
 
-### Text-to-Speech (TTS)
+### 文字转语音（TTS）
 
-A TTS model turns text into spoken audio. In a voice simulation, the **TTS model is the simulated user's voice**: every user message the simulator generates is synthesized to speech before it reaches your agent.
+TTS 模型把文本变成语音。在语音模拟中，**TTS 模型就是模拟用户的声音**：模拟器生成的每条用户消息都会在到达你的智能体之前被合成为语音。
 
-Some LLM providers offer TTS (OpenAI, Gemini), while dedicated vendors like ElevenLabs, Cartesia, and Inworld lead on naturalness and voice variety. For simulation purposes the bar is lower than for production voice products — the synthesis needs to be clear enough that your agent's own speech recognition isn't the bottleneck, since unnatural or garbled speech skews the whole simulation.
+一些 LLM 提供商提供 TTS（OpenAI、Gemini），而 ElevenLabs、Cartesia、Inworld 等专业厂商在自然度与声音多样性上领先。就模拟而言，门槛低于生产级语音产品——合成只需要清晰到你的智能体自己的语音识别不成为瓶颈，因为不自然或含混的语音会让整个模拟产生偏差。
 
-### Speech-to-Text (STT)
+### 语音转文字（STT）
 
-An STT model turns spoken audio into text. In a voice simulation, the **STT model is how `deepeval` hears your agent**: its transcription of each spoken reply becomes the `Turn.content` that your metrics judge.
+STT 模型把语音变成文本。在语音模拟中，**STT 模型是 `deepeval` 聆听你智能体的方式**：它对每条语音回复的转写成为供你的指标评判的 `Turn.content`。
 
-This makes STT the more quality-critical of the two — transcription accuracy directly bounds evaluation quality, and it decides voice-specific measurements like word error rate (WER).
+这使 STT 成为两者中更关乎质量的一个——转写准确率直接框定评估质量，并决定词错误率（WER）等语音专项测量。
 
-## Interruptions
+## 打断
 
-By default the simulated caller never interrupts: it finishes speaking, then waits until the agent has finished before continuing. This is the simplest way to evaluate the conversation, but it does not test overlap or barge-in.
+默认情况下模拟来电者从不打断：它说完自己的话，然后等智能体说完再继续。这是评估对话最简单的方式，但它不会测试重叠或插话。
 
-Two separate things decide what happens on the line:
+线路上发生什么由两个独立的因素决定：
 
-- **The connector** decides whether audio can flow both ways at once. A full-duplex connector like `LiveKitConnector` lets the caller listen while it speaks; one that can't, like `CallbackVoiceConnector`, takes turns.
-- **The persona** decides whether the caller uses that to barge in. Enable interruptions and the caller can speak over the agent, with either side yielding when speech overlaps.
+- **连接器**决定音频能否双向同时流动。`LiveKitConnector` 这样的全双工连接器允许来电者边听边说；`CallbackVoiceConnector` 这样做不到的则轮流说话。
+- **人设**决定来电者是否借此插话。启用打断后，来电者可以在智能体说话时插话，任一方在语音重叠时退让。
 
-Whether the simulated caller interrupts is configured on its [persona](/docs/conversation-simulator-voice-personas), because interruption frequency and overlap behavior are caller traits. See [Interruptions](/docs/conversation-simulator-voice-interruptions) for configuration and duplex connector requirements.
+模拟来电者是否打断是在其[人设](/docs/conversation-simulator-voice-personas)上配置的，因为打断频率与重叠行为是来电者的特质。配置方法与全双工连接器要求见[打断](/docs/conversation-simulator-voice-interruptions)。
 
-## Transports and Connectors
+## 传输与连接器
 
-A **transport** is how audio moves, such as WebRTC or WebSocket. A **connector** is the `deepeval` integration that uses that transport to reach your agent. You choose a connector based on how your existing agent is deployed; it is not your STT or TTS model.
+**传输（transport）**是音频如何移动，例如 WebRTC 或 WebSocket。**连接器（connector）**是 `deepeval` 使用该传输协议到达你智能体的集成。你根据现有智能体的部署方式选择连接器；它不是你的 STT 或 TTS 模型。
 
-`deepeval` currently ships these connectors:
+`deepeval` 目前提供以下连接器：
 
 | Connector                | Use it when your agent is...                     | What you provide                                                |
 | ------------------------ | ------------------------------------------------ | --------------------------------------------------------------- |
@@ -126,19 +126,19 @@ A **transport** is how audio moves, such as WebRTC or WebSocket. A **connector**
 | `WebSocketConnector`     | exposed through a compatible raw-audio WebSocket | The URL and your message schema                                 |
 | `CallbackVoiceConnector` | callable directly from the same Python process   | A callable that accepts user audio and returns the agent reply  |
 
-The first two are provider integrations. `WebSocketConnector` is configuration-based, so a custom WebSocket agent usually does not require a new wrapper class. `CallbackVoiceConnector` is the in-process option and is useful while building or testing a pipeline. Only agents with a different transport or message lifecycle need a custom `BaseVoiceConnector`.
+前两个是提供商集成。`WebSocketConnector` 基于配置，因此自定义的 WebSocket 智能体通常不需要新的包装类。`CallbackVoiceConnector` 是进程内选项，在构建或测试流水线时很有用。只有传输方式或消息生命周期不同的智能体才需要自定义 `BaseVoiceConnector`。
 
-See [Voice Connectors](/docs/conversation-simulator-voice-connectors) for installation, credentials, message-schema options, and custom connector guidance.
+安装方式、凭据、消息 schema 选项与自定义连接器指南见[语音连接器](/docs/conversation-simulator-voice-connectors)。
 
-A connector holds one agent session for the entire simulated conversation. In half-duplex mode, it drives that session one full exchange at a time:
+一个连接器为整段模拟对话持有一个智能体会话。在半双工模式下，它一次一个完整交换地驱动该会话：
 
 | Method            | Responsibility                                                                                                         |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `connect()`       | Open and retain a usable agent session: join the room or open the socket, authenticate, and wait until audio can flow. |
-| `exchange_turn()` | Play user audio to the agent, wait for the spoken reply, and measure timing.                                           |
-| `disconnect()`    | Tear down the session and release its resources.                                                                       |
+| `connect()`       | 打开并保持一个可用的智能体会话：加入房间或打开套接字、完成认证，并等待音频可以流动。 |
+| `exchange_turn()` | 把用户音频播放给智能体，等待其语音回复，并测量时间。                                           |
+| `disconnect()`    | 拆除会话并释放其资源。                                                                       |
 
-`exchange_turn()` is step 3 in [How Voice Evals Work](#how-voice-evals-work). `connect()` and `disconnect()` bracket the whole conversation — one live call per conversation:
+`exchange_turn()` 是[语音评估如何运作](#how-voice-evals-work)中的第 3 步。`connect()` 与 `disconnect()` 界定整段对话——每次对话一条实时通话：
 
 ```mermaid
 sequenceDiagram
@@ -159,11 +159,11 @@ sequenceDiagram
     Connector->>Agent: end the call
 ```
 
-One live call per connector is also why voice simulations run sequentially — concurrent conversations would interleave audio on the same session. The simulator maps each exchange onto a normal [`Turn`](#voice-data-on-test-cases) on the `ConversationalTestCase` — you only construct the transport reply type yourself when wrapping an in-process agent; see [Callback](/docs/conversation-simulator-voice-connectors#callback). Connector-specific end-of-turn behavior is covered under [Turn Detection](/docs/conversation-simulator-voice-connectors#turn-detection).
+每次对话一条连接器实时通话，也是语音模拟按顺序运行的原因——并发的对话会在同一会话上交织音频。模拟器把每次交换映射为 `ConversationalTestCase` 上一个普通的 [`Turn`](#voice-data-on-test-cases)——只有包装进程内智能体时你才需要自己构造传输回复类型；见 [Callback](/docs/conversation-simulator-voice-connectors#callback)。各连接器的轮次结束行为在[轮次检测](/docs/conversation-simulator-voice-connectors#turn-detection)中说明。
 
-## Voice Data on Test Cases
+## 测试用例上的语音数据
 
-Voice data lives on the same test case classes you already use, so nothing downstream has to change. A voice conversation is still a `ConversationalTestCase` made of `Turn`s — see [multi-turn test cases](/docs/evaluation-multiturn-test-cases#turns) for the full structure of the `Turn` class — with a few voice fields added on top:
+语音数据就在你已经在用的测试用例类上，因此下游无需任何改动。语音对话仍然是由 `Turn` 组成的 `ConversationalTestCase` —— `Turn` 类的完整结构见[多轮测试用例](/docs/evaluation-multiturn-test-cases#turns) ——只是额外增加了几个语音字段：
 
 ```python
 class Turn:
@@ -176,15 +176,15 @@ class Turn:
     ...
 ```
 
-- **`Turn.audio`** holds an [`Audio`](#audio-data-model) object for that turn: the synthesized user speech on user turns, the agent's reply on assistant turns. Clip length lives on `Audio.duration` (seconds), not on the turn.
-- **`Turn.latency_ms`** records how long the agent took to start speaking after the user's audio was sent (assistant turns only). This is wait time, not how long the reply lasted.
-- **`Turn.interrupted`** is `True` when a user barge-in cut this assistant reply short; left `None` when interruptions weren't exercised (half-duplex) or the turn finished normally.
+- **`Turn.audio`** 为该轮次持有一个 [`Audio`](#audio-data-model) 对象：用户轮次是合成的用户语音，助手轮次是智能体的回复。片段时长在 `Audio.duration`（秒）上，不在轮次上。
+- **`Turn.latency_ms`** 记录智能体在用户音频发出后过了多久才开始说话（仅助手轮次）。这是等待时间，不是回复持续了多久。
+- **`Turn.interrupted`** 在用户插话打断这条助手回复时为 `True`；未测试打断（半双工）或该轮正常结束时保持 `None`。
 
-Because the transcript still lives in each `Turn.content`, every multi-turn metric works on voice conversations unchanged — the audio and timing fields are additional signal, not a parallel format.
+由于转写文本仍在每个 `Turn.content` 中，所有多轮指标在语音对话上原样可用——音频与时间字段是额外的信号，而不是一套平行格式。
 
-### `Audio` Data Model
+### `Audio` 数据模型
 
-Here's the data model of the `Audio` class in `deepeval`:
+以下是 `deepeval` 中 `Audio` 类的数据模型：
 
 ```python
 class Audio:
@@ -197,17 +197,17 @@ class Audio:
     start_time: Optional[float] = None
 ```
 
-There are **SEVEN** fields on an `Audio`:
+`Audio` 有**七个**字段：
 
-- [Optional] `url`: a string that is a local file path or an `http(s)://` URL. When set, `mimeType`, `filename`, and (for local files) `dataBase64` are derived for you. Defaulted to `None`.
-- [Optional] `dataBase64`: a string of base64-encoded audio bytes stored on the object. Set automatically by `Audio.from_bytes(...)` or when loading a local `url`; not something you normally pass in. Defaulted to `None`.
-- [Optional] `mimeType`: a string specifying the audio MIME type, such as `"audio/wav"`, `"audio/mpeg"`, `"audio/opus"`, `"audio/aac"`, `"audio/flac"`, or `"audio/pcm"`. Guessed from the file extension when constructing from `url` (falling back to `"audio/wav"`). Required for `Audio.from_bytes(...)`. Defaulted to `None`.
-- [Optional] `sampleRate`: an integer sample rate in Hz (e.g. `24000`). Metadata only — set it when you know it. Defaulted to `None`.
-- [Optional] `encoding`: a string container/codec label (e.g. `"wav"`). Metadata only. Defaulted to `None`.
-- [Optional] `duration`: a number representing the length of this audio clip in seconds. Metadata only — this is how long the speech _is_, not how long the agent took to reply (`Turn.latency_ms`). Defaulted to `None`.
-- [Optional] `start_time`: the number of seconds from the beginning of the call to the first frame of this clip. Voice simulations populate it from the live monotonic call clock. Together with `duration`, it lets metrics reconstruct real silence and overlap without duplicating a full-call recording. Defaulted to `None` for manually constructed or legacy audio.
+- [可选] `url`：字符串，本地文件路径或 `http(s)://` URL。设置后，`mimeType`、`filename` 与（本地文件的）`dataBase64` 会自动推导。默认为 `None`。
+- [可选] `dataBase64`：字符串，保存在对象上的 base64 编码音频字节。由 `Audio.from_bytes(...)` 或加载本地 `url` 时自动设置；通常不需要你手动传入。默认为 `None`。
+- [可选] `mimeType`：字符串，指定音频 MIME 类型，例如 `"audio/wav"`、`"audio/mpeg"`、`"audio/opus"`、`"audio/aac"`、`"audio/flac"` 或 `"audio/pcm"`。从 `url` 构造时按扩展名推测（回退为 `"audio/wav"`）。`Audio.from_bytes(...)` 必需。默认为 `None`。
+- [可选] `sampleRate`：整数采样率，单位 Hz（例如 `24000`）。仅为元数据——知道时请设置。默认为 `None`。
+- [可选] `encoding`：字符串容器/编解码器标签（例如 `"wav"`）。仅为元数据。默认为 `None`。
+- [可选] `duration`：数字，表示该音频片段的时长（秒）。仅为元数据——这是语音_本身_的长度，不是智能体回复花了多久（`Turn.latency_ms`）。默认为 `None`。
+- [可选] `start_time`：从通话开始到该片段第一帧的秒数。语音模拟会从实时的单调通话时钟填充它。配合 `duration`，指标可以重建真实的静默与重叠，而无需复制整段通话录音。手工构造或旧版音频默认为 `None`。
 
-Construct an `Audio` in exactly one of two ways:
+构造 `Audio` 有且只有两种方式：
 
 ```python
 from deepeval.test_case import Audio
@@ -219,17 +219,17 @@ recording = Audio(url="./agent-reply.wav")
 recording = Audio.from_bytes(wav_bytes, mimeType="audio/wav", sampleRate=24000)
 ```
 
-`Audio.from_bytes(...)` is the supported in-memory constructor: pass raw `bytes` plus `mimeType`, and it stores them as `dataBase64` under the hood. You generally should not pass `dataBase64=` yourself.
+`Audio.from_bytes(...)` 是受支持的内存构造方式：传入原始 `bytes` 与 `mimeType`，它会在底层把它们存为 `dataBase64`。一般不应自己传 `dataBase64=`。
 
 <Info>
-During a voice simulation you never build `Audio` objects yourself — the TTS model and the connector construct them and attach them to `Turn`s. You'll construct one manually only when assembling test cases by hand, such as from recorded production calls.
+在语音模拟期间你从不需要自己构建 `Audio` 对象——TTS 模型与连接器会构建并挂到 `Turn` 上。只有当你手工组装测试用例（例如来自录制的生产通话）时才需要手动构造。
 </Info>
 
-## Simulating Voice Conversations
+## 模拟语音对话
 
-The `ConversationSimulator` puts all of this together: pass a `VoiceConfig` (connector + optional speech models) instead of a `model_callback`, and every simulated conversation becomes a voice call.
+`ConversationSimulator` 把这一切整合起来：传入一个 `VoiceConfig`（连接器 + 可选语音模型）而不是 `model_callback`，每次模拟对话就变成一次语音通话。
 
-In this example, `ElevenLabsConnector` connects to an existing ElevenLabs conversational agent. It is the agent bridge; the TTS and STT models used by the simulated caller remain the `VoiceConfig` defaults.
+在本例中，`ElevenLabsConnector` 连接到一个已有的 ElevenLabs 对话式智能体。它是智能体桥；模拟来电者使用的 TTS 与 STT 模型仍是 `VoiceConfig` 的默认值。
 
 ```python
 from deepeval.voice import VoiceConfig, ElevenLabsConnector
@@ -240,24 +240,24 @@ simulator = ConversationSimulator(
 )
 ```
 
-See [Voice Mode](/docs/conversation-simulator-voice-mode) for configuration and custom speech models, [Voice Connectors](/docs/conversation-simulator-voice-connectors) for the connector catalog, [Personas](/docs/conversation-simulator-voice-personas) for who does the calling, and [Interruptions](/docs/conversation-simulator-voice-interruptions) for barge-in.
+配置与自定义语音模型见[语音模式](/docs/conversation-simulator-voice-mode)，连接器目录见[语音连接器](/docs/conversation-simulator-voice-connectors)，谁来打电话见[人设](/docs/conversation-simulator-voice-personas)，插话见[打断](/docs/conversation-simulator-voice-interruptions)。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="Why does deepeval need its own TTS and STT if my agent already has them?">
-Your agent's speech stack is *inside* the system under test. `deepeval` 's speech models sit on the other side of the call — they are the simulated caller's mouth and ears, speaking user turns to your agent and transcribing what it says back so metrics can judge the conversation.
+你智能体的语音栈在*被测系统内部*。`deepeval` 的语音模型位于通话的另一端——它们是模拟来电者的嘴和耳朵，把用户轮次说给你的智能体听，并转写它的回复，供指标评判对话。
 </Accordion>
 <Accordion title="Which connector should I use to reach my agent?">
-Use the connector matching how your agent is already deployed: `ElevenLabsConnector` for ElevenLabs conversational agents, `LiveKitConnector` for LiveKit rooms, or `WebSocketConnector` for a compatible raw-audio WebSocket. For an agent callable in the same Python process, use `CallbackVoiceConnector` .
+使用与你智能体现有部署方式匹配的连接器：ElevenLabs 对话式智能体用 `ElevenLabsConnector`，LiveKit 房间用 `LiveKitConnector`，兼容的原始音频 WebSocket 用 `WebSocketConnector`。可在同一 Python 进程内调用的智能体用 `CallbackVoiceConnector`。
 </Accordion>
 <Accordion title="What exactly does latency_ms measure?">
-The time from sending the simulated user's audio to capturing the agent's spoken reply. The exact timing boundary depends on the connector's transport, so compare latency measurements made through the same connector type.
+从发出模拟用户的音频到捕获智能体语音回复的时间。确切的时间边界取决于连接器的传输方式，因此延迟测量只在相同类型的连接器之间比较。
 </Accordion>
 <Accordion title="Do my existing multi-turn metrics work on voice conversations?">
-Yes. A voice simulation produces a standard `ConversationalTestCase` whose transcript lives in each `Turn.content` — metrics like `TurnRelevancyMetric` judge it exactly as they would a text conversation. The audio and `latency_ms` fields are additional signal on top.
+可以。语音模拟产生一个标准的 `ConversationalTestCase`，其转写文本保存在每个 `Turn.content` 中——`TurnRelevancyMetric` 等指标评判它与评判文本对话的方式完全一致。音频与 `latency_ms` 字段是其上的额外信号。
 </Accordion>
 <Accordion title="Can one connector serve multiple conversations concurrently?">
-No — a connector holds a single live call, so the simulator connects before each conversation's first turn, disconnects when it ends, and runs conversations sequentially. Concurrent conversations would interleave audio on the same session.
+不可以——一个连接器只持有一条实时通话，因此模拟器会在每段对话的首轮前连接、结束时断开，并按顺序运行对话。并发对话会在同一会话上交织音频。
 </Accordion>
 </AccordionGroup>
