@@ -384,6 +384,9 @@ def convert_cards(text):
     text = re.sub(r"</Cards>", "</CardGroup>", text)
     text = re.sub(r'icon=\{<(\w+)\s*/>\}',
                   lambda m: 'icon="%s"' % pascal_to_kebab(m.group(1)), text)
+    # 本地图片图标（/icons/...）：站点不带第三方图标资产，整块剥离
+    text = re.sub(r"icon=\{\s*\n?\s*<img\b.*?/\>\s*\n?\s*\}\s*\n?", "", text,
+                  flags=re.S)
     return text
 
 

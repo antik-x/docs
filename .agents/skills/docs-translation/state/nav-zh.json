@@ -28,5 +28,10 @@
     "Voice Mode": "语音模式",
     "End-to-End Evals": "端到端评估"
   },
-  "pages": {}
+  "pages": {
+    "introduction": "简介",
+    "introduction-design-philosophy": "设计哲学",
+    "introduction-comparisons": "对比",
+    "getting-started": "快速上手"
+  }
 }

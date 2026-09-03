@@ -1,0 +1,1807 @@
+---
+title: DeepEval 5 分钟快速上手
+---
+
+本快速上手将带你在几分钟内从安装 DeepEval 走到第一次通过的评估。你将创建一个小的测试用例、选择一个指标，并用 `deepeval test run` 运行它。
+
+读完本快速上手，你应当能够：
+
+- 用测试用例、指标和 `deepeval test run` 运行你的第一次本地评估。
+- 评估 AI 智能体的完整轨迹，并借助追踪诊断其内部组件。
+- 知道接下来去哪里了解数据集、集成与 Confident AI
+  平台。
+
+初次接触 DeepEval？阅读[简介](/docs/introduction)进一步了解这个框架。
+
+<Tip>
+
+**更想让编码智能体替你完成？**
+
+本页带你**亲手**完成 DeepEval 的安装配置。如果你更想在 **Cursor、Claude Code、Codex、Windsurf** 或任何其他 AI 编码工具中安装一个 skill——让编码智能体替你编写测试套件、运行 `deepeval test run` 并针对失败进行迭代——请直接从 **[5 分钟 Vibe Coder 快速上手 →](/docs/vibe-coder-quickstart)** 开始。
+</Tip>
+
+## 安装
+
+<Tabs>
+
+<Tab title="Python">
+
+在新建的虚拟环境中运行：
+
+```bash
+pip install -U deepeval
+```
+
+`deepeval` 插入 Pytest，因此 `deepeval test run` 会像 `pytest` 一样收集并运行你的评估文件。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+在你的项目中运行：
+
+```bash
+npm install --save-dev deepeval
+```
+
+该包自带 `deepeval` 可执行文件，因此下面所有命令都通过 `npx` 运行。`deepeval` 插入 [Vitest](https://vitest.dev)，因此 `npx deepeval test run` 会像 `vitest` 一样收集并运行你的评估文件。
+
+</Tab>
+
+</Tabs>
+
+`deepeval` 在你的环境中本地运行评估。要把测试报告集中保存到云端，请使用 [Confident AI](https://www.confident-ai.com)——一个 DeepEval 与之原生集成、具备可观测性、评估与监控能力的 AI 质量平台：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval login
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval login
+```
+
+</Tab>
+
+</Tabs>
+
+浏览器只负责认证。在你登录或创建账号后，回到终端输入你的姓名与组织，确认预填的第一个项目名称，或选择一个现有项目。DeepEval 会自动创建并保存专属的项目 API key。对于 CI 或其他非交互环境，用 `deepeval login --api-key ...` 传入已有密钥。
+
+<details>
+
+<summary>配置环境变量</summary>
+
+DeepEval 会自动加载环境文件（在导入时）
+
+- **优先级：**现有进程环境变量 -> `.env.local` -> `.env`
+- **退出加载：**设置 `DEEPEVAL_DISABLE_DOTENV=1`
+
+关于 `env` 设置的更多信息见[这里](/docs/evaluation-flags-and-configs#environment-flags)。
+
+```bash
+# quickstart
+cp .env.example .env.local
+# then edit .env.local (ignored by git)
+```
+
+</details>
+
+<Note>
+Confident AI 免费，并允许你把所有评估结果保存在云端。在[这里](https://app.confident-ai.com)注册。
+</Note>
+
+## 创建你的第一次测试运行
+
+创建一个测试文件，来运行你的第一次**端到端评估**。
+
+<Tabs>
+<Tab title="单轮">
+
+`deepeval` 中的 [LLM 测试用例](/docs/evaluation-test-cases#llm-test-case)表示**单次 LLM 应用交互单元**，包含 `input` 和 `actual_output`（LLM 生成的输出）等必填字段，以及 `expected_output` 等可选字段。
+
+![LLM 测试用例](https://deepeval-docs.s3.amazonaws.com/docs:llm-test-case.png)
+
+在终端运行 `touch test_example.py`（TypeScript 中为 `touch example.test.ts`），并粘贴以下代码：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_example.py"
+from deepeval import assert_test
+from deepeval.test_case import LLMTestCase, SingleTurnParams
+from deepeval.metrics import GEval
+
+def test_correctness():
+    correctness_metric = GEval(
+        name="Correctness",
+        criteria="Determine if the 'actual output' is correct based on the 'expected output'.",
+        evaluation_params=[SingleTurnParams.ACTUAL_OUTPUT, SingleTurnParams.EXPECTED_OUTPUT],
+        threshold=0.5
+    )
+    test_case = LLMTestCase(
+        input="I have a persistent cough and fever. Should I be worried?",
+        # Replace this with the actual output from your LLM application
+        actual_output="A persistent cough and fever could be a viral infection or something more serious. See a doctor if symptoms worsen or don't improve in a few days.",
+        expected_output="A persistent cough and fever could indicate a range of illnesses, from a mild viral infection to more serious conditions like pneumonia or COVID-19. You should seek medical attention if your symptoms worsen, persist for more than a few days, or are accompanied by difficulty breathing, chest pain, or other concerning signs."
+    )
+    assert_test(test_case, [correctness_metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="example.test.ts"
+import { it, expect } from "vitest";
+import { LLMTestCase, SingleTurnParams } from "deepeval/test-case";
+import { GEval } from "deepeval/metrics";
+import "deepeval/vitest";
+
+it("gives medically sound advice", async () => {
+  const correctnessMetric = new GEval({
+    name: "Correctness",
+    criteria:
+      "Determine if the 'actual output' is correct based on the 'expected output'.",
+    evaluationParams: [
+      SingleTurnParams.ACTUAL_OUTPUT,
+      SingleTurnParams.EXPECTED_OUTPUT,
+    ],
+    threshold: 0.5,
+  });
+  const testCase = new LLMTestCase({
+    input: "I have a persistent cough and fever. Should I be worried?",
+    // Replace this with the actual output from your LLM application
+    actualOutput:
+      "A persistent cough and fever could be a viral infection or something more serious. See a doctor if symptoms worsen or don't improve in a few days.",
+    expectedOutput:
+      "A persistent cough and fever could indicate a range of illnesses, from a mild viral infection to more serious conditions like pneumonia or COVID-19. You should seek medical attention if your symptoms worsen, persist for more than a few days, or are accompanied by difficulty breathing, chest pain, or other concerning signs.",
+  });
+  await expect(testCase).toPass([correctnessMetric]);
+});
+```
+
+导入 `deepeval/vitest` 会注册 `toPass()` 匹配器。`npx deepeval test run` 会自动注入它，因此只有当你直接用 `vitest` 运行同一文件时这个导入才有意义。
+
+</Tab>
+
+</Tabs>
+
+然后，在项目根目录运行 `deepeval test run`，对 LLM 应用做**端到端**评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval test run test_example.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval test run example.test.ts
+```
+
+</Tab>
+
+</Tabs>
+
+恭喜！你的测试用例应该已经通过 ✅ 我们来分解一下发生了什么。
+
+- 变量 `input` 模拟用户输入，`actual_output` 是你的应用基于该输入应当输出的内容的占位。
+- 变量 `expected_output` 表示给定 `input` 的理想答案；[`GEval`](/docs/metrics-llm-evals) 是 `deepeval` 提供的、有研究支撑的指标，让你以类人准确度按任意自定义标准评估 LLM 输出。
+- 在本例中，指标 `criteria` 是基于给定 `expected_output` 的 `actual_output` 正确性，但并非所有指标都需要 `expected_output`。
+- 所有指标分数范围都是 0 - 1，`threshold=0.5`（TypeScript 中为 `threshold: 0.5`）阈值最终决定你的测试是否通过。
+
+如果你运行了不止一次测试运行，就能通过并排比较测试用例来**发现回归**。如果把 `deepeval` 与 Confident AI 搭配使用会更容易（[见下文](/docs/getting-started#save-results)视频演示）。
+
+</Tab>
+<Tab title="多轮">
+
+`deepeval` 中的[对话式测试用例](/docs/evaluation-multiturn-test-cases#conversational-test-case)表示**与 LLM 应用的一次多轮交互**，包含以 `turn` 形式组织的实际对话内容，以及可选的对话场景。
+
+![对话式测试用例](https://deepeval-docs.s3.amazonaws.com/docs:conversational-test-case.png)
+
+在终端运行 `touch test_example.py`（TypeScript 中为 `touch example.test.ts`），并粘贴以下代码：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_example.py"
+from deepeval import assert_test
+from deepeval.test_case import Turn, ConversationalTestCase
+from deepeval.metrics import ConversationalGEval
+
+def test_professionalism():
+    professionalism_metric = ConversationalGEval(
+        name="Professionalism",
+        criteria="Determine whether the assistant has acted professionally based on the content.",
+        threshold=0.5
+    )
+    test_case = ConversationalTestCase(
+        turns=[
+            Turn(role="user", content="What is DeepEval?"),
+            Turn(role="assistant", content="DeepEval is an open-source LLM eval package.")
+        ]
+    )
+    assert_test(test_case, [professionalism_metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="example.test.ts"
+import { it, expect } from "vitest";
+import {
+  ConversationalTestCase,
+  MultiTurnParams,
+  Turn,
+} from "deepeval/test-case";
+import { ConversationalGEval } from "deepeval/metrics";
+import "deepeval/vitest";
+
+it("stays professional across the conversation", async () => {
+  const professionalismMetric = new ConversationalGEval({
+    name: "Professionalism",
+    criteria:
+      "Determine whether the assistant has acted professionally based on the content.",
+    evaluationParams: [MultiTurnParams.CONTENT],
+    threshold: 0.5,
+  });
+  const testCase = new ConversationalTestCase({
+    turns: [
+      new Turn({ role: "user", content: "What is DeepEval?" }),
+      new Turn({
+        role: "assistant",
+        content: "DeepEval is an open-source LLM eval package.",
+      }),
+    ],
+  });
+  await expect(testCase).toPass([professionalismMetric]);
+});
+```
+
+</Tab>
+
+</Tabs>
+
+然后，在项目根目录运行 `deepeval test run`，对 LLM 应用做**端到端**评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval test run test_example.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval test run example.test.ts
+```
+
+</Tab>
+
+</Tabs>
+
+🎉 恭喜！你的测试用例应该已经通过 ✅ 我们来分解一下发生了什么。
+
+- 变量 `role` 区分最终用户与你的 LLM 应用，`content` 包含用户输入或 LLM 输出。
+- 在本例中，`criteria` 指标评估 `content` 序列的专业度。
+- 所有指标分数范围都是 0 - 1，`threshold=0.5`（TypeScript 中为 `threshold: 0.5`）阈值最终决定你的测试是否通过。
+
+如果你运行了不止一次测试运行，就能通过并排比较测试用例来**发现回归**。如果把 `deepeval` 与 Confident AI 搭配使用会更容易（[见下文](/docs/getting-started#save-results)视频演示）。
+
+</Tab>
+</Tabs>
+
+<Info>
+
+由于包括 `GEval` 在内的几乎所有 `deepeval` 指标都是 LLM-as-a-Judge 指标，你需要把 `OPENAI_API_KEY` 设为环境变量。你也可以自定义评估使用的模型：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+correctness_metric = GEval(..., model="o1")
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+const correctnessMetric = new GEval({
+  // ...
+  model: "o1",
+});
+```
+
+</Tab>
+
+</Tabs>
+
+DeepEval 还与这些模型提供商集成：[Ollama](https://deepeval.com/integrations/models/ollama)、[Azure OpenAI](https://deepeval.com/integrations/models/azure-openai)、[Anthropic](https://deepeval.com/integrations/models/anthropic)、[Gemini](https://deepeval.com/integrations/models/gemini) 等。
+
+要使用**任意**你选择的自定义 LLM，请参阅[文档的这一部分](/guides/guides-using-custom-llms)。
+
+<details>
+
+<summary>评估"卡住"了？</summary>
+
+最可能是你的评估 LLM 出了问题，原因可能是速率限制或配额不足。
+
+<Tabs>
+
+<Tab title="Python">
+
+默认情况下，`deepeval` 会对**瞬时** LLM 错误重试一次（共尝试 2 次）：
+
+- **会重试：**网络/超时错误与 **5xx** 服务器错误。
+- **速率限制（429）：**会重试，除非提供商标记为不可重试
+  （对 OpenAI 而言，`insufficient_quota` 被视为不可重试）。
+- **退避：**带抖动的指数退避（初始 **1s**，基数 **2**，抖动 **2s**，上限 **5s**）。
+
+你可以通过环境开关调整这些行为（无需改代码）。详见[环境变量](/docs/environment-variables)。
+
+</Tab>
+
+<Tab title="TypeScript">
+
+`deepeval` 不会在 LLM 调用外再包一层重试——重试由各提供商的 SDK 处理，因此请在你传入的客户端上配置：
+
+```typescript
+import OpenAI from "openai";
+
+const client = new OpenAI({ maxRetries: 5 });
+```
+
+其余可调项见[环境变量](/docs/environment-variables)。
+
+</Tab>
+
+</Tabs>
+
+</details>
+
+</Info>
+
+### 保存结果
+
+建议你把测试运行推送到 Confident AI——一个 `deepeval` 与之原生集成、面向可观测性、评估与监控的 AI 质量平台。
+
+<Tabs>
+<Tab title="Confident AI">
+
+Confident AI 是一个具备可观测性、评估与监控能力的 AI 质量平台，`deepeval` 与之原生集成，帮助你构建最好的 LLM 评估流水线。
+
+运行 `deepeval view` 在平台上查看你刚运行的测试运行：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval view
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval view
+```
+
+</Tab>
+
+</Tabs>
+
+`deepeval view` 命令要求你上面运行的测试运行已成功缓存在本地。如果出错，用 `deepeval login` 登录后重新运行一次测试运行即可：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+deepeval login
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx deepeval login
+```
+
+</Tab>
+
+</Tabs>
+
+设置完成后，无论你在何种环境、何种规模、何地运行测试运行来评估你的 LLM 应用，Confident AI 都会**生成测试报告并自动化回归测试**。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/evaluation:overview.mp4"></video>
+  <figcaption>完整演示如何运行并分析你的第一次评估。</figcaption>
+</figure>
+
+**当你运行了不止一次测试运行**，你就能使用视频末尾附近展示的[回归测试页面](https://www.confident-ai.com/docs/llm-evaluation/dashboards/ab-regression-testing)。绿色行表示你的 LLM 在特定测试用例上有改进，红色行则突出回归之处。
+
+</Tab>
+<Tab title="本地 JSON">
+
+只需把 `DEEPEVAL_RESULTS_FOLDER` 环境变量设置为你选择的相对路径。
+
+```bash
+# linux
+export DEEPEVAL_RESULTS_FOLDER="./data"
+
+# or windows
+set DEEPEVAL_RESULTS_FOLDER=.\data
+```
+
+</Tab>
+</Tabs>
+
+<span id="evals-with-llm-tracing" />
+
+## 评估 AI 智能体
+
+AI 智能体在产出结果之前往往要经历许多步骤。要评估智能体是否完成了任务以及它是如何完成的，先用 [LLM 追踪](/docs/evaluation-llm-tracing)对它做埋点，再对它的完整轨迹打分。
+
+<Steps>
+<Step>
+
+### 构建数据集
+
+为你的智能体创建一个由代表性任务组成的小数据集：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset, Golden
+
+dataset = EvaluationDataset(goldens=[Golden(input="Plan a three-day trip to Paris")])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "Plan a three-day trip to Paris" })],
+});
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+<Step>
+
+### 埋点并评估轨迹
+
+每个示例都会对智能体做埋点，为每个金标（golden）捕获一条完整追踪，并把 `TaskCompletionMetric` 应用到整条轨迹。
+
+<Tabs>
+
+<Tab title="Python">
+
+在下面选择你的技术栈，粘贴代码片段并运行。每个集成都提供 **Async** 示例（默认——并发运行金标）和 **Sync** 示例（一次一个金标，适合调试或受速率限制的提供商）：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+粘贴下面的代码片段并运行——当你的应用产出追踪时，金标会被并发评估：
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+<Tabs>
+<Tab title="手动埋点">
+
+用 `@observe` 包装顶层函数，并调用 `update_current_trace(...)` 设置追踪级测试用例字段：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="main.py" showLineNumbers
+import asyncio
+from deepeval.tracing import observe, update_current_trace
+from deepeval.metrics import TaskCompletionMetric
+...
+
+@observe()
+async def my_ai_agent(query: str) -> str:
+    answer = "..."  # await your LLM call here
+    update_current_trace(input=query, output=answer)
+    return answer
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(my_ai_agent(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="main.py" showLineNumbers
+from deepeval.evaluate import AsyncConfig
+from deepeval.tracing import observe, update_current_trace
+from deepeval.metrics import TaskCompletionMetric
+...
+
+@observe()
+def my_ai_agent(query: str) -> str:
+    answer = "..."  # call your LLM here
+    update_current_trace(input=query, output=answer)
+    return answer
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    my_ai_agent(golden.input)
+```
+
+</Tab>
+</Tabs>
+
+完整的 `@observe` 与 `update_current_trace` 用法见[追踪](/docs/evaluation-llm-tracing)。
+
+</Tab>
+<Tab title="LangChain">
+
+用 `create_agent` 构建你的智能体，然后在循环中把 `deepeval` 的 `CallbackHandler` 传给它的 `invoke` / `ainvoke` 方法：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="langchain_app.py" showLineNumbers
+import asyncio
+from langchain.agents import create_agent
+from deepeval.integrations.langchain import CallbackHandler
+from deepeval.metrics import TaskCompletionMetric
+...
+
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers."""
+    return a * b
+
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    tools=[multiply],
+    system_prompt="Be concise.",
+)
+
+async def run_agent(prompt: str):
+    return await agent.ainvoke(
+        {"messages": [{"role": "user", "content": prompt}]},
+        config={"callbacks": [CallbackHandler()]},
+    )
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(run_agent(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="langchain_app.py" showLineNumbers
+from langchain.agents import create_agent
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.langchain import CallbackHandler
+from deepeval.metrics import TaskCompletionMetric
+...
+
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers."""
+    return a * b
+
+agent = create_agent(
+    model="openai:gpt-4o-mini",
+    tools=[multiply],
+    system_prompt="Be concise.",
+)
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    agent.invoke(
+        {"messages": [{"role": "user", "content": golden.input}]},
+        config={"callbacks": [CallbackHandler()]},
+    )
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [LangChain 集成](/integrations/frameworks/langchain)。
+
+</Tab>
+<Tab title="LangGraph">
+
+接好你的 `StateGraph`，然后在循环中把 `deepeval` 的 `CallbackHandler` 传给它的 `invoke` / `ainvoke` 方法：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="langgraph_app.py" showLineNumbers
+import asyncio
+from langchain.chat_models import init_chat_model
+from langgraph.graph import StateGraph, MessagesState, START, END
+from deepeval.integrations.langchain import CallbackHandler
+from deepeval.metrics import TaskCompletionMetric
+...
+
+llm = init_chat_model("openai:gpt-4o-mini")
+
+async def chatbot(state: MessagesState):
+    return {"messages": [await llm.ainvoke(state["messages"])]}
+
+graph = (
+    StateGraph(MessagesState)
+    .add_node(chatbot)
+    .add_edge(START, "chatbot")
+    .add_edge("chatbot", END)
+    .compile()
+)
+
+async def run_graph(prompt: str):
+    return await graph.ainvoke(
+        {"messages": [{"role": "user", "content": prompt}]},
+        config={"callbacks": [CallbackHandler()]},
+    )
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(run_graph(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="langgraph_app.py" showLineNumbers
+from langchain.chat_models import init_chat_model
+from langgraph.graph import StateGraph, MessagesState, START, END
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.langchain import CallbackHandler
+from deepeval.metrics import TaskCompletionMetric
+...
+
+llm = init_chat_model("openai:gpt-4o-mini")
+
+def chatbot(state: MessagesState):
+    return {"messages": [llm.invoke(state["messages"])]}
+
+graph = (
+    StateGraph(MessagesState)
+    .add_node(chatbot)
+    .add_edge(START, "chatbot")
+    .add_edge("chatbot", END)
+    .compile()
+)
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    graph.invoke(
+        {"messages": [{"role": "user", "content": golden.input}]},
+        config={"callbacks": [CallbackHandler()]},
+    )
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [LangGraph 集成](/integrations/frameworks/langgraph)。
+
+</Tab>
+<Tab title="OpenAI">
+
+把 `from openai import OpenAI` 直接替换为 `from deepeval.openai import OpenAI`（或 `AsyncOpenAI`）。把调用包在 `with trace():` 中，LLM 调用就会成为追踪：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="openai_app.py" showLineNumbers
+import asyncio
+from deepeval.openai import AsyncOpenAI
+from deepeval.tracing import trace
+from deepeval.metrics import TaskCompletionMetric
+...
+
+client = AsyncOpenAI()
+
+async def call_openai(prompt: str):
+    with trace():
+        return await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(call_openai(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="openai_app.py" showLineNumbers
+from deepeval.openai import OpenAI
+from deepeval.tracing import trace
+from deepeval.evaluate import AsyncConfig
+from deepeval.metrics import TaskCompletionMetric
+...
+
+client = OpenAI()
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    with trace():
+        client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": golden.input}],
+        )
+```
+
+</Tab>
+</Tabs>
+
+流式与工具调用相关内容见 [OpenAI 集成](/integrations/frameworks/openai)。
+
+</Tab>
+<Tab title="Pydantic AI">
+
+把 `DeepEvalInstrumentationSettings()` 传给你 `Agent` 的 `instrument` 关键字参数：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="pydanticai_agent.py" showLineNumbers
+import asyncio
+from pydantic_ai import Agent
+from deepeval.integrations.pydantic_ai import DeepEvalInstrumentationSettings
+from deepeval.metrics import TaskCompletionMetric
+...
+
+agent = Agent(
+    "openai:gpt-4.1",
+    system_prompt="Be concise.",
+    instrument=DeepEvalInstrumentationSettings(),
+)
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(agent.run(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="pydanticai_agent.py" showLineNumbers
+from pydantic_ai import Agent
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.pydantic_ai import DeepEvalInstrumentationSettings
+from deepeval.metrics import TaskCompletionMetric
+...
+
+agent = Agent(
+    "openai:gpt-4.1",
+    system_prompt="Be concise.",
+    instrument=DeepEvalInstrumentationSettings(),
+)
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    agent.run_sync(golden.input)
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [Pydantic AI 集成](/integrations/frameworks/pydanticai)。
+
+</Tab>
+<Tab title="AgentCore">
+
+在创建智能体之前调用 `instrument_agentcore()`。同一次调用也会对运行在 AgentCore 内的 [Strands](https://strandsagents.com/) 智能体做埋点：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="agentcore_agent.py" showLineNumbers
+import asyncio
+from strands import Agent
+from deepeval.integrations.agentcore import instrument_agentcore
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_agentcore()
+
+agent = Agent(model="amazon.nova-lite-v1:0")
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(agent.invoke_async(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="agentcore_agent.py" showLineNumbers
+from strands import Agent
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.agentcore import instrument_agentcore
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_agentcore()
+
+agent = Agent(model="amazon.nova-lite-v1:0")
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    agent(golden.input)
+```
+
+</Tab>
+</Tabs>
+
+完整用法（包括 `BedrockAgentCoreApp` 入口模式）见 [AgentCore 集成](/integrations/frameworks/agentcore)。
+
+</Tab>
+<Tab title="Strands">
+
+在调用你的 Strands 智能体之前调用 `instrument_strands()`（对托管在 AgentCore 上的 Strands，请改用 AgentCore 标签页）：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="strands_agent.py" showLineNumbers
+import asyncio
+from strands import Agent
+from strands.models.openai import OpenAIModel
+from deepeval.integrations.strands import instrument_strands
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_strands()
+
+agent = Agent(
+    model=OpenAIModel(model_id="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant.",
+)
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(agent.invoke_async(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="strands_agent.py" showLineNumbers
+from strands import Agent
+from strands.models.openai import OpenAIModel
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.strands import instrument_strands
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_strands()
+
+agent = Agent(
+    model=OpenAIModel(model_id="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant.",
+)
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    agent(golden.input)
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [Strands 集成](/integrations/frameworks/strands)。
+
+</Tab>
+<Tab title="Anthropic">
+
+把 `from anthropic import Anthropic` 直接替换为 `from deepeval.anthropic import Anthropic`（或 `AsyncAnthropic`）。把调用包在 `with trace():` 中，LLM 调用就会成为追踪：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="anthropic_app.py" showLineNumbers
+import asyncio
+from deepeval.anthropic import AsyncAnthropic
+from deepeval.tracing import trace
+from deepeval.metrics import TaskCompletionMetric
+...
+
+client = AsyncAnthropic()
+
+async def call_claude(prompt: str):
+    with trace():
+        return await client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(call_claude(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="anthropic_app.py" showLineNumbers
+from deepeval.anthropic import Anthropic
+from deepeval.tracing import trace
+from deepeval.evaluate import AsyncConfig
+from deepeval.metrics import TaskCompletionMetric
+...
+
+client = Anthropic()
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    with trace():
+        client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": golden.input}],
+        )
+```
+
+</Tab>
+</Tabs>
+
+流式与工具使用相关内容见 [Anthropic 集成](/integrations/frameworks/anthropic)。
+
+</Tab>
+<Tab title="LlamaIndex">
+
+把 `deepeval` 的事件处理器注册到 LlamaIndex 的 instrumentation 调度器上。`agent.run(...)` 仅支持异步，同步变体使用 `asyncio.run(...)`：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="llamaindex_agent.py" showLineNumbers
+import asyncio
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import FunctionAgent
+import llama_index.core.instrumentation as instrument
+from deepeval.integrations.llama_index import instrument_llama_index
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_llama_index(instrument.get_dispatcher())
+
+def multiply(a: float, b: float) -> float:
+    return a * b
+
+agent = FunctionAgent(
+    tools=[multiply],
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="You are a helpful calculator.",
+)
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(agent.run(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="llamaindex_agent.py" showLineNumbers
+import asyncio
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import FunctionAgent
+import llama_index.core.instrumentation as instrument
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.llama_index import instrument_llama_index
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_llama_index(instrument.get_dispatcher())
+
+def multiply(a: float, b: float) -> float:
+    return a * b
+
+agent = FunctionAgent(
+    tools=[multiply],
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="You are a helpful calculator.",
+)
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    asyncio.run(agent.run(golden.input))
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [LlamaIndex 集成](/integrations/frameworks/llamaindex)。
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+注册一次 `DeepEvalTracingProcessor`，然后用 `deepeval` 的 `Agent` 与 `function_tool` 垫片构建你的智能体：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="openai_agents_app.py" showLineNumbers
+import asyncio
+from agents import Runner, add_trace_processor
+from deepeval.openai_agents import Agent, DeepEvalTracingProcessor, function_tool
+from deepeval.metrics import TaskCompletionMetric
+...
+
+add_trace_processor(DeepEvalTracingProcessor())
+
+@function_tool
+def get_weather(city: str) -> str:
+    return f"It's always sunny in {city}!"
+
+agent = Agent(
+    name="weather_agent",
+    instructions="Answer weather questions concisely.",
+    tools=[get_weather],
+)
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(Runner.run(agent, golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="openai_agents_app.py" showLineNumbers
+from agents import Runner, add_trace_processor
+from deepeval.evaluate import AsyncConfig
+from deepeval.openai_agents import Agent, DeepEvalTracingProcessor, function_tool
+from deepeval.metrics import TaskCompletionMetric
+...
+
+add_trace_processor(DeepEvalTracingProcessor())
+
+@function_tool
+def get_weather(city: str) -> str:
+    return f"It's always sunny in {city}!"
+
+agent = Agent(
+    name="weather_agent",
+    instructions="Answer weather questions concisely.",
+    tools=[get_weather],
+)
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    Runner.run_sync(agent, golden.input)
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [OpenAI Agents 集成](/integrations/frameworks/openai-agents)。
+
+</Tab>
+<Tab title="Google ADK">
+
+在构建 `LlmAgent` 之前调用一次 `instrument_google_adk()`。ADK 的 `runner.run_async(...)` 仅支持异步，同步变体使用 `asyncio.run(...)`：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="google_adk_agent.py" showLineNumbers
+import asyncio
+from google.adk.agents import LlmAgent
+from google.adk.runners import InMemoryRunner
+from google.genai import types
+from deepeval.integrations.google_adk import instrument_google_adk
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_google_adk()
+
+agent = LlmAgent(model="gemini-2.0-flash", name="assistant", instruction="Be concise.")
+runner = InMemoryRunner(agent=agent, app_name="deepeval-quickstart")
+
+async def run_agent(prompt: str) -> str:
+    session = await runner.session_service.create_session(
+        app_name="deepeval-quickstart", user_id="demo-user",
+    )
+    message = types.Content(role="user", parts=[types.Part(text=prompt)])
+    async for event in runner.run_async(
+        user_id="demo-user", session_id=session.id, new_message=message,
+    ):
+        if event.is_final_response() and event.content:
+            return "".join(part.text for part in event.content.parts if getattr(part, "text", None))
+    return ""
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(run_agent(golden.input))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="google_adk_agent.py" showLineNumbers
+import asyncio
+from google.adk.agents import LlmAgent
+from google.adk.runners import InMemoryRunner
+from google.genai import types
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.google_adk import instrument_google_adk
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_google_adk()
+
+agent = LlmAgent(model="gemini-2.0-flash", name="assistant", instruction="Be concise.")
+runner = InMemoryRunner(agent=agent, app_name="deepeval-quickstart")
+
+async def run_agent(prompt: str) -> str:
+    session = await runner.session_service.create_session(
+        app_name="deepeval-quickstart", user_id="demo-user",
+    )
+    message = types.Content(role="user", parts=[types.Part(text=prompt)])
+    async for event in runner.run_async(
+        user_id="demo-user", session_id=session.id, new_message=message,
+    ):
+        if event.is_final_response() and event.content:
+            return "".join(part.text for part in event.content.parts if getattr(part, "text", None))
+    return ""
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    asyncio.run(run_agent(golden.input))
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [Google ADK 集成](/integrations/frameworks/google-adk)。
+
+</Tab>
+<Tab title="CrewAI">
+
+调用一次 `instrument_crewai()`，然后用 `deepeval` 的 `Crew`、`Agent` 与 `@tool` 垫片构建你的 crew：
+
+<Tabs>
+<Tab title="Async">
+
+```python title="crewai_app.py" showLineNumbers
+import asyncio
+from crewai import Task
+from deepeval.integrations.crewai import instrument_crewai, Crew, Agent
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_crewai()
+
+tutor = Agent(
+    role="Math Tutor",
+    goal="Answer math questions accurately and concisely.",
+    backstory="An experienced tutor who explains simple math clearly.",
+)
+answer_task = Task(
+    description="{question}",
+    expected_output="An accurate, concise answer.",
+    agent=tutor,
+)
+crew = Crew(agents=[tutor], tasks=[answer_task])
+
+for golden in dataset.evals_iterator(metrics=[TaskCompletionMetric()]):
+    task = asyncio.create_task(crew.kickoff_async({"question": golden.input}))
+    dataset.evaluate(task)
+```
+
+</Tab>
+<Tab title="Sync">
+
+```python title="crewai_app.py" showLineNumbers
+from crewai import Task
+from deepeval.evaluate import AsyncConfig
+from deepeval.integrations.crewai import instrument_crewai, Crew, Agent
+from deepeval.metrics import TaskCompletionMetric
+...
+
+instrument_crewai()
+
+tutor = Agent(
+    role="Math Tutor",
+    goal="Answer math questions accurately and concisely.",
+    backstory="An experienced tutor who explains simple math clearly.",
+)
+task = Task(
+    description="{question}",
+    expected_output="An accurate, concise answer.",
+    agent=tutor,
+)
+crew = Crew(agents=[tutor], tasks=[task])
+
+for golden in dataset.evals_iterator(
+    metrics=[TaskCompletionMetric()],
+    async_config=AsyncConfig(run_async=False),
+):
+    crew.kickoff({"question": golden.input})
+```
+
+</Tab>
+</Tabs>
+
+完整用法见 [CrewAI 集成](/integrations/frameworks/crewai)。
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="TypeScript">
+
+`evalsIterator()` 仅支持异步，因此没有同步变体可选——金标被并发评估，由循环等待完成。
+
+<Tabs>
+<Tab title="Manual Instrumentation">
+
+用 `observe` 包装顶层函数，并调用 `updateCurrentTrace(...)` 设置追踪级测试用例字段：
+
+```typescript title="main.ts" showLineNumbers
+import { TaskCompletionMetric } from "deepeval/metrics";
+import { observe, updateCurrentTrace } from "deepeval/tracing";
+...
+
+const myAiAgent = observe({
+  type: "agent",
+  fn: async (query: string): Promise<string> => {
+    const answer = "..."; // await your LLM call here
+    updateCurrentTrace({ input: query, output: answer });
+    return answer;
+  },
+});
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await myAiAgent((golden as Golden).input);
+}
+```
+
+完整的 `observe` 与 `updateCurrentTrace` 用法见[追踪](/docs/evaluation-llm-tracing)。
+
+</Tab>
+<Tab title="LangChain">
+
+用 `createAgent` 构建你的智能体，然后在循环中把 `deepeval` 的 `DeepEvalCallbackHandler` 传给它的 `invoke` 方法：
+
+```typescript title="langchain-agent.ts" showLineNumbers
+import { createAgent } from "langchain";
+import { DeepEvalCallbackHandler } from "deepeval/integrations/langchain";
+import { TaskCompletionMetric } from "deepeval/metrics";
+...
+
+const agent = createAgent({
+  model: "openai:gpt-4o-mini",
+  tools: [multiply],
+  systemPrompt: "Be concise.",
+});
+
+const handler = new DeepEvalCallbackHandler({});
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await agent.invoke(
+    { messages: [{ role: "user", content: (golden as Golden).input }] },
+    { callbacks: [handler] },
+  );
+}
+```
+
+完整用法见 [LangChain 集成](/integrations/frameworks/langchain)。
+
+</Tab>
+<Tab title="Mastra">
+
+在你的 `Mastra` 实例的 `Observability` 配置上注册一个 `DeepEvalExporter`，然后让金标流经该智能体：
+
+```typescript title="mastra-agent.ts" showLineNumbers
+import { Observability } from "@mastra/observability";
+import { Mastra } from "@mastra/core/mastra";
+import { DeepEvalExporter } from "deepeval/integrations/mastra";
+import { TaskCompletionMetric } from "deepeval/metrics";
+...
+
+const mastra = new Mastra({
+  agents: { weatherAgent },
+  observability: new Observability({
+    configs: {
+      deepeval: {
+        serviceName: "weather-app",
+        exporters: [new DeepEvalExporter()],
+      },
+    },
+  }),
+});
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await mastra.getAgent("weatherAgent").generate((golden as Golden).input);
+}
+```
+
+`evalsIterator()` 在打分前会等待 exporter 落定，因此无需在评估内手动 flush。完整用法见 [Mastra 集成](/integrations/frameworks/mastra)。
+
+</Tab>
+<Tab title="LangGraph">
+
+接好你的 `StateGraph`，然后在循环中把同一个 `DeepEvalCallbackHandler` 传给它的 `invoke` 方法：
+
+```typescript title="langgraph-agent.ts" showLineNumbers
+import { StateGraph, MessagesAnnotation, START, END } from "@langchain/langgraph";
+import { DeepEvalCallbackHandler } from "deepeval/integrations/langchain";
+import { TaskCompletionMetric } from "deepeval/metrics";
+...
+
+const graph = new StateGraph(MessagesAnnotation)
+  .addNode("chatbot", chatbot)
+  .addEdge(START, "chatbot")
+  .addEdge("chatbot", END)
+  .compile();
+
+const handler = new DeepEvalCallbackHandler({});
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await graph.invoke(
+    { messages: [{ role: "user", content: (golden as Golden).input }] },
+    { callbacks: [handler] },
+  );
+}
+```
+
+完整用法见 [LangGraph 集成](/integrations/frameworks/langgraph)。
+
+</Tab>
+<Tab title="OpenAI">
+
+对你已有的 client 调用一次 `instrumentOpenAI(client)`——它发出的每次补全或响应调用都会成为追踪下的一个 LLM span：
+
+```typescript title="openai-app.ts" showLineNumbers
+import { OpenAI } from "openai";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import { instrumentOpenAI } from "deepeval/openai";
+...
+
+const client = new OpenAI();
+instrumentOpenAI(client);
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: (golden as Golden).input }],
+  });
+}
+```
+
+完整用法见 [OpenAI 集成](/integrations/frameworks/openai)。
+
+</Tab>
+<Tab title="OpenAI Agents">
+
+向 agents SDK 注册一次 `DeepEvalTracingProcessor`，然后让金标流经该智能体：
+
+```typescript title="openai-agents-app.ts" showLineNumbers
+import { Agent, run, addTraceProcessor } from "@openai/agents";
+import { DeepEvalTracingProcessor } from "deepeval/integrations/openai-agents";
+import { TaskCompletionMetric } from "deepeval/metrics";
+...
+
+addTraceProcessor(new DeepEvalTracingProcessor());
+
+const agent = new Agent({
+  name: "weatherAgent",
+  instructions: "Answer weather questions concisely.",
+  model: "gpt-4o-mini",
+  tools: [getWeather],
+});
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await run(agent, (golden as Golden).input);
+}
+```
+
+完整用法见 [OpenAI Agents 集成](/integrations/frameworks/openai-agents)。
+
+</Tab>
+<Tab title="Vercel AI SDK">
+
+启动时调用一次 `configureAiSdkTracing(...)`，然后把返回的 tracer 传入每次想追踪的调用的 `experimental_telemetry`：
+
+```typescript title="ai-sdk-agent.ts" showLineNumbers
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { configureAiSdkTracing } from "deepeval/integrations/ai-sdk";
+import { TaskCompletionMetric } from "deepeval/metrics";
+...
+
+const tracer = configureAiSdkTracing({ name: "weather-app" });
+
+for await (const golden of dataset.evalsIterator({
+  metrics: [new TaskCompletionMetric()],
+})) {
+  await generateText({
+    model: openai("gpt-4o-mini"),
+    prompt: (golden as Golden).input,
+    experimental_telemetry: { isEnabled: true, tracer },
+  });
+}
+```
+
+没有 `isEnabled` 和 `tracer` 的调用不会产生任何 span。完整用法见 [Vercel AI SDK 集成](/integrations/frameworks/ai-sdk)。
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+</Tabs>
+
+然后运行该文件：
+
+<Tabs>
+
+<Tab title="Python">
+
+```bash
+python main.py
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```bash
+npx tsx main.ts
+```
+
+</Tab>
+
+</Tabs>
+
+🎉 恭喜！你的评估应该已经运行 ✅ 快速回顾一下发生了什么：
+
+- `evals_iterator()` 遍历你的数据集，为每个金标捕获一条追踪。
+- <Tabs><Tab title="Python">你集成的适配器（或 `@observe`）创建了 span</Tab><Tab title="TypeScript">你的集成（或 `observe`）</Tab></Tabs>记录了智能体的内部步骤。
+- `TaskCompletionMetric` 在智能体结束后分析完整的有序追踪。
+- DeepEval 把一切汇总为一个测试运行。
+
+</Step>
+<Step>
+
+### 评估单个组件
+
+基于轨迹的评估告诉你完整路径是否有效。[组件级评估](/docs/evaluation-component-level-llm-evals)用同一条追踪逐个对 span 打分，帮你定位是哪个规划器、检索器、工具调用、LLM 生成或子智能体造成了失败。
+
+![智能体追踪中挂在单个 span 上的组件级指标](https://deepeval-docs.s3.us-east-1.amazonaws.com/component-level-evals.png)
+
+智能体被追踪后，只把组件指标挂到你需要诊断的 span 上。轨迹分数与组件分数可以在同一次测试运行中一起产出。针对具体技术栈的示例、子智能体评估、检索器打分与 span 自定义，见[组件级指南](/docs/evaluation-component-level-llm-evals)。
+
+</Step>
+</Steps>
+
+要在测试套件中运行轨迹评估，在断言中调用被追踪的智能体并传入轨迹指标。挂在其 span 上的组件指标会在同一次测试中运行：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python title="test_agent.py"
+from deepeval.metrics import TaskCompletionMetric
+from deepeval.dataset import Golden
+from deepeval import assert_test
+from agent import my_agent
+import pytest
+
+goldens = [Golden(input="Plan a three-day trip to Paris")]
+
+@pytest.mark.parametrize("golden", goldens)
+def test_agent(golden: Golden):
+    my_agent(golden.input)
+    assert_test(golden=golden, metrics=[TaskCompletionMetric()])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript title="agent.test.ts"
+import { TaskCompletionMetric } from "deepeval/metrics";
+import { Golden } from "deepeval/dataset";
+import { myAgent } from "./agent";
+import { expect, it } from "vitest";
+import "deepeval/vitest";
+
+const goldens = [new Golden({ input: "Plan a three-day trip to Paris" })];
+
+it.each(goldens)("completes the agent trajectory #%$", async (golden) => {
+  await expect(golden).toPass([new TaskCompletionMetric()], {
+    task: (g) => myAgent(g.input),
+  });
+});
+```
+
+</Tab>
+
+</Tabs>
+
+无论哪种方式，都用 `deepeval test run` 像运行其他测试文件一样运行它。
+
+<Tip>
+每次 `evals_iterator()` 运行都会快照到磁盘，因此运行 `deepeval inspect` 即可在追踪树 TUI 中查看它——包含轨迹分数、每个 span 的分数与指标原因。完整细节见 [`deepeval inspect` 参考](/docs/command-line-interface#inspect)。
+
+![deepeval inspect TUI 显示带每个 Span 分数与指标原因的追踪树](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:tui-trace-inspect.png)
+
+</Tip>
+
+## DeepEval 在线评估
+
+使用 `deepeval` 做 LLM 追踪时，你可以自动运行在线评估，监控**生产环境中的追踪、Span 与线程（对话）**。
+
+你需要使用 Confident AI 来提供所需的后端基础设施与仪表盘。
+
+只需从 Confident AI 获取一个 [API key](https://app.confident-ai.com)，并在 CLI 中设置：
+
+```bash
+CONFIDENT_API_KEY="confident_us..."
+```
+
+然后向你的追踪添加一个「指标集合」（metric collection）：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.tracing import observe, update_current_trace
+
+@observe()
+def ai_agent(input: str) -> str:
+    output = "Your AI agent output"
+    update_current_trace(metric_collection="My Online Evals",)
+    return output
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { observe, updateCurrentTrace } from "deepeval/tracing";
+
+const aiAgent = observe({
+  type: "agent",
+  fn: async (input: string): Promise<string> => {
+    const output = "Your AI agent output";
+    updateCurrentTrace({ metricCollection: "My Online Evals" });
+    return output;
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+✅ 完成。你的 AI 智能体的所有调用现在都会运行在线评估。
+
+<Tip>
+想进一步了解什么是「指标集合」，以及如何把可观测性与在线评估配对，请查看 [Confident AI 文档](https://www.confident-ai.com/docs/llm-tracing/quickstart)。
+</Tip>
+
+`deepeval` 的 LLM 追踪实现是**非侵入的**，不会影响你代码的任何部分。
+
+<Tabs>
+<Tab title="生产中的追踪级评估">
+
+追踪级评估可以用[端到端评估](/docs/evaluation-end-to-end-llm-evals)给可观察结果打分，也可以用[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)分析智能体完整的内部路径。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:traces.mp4"></video>
+  <figcaption>对线上流量中的完整结果或智能体轨迹打分。</figcaption>
+</figure>
+
+</Tab>
+<Tab title="生产中的 Span（组件级）评估">
+
+Span 组成追踪，对 span 的评估即[组件级评估](/docs/evaluation-component-level-llm-evals)，评估的是 LLM 应用中的各个组件。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:spans.mp4"></video>
+  <figcaption>评估每条追踪内的工具调用、检索等单个组件。</figcaption>
+</figure>
+
+</Tab>
+<Tab title="生产中的线程（对话）评估">
+
+线程由**一条或多条追踪**组成，表示一次待评估的多轮交互。
+
+<figure>
+  <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing:threads.mp4"></video>
+  <figcaption>把追踪分组为线程，以评估完整对话。</figcaption>
+</figure>
+
+</Tab>
+</Tabs>
+
+## 框架集成
+
+已经在用智能体框架？DeepEval 的集成会捕获框架的追踪与 Span，让同一批指标以最少的埋点评估完整轨迹与单个组件。
+
+以下是你所选 SDK 可用的一些示例：
+
+<Tabs>
+  <Tab title="Python">
+    <CardGroup cols={2}>
+      <Card
+        title="LangChain"
+        description="评估完整的智能体运行、模型调用、工具与检索器。"
+        href="/integrations/frameworks/langchain"
+      />
+      <Card
+        title="Pydantic AI"
+        description="评估 Pydantic AI 智能体及其被埋点的 span。"
+        href="/integrations/frameworks/pydanticai"
+      />
+      <Card
+        title="AWS AgentCore"
+        description="评估托管在 AgentCore 上的智能体及其嵌套 span。"
+        href="/integrations/frameworks/agentcore"
+      />
+      <Card
+        title="Google ADK"
+        description="评估 ADK 智能体运行、工具与模型调用。"
+        href="/integrations/frameworks/google-adk"
+      />
+    </CardGroup>
+  </Tab>
+  <Tab title="TypeScript">
+    <CardGroup cols={2}>
+      <Card
+        title="LangChain"
+        description="评估完整的智能体运行、模型调用、工具与检索器。"
+        href="/integrations/frameworks/langchain"
+      />
+      <Card
+        title="Mastra"
+        description="评估 Mastra 智能体及其 OpenTelemetry span。"
+        href="/integrations/frameworks/mastra"
+      />
+      <Card
+        title="Vercel AI SDK"
+        description="评估 AI SDK 的生成、工具与遥测 span。"
+        href="/integrations/frameworks/ai-sdk"
+      />
+      <Card
+        title="LangGraph"
+        description="评估图轨迹以及每次运行内的节点。"
+        href="/integrations/frameworks/langgraph"
+      />
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+[浏览全部框架集成 →](/integrations)
+
+## 下一步
+
+- 如果想构建可复现的评估套件，先学习核心概念：
+
+  - [测试用例](/docs/evaluation-test-cases)
+  - [指标](/docs/metrics-introduction)
+  - [数据集](/docs/evaluation-datasets)
+
+- 如果想要针对你的系统的路径，跟随场景快速上手：
+
+  - [AI 智能体](/docs/getting-started-agents)
+  - [RAG](/docs/getting-started-rag)
+  - [聊天机器人](/docs/getting-started-chatbots)
+
+- 如果准备好超越单个评估，探索其他工作流：
+
+  - [生成合成数据](/docs/synthesizer-introduction)
+  - [模拟对话](/docs/conversation-simulator)
+  - [使用集成](/integrations)：LangChain、LangGraph、OpenAI、CrewAI 等更多
+
+如果你的团队需要共享报告、回归分析或生产监控，
+DeepEval 与 [Confident AI](https://www.confident-ai.com/docs) 原生集成。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="为什么我的评估卡住了？">
+大多数 LLM-as-a-judge 指标会调用一个评估模型。如果提供商被限速、配额不足或响应缓慢，评估可能看起来卡住了。请检查你的模型提供商密钥、配额与网络访问。
+</Accordion>
+<Accordion title="这个快速上手需要 Confident AI 吗？">
+不需要。DeepEval 在本地运行。Confident AI 是可选的，当你想要共享报告、回归追踪、可观测性或生产监控时才有用。
+</Accordion>
+<Accordion title="这个测试文件应该放在哪里？">
+放在你的测试运行器能发现的地方即可，通常与你的应用放在一起，或放在 `tests/` 文件夹里。然后运行 `deepeval test run path/to/test_file.py`（TypeScript 中为 `npx deepeval test run path/to/file.test.ts`）。
+</Accordion>
+<Accordion title="可以用 OpenAI 以外的模型吗？">
+可以。DeepEval 支持多种模型提供商以及自定义/本地模型做评估。OpenAI 只是许多示例中最快的默认路径。
+</Accordion>
+<Accordion title="读完之后该看什么？">
+如果你在评估智能体，从追踪开始。如果想要构建可复现的评估套件，从数据集与指标开始。
+</Accordion>
+</AccordionGroup>
+
+## Full Example
+
+你可以在我们的 [GitHub 上找到完整示例](https://github.com/confident-ai/deepeval/blob/main/examples/getting_started/test_example.py)。

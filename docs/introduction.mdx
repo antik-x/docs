@@ -1,0 +1,207 @@
+---
+title: DeepEval 简介
+---
+
+**DeepEval** 是一个面向 LLM 应用的开源 LLM 评估框架。DeepEval 让 LLM（应用）的构建与迭代变得极其简单，其设计遵循以下原则：
+
+- 用 Pytest 风格的断言对 LLM 输出做单元测试。
+- 提供 50+ 开箱即用的指标，涵盖 LLM-as-a-judge、智能体、工具调用、对话、安全、RAG 与多模态等。
+- 评估 AI 智能体、对话式智能体（聊天机器人）、RAG 流水线、MCP 系统及其他自定义工作流。
+- 支持端到端评估、基于轨迹的评估与组件级评估。
+- 为难以手工收集的边界场景合成数据集。
+- 在内置行为不够用时，可自定义指标、提示词、模型与评估模板。
+
+DeepEval 是本地优先的：评估在你自己的环境中运行。当团队需要共享仪表盘、回归追踪、可观测性或生产监控时，DeepEval 与 [Confident AI](https://www.confident-ai.com) 原生集成。
+
+<Tip>
+
+**在用 vibe coding？让编码智能体替你把 DeepEval 装好。**
+
+在 **Cursor、Claude Code、Codex、Windsurf** 或任何其他 AI 编码工具中安装 DeepEval Skill，粘贴一段起始提示词，剩下的工作交给你的编码智能体。[点这里](/docs/vibe-coder-quickstart)开始。
+</Tip>
+
+## DeepEval 适合谁？
+
+DeepEval 为技术受众设计，以下是我们服务良好的主要人群：
+
+- **AI 工程师**：需要评估智能体、RAG 流水线、工具调用与生产 LLM 工作流，为 AI 行为编写单元测试，并在 Claude Code、Codex 等智能体编码工具中使用评估。
+- **数据科学家**：想要可复现的实验，用来比较提示词、模型、数据集与指标分数。
+- **QA**：需要在变更触达用户之前，为 AI 行为建立可靠的回归测试。
+- **懂技术的 PM**：想要定义质量标准、检查失败案例，并追踪产品变更是否改善了 AI 输出。
+
+## 将 DeepEval 用于编码智能体
+
+除了用 DeepEval 构建评估套件与流水线之外，DeepEval 的 CLI 评估能力使它成为 vibe coding 智能体（如 Claude Code、Codex、Cursor）最好的评估工具之一。
+
+下图解释了 DeepEval 如何参与你的迭代循环，而不只是充当最终校验环节。
+
+<Info>
+想进一步了解如何把 DeepEval 用作评估工具，点击[这里](/docs/vibe-coding)。
+</Info>
+
+## 选择你的路径
+
+我们强烈推荐从下面两个快速上手之一开始：
+
+<CardGroup cols={2}>
+  <Card
+    icon="rocket"
+    title="5 分钟人工快速上手"
+    href="/docs/getting-started"
+  >
+    亲手安装 DeepEval、创建第一个测试用例、用 `deepeval test
+    run` 运行并检查结果。
+  </Card>
+  <Card
+    icon="sparkles"
+    title="5 分钟 Vibe Coder 快速上手"
+    href="/docs/vibe-coder-quickstart"
+  >
+    在 Cursor / Claude Code / Codex 中安装 Skill，让编码智能体替你构建测试套件、运行评估并迭代。
+  </Card>
+</CardGroup>
+
+## 带着使用场景开始
+
+或者，如果你已经有了具体的使用场景——试试我们针对场景的快速上手：
+
+<CardGroup cols={2}>
+  <Card icon="bot" title="AI 智能体" href="/docs/getting-started-agents">
+    设置追踪、评估端到端任务完成度，并对智能体的各个组件打分。
+  </Card>
+  <Card
+    icon="messages-square"
+    title="聊天机器人"
+    href="/docs/getting-started-chatbots"
+  >
+    评估多轮对话、轮次与模拟用户交互。
+  </Card>
+  <Card icon="file-search" title="RAG" href="/docs/getting-started-rag">
+    端到端评估 RAG 质量，再分别测试检索与生成。
+  </Card>
+  <Card icon="plug" title="MCP" href="/docs/getting-started-mcp">
+    评估 MCP 客户端的单轮与多轮交互。
+  </Card>
+</CardGroup>
+
+<Tip>
+所有快速上手在接近末尾处都附有如何把评估带上生产的指南。
+</Tip>
+
+## 更多资源
+
+### 核心构件
+
+这些概念贯穿 DeepEval 全程，掌握这些基础至关重要：
+
+<CardGroup cols={2}>
+  <Card
+    icon="flask-conical"
+    title="测试用例"
+    description="你想评估的单个行为：任务输入、智能体输出、预期行为、工具、上下文与元数据。"
+    href="/docs/evaluation-test-cases"
+  />
+  <Card
+    icon="database"
+    title="数据集"
+    description="金标（golden）的集合，让评估在提示词、模型与版本之间可复现。"
+    href="/docs/evaluation-datasets"
+  />
+  <Card
+    icon="gauge"
+    title="指标"
+    description="判定智能体响应、追踪、Span 或输出是否满足你的标准的打分逻辑。"
+    href="/docs/metrics-introduction"
+  />
+  <Card
+    icon="git-merge"
+    title="追踪"
+    description="智能体步骤、Span、输入、输出、工具调用与组件行为的运行时记录。"
+    href="/docs/evaluation-llm-tracing"
+  />
+</CardGroup>
+
+### 三种评估模式
+
+DeepEval 支持三种互补的评估方式。选择与你要度量内容匹配的范围：
+
+<CardGroup cols={2}>
+  <Card
+    icon="route"
+    title="端到端 LLM 评估"
+    description="最适合裸 LLM API、简单应用、聊天机器人与黑盒质量检查。"
+    href="/docs/evaluation-end-to-end-llm-evals"
+  >
+    <div className="pt-2">
+      把 LLM 应用当作黑盒。提供输入、输出、预期行为与指标，然后用 DeepEval 检测质量回归。
+    </div>
+  </Card>
+  <Card
+    icon="git-merge"
+    title="组件级 LLM 评估"
+    description="最适合智能体、使用工具的工作流、MCP 系统与复杂的多步应用。"
+    href="/docs/evaluation-component-level-llm-evals"
+  >
+    <div className="pt-2">
+      对应用做追踪，评估单个 Span、工具、规划器、检索器、生成器或其他内部组件。
+    </div>
+  </Card>
+  <Card
+    className="md:col-span-2"
+    icon="workflow"
+    title="基于轨迹的评估"
+    description="最适合执行路径影响质量的 AI 智能体与长程智能体。"
+    href="/docs/evaluation-trajectory-based-llm-evals"
+  >
+    <div className="pt-2">
+      对智能体做追踪，把完整的计划、模型调用、工具、移交与中间步骤作为一条轨迹来评估。
+    </div>
+  </Card>
+</CardGroup>
+
+三种模式可独立使用，也可组合使用：给黑盒结果打分、评估完整的智能体轨迹，再检查单个 Span 定位失败点。
+
+### DeepEval 生态
+
+DeepEval 可以独立运行，但当你的工作流需要协作、监控或安全测试时，它也能连接周边工具。
+
+<CardGroup cols={2}>
+  <Card
+    icon="cloud"
+    title="Confident AI"
+    description="一个 AI 质量平台，提供共享评估仪表盘、回归分析、可观测性与监控。"
+    href="https://www.confident-ai.com/docs?utm_source=deepeval&utm_medium=docs&utm_content=introduction_ecosystem_card&ref_page=/docs/introduction"
+    external
+  />
+  <Card
+    icon="shield-check"
+    title="DeepTeam"
+    description="一个安全测试框架，用于对 LLM 应用做红队测试以发现漏洞。"
+    href="https://trydeepteam.com"
+    external
+  />
+</CardGroup>
+
+## 向我们的社区致谢
+
+DeepEval 的成型离不开那些报告 bug、提出想法、评审变更、改进文档并与我们一起写代码的人。感谢你们与我们一起建设这个项目。
+
+## 常见问题
+
+<AccordionGroup>
+<Accordion title="DeepEval 是什么？">
+DeepEval 是一个开源 LLM 评估框架。它让你可以对 LLM 输出做单元测试、运行端到端与组件级评估、生成合成数据集，并从 Python 把评估带进 CI/CD。
+</Accordion>
+<Accordion title="使用 DeepEval 需要注册账号吗？">
+不需要。DeepEval 在本地运行。只有当指标使用 LLM 裁判时，你才需要 LLM 提供商的密钥（如 `OPENAI_API_KEY`）。只有想把结果发送到 Confident AI 时才需要账号。
+</Accordion>
+<Accordion title="DeepEval 能评估什么？">
+AI 智能体、MCP 系统、聊天机器人、使用工具的工作流、LLM 竞技场、RAG 流水线、摘要器、结构化输出、多模态应用以及自定义 LLM 工作流。
+</Accordion>
+<Accordion title="DeepEval 与可观测性工具有何不同？">
+可观测性工具帮你检查发生了什么；DeepEval 关注的是行为是否足够好——它对测试用例、追踪、Span 与数据集运行指标。两者可以搭配使用。
+</Accordion>
+<Accordion title="DeepEval 能在 CI/CD 中使用吗？">
+可以。DeepEval 就是为配合 `pytest` 与 CI 提供商而构建的，你可以用 LLM 回归测试为变更把关。
+</Accordion>
+</AccordionGroup>

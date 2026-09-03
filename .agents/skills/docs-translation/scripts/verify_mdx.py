@@ -20,8 +20,9 @@ def mdx_safety(dst_text):
         body = body.replace(f, f"\x00F{i}\x00")
     # $$...$$ 数学块内的花括号合法
     body = re.sub(r"\$\$.*?\$\$", " ", body, flags=re.S)
-    nb, _ = frontmatter(body)
-    nb = re.sub(r"<[A-Za-z/][^>\n]*>", "", nb)
+    _, nb = frontmatter(body)
+    # 多行 JSX 标签（<Card\n ...>）先移除，再查裸 <
+    nb = re.sub(r"<[A-Za-z/][^>]*>", "", nb, flags=re.S)
     nb = re.sub(r"`[^`\n]+`", "", nb)
     nb = re.sub(r"\{[^{}]*\}", "", nb)  # Map/JS 对象字面量已在 JSX 之外的合法场景
     bare = nb.count("{")

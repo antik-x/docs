@@ -41,15 +41,15 @@
     "pages": [
       {
         "page": "docs/introduction",
-        "title": "Introduction"
+        "title": "简介"
       },
       {
         "page": "docs/introduction-design-philosophy",
-        "title": "Design Philosophy"
+        "title": "设计哲学"
       },
       {
         "page": "docs/introduction-comparisons",
-        "title": "Comparisons"
+        "title": "对比"
       },
       {
         "group": "快速开始",
@@ -58,7 +58,7 @@
       },
       {
         "page": "docs/getting-started",
-        "title": "Human 5-min Quickstart"
+        "title": "快速上手"
       },
       {
         "page": "docs/vibe-coder-quickstart",
