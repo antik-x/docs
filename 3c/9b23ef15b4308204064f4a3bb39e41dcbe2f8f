@@ -1,0 +1,34 @@
+docs/conversation-simulator-custom-templates.mdx
+  h_04c00a69eeb820 5,20,22-24,26,29,32,72,74,76,78,80,82,84,86,101,105
+docs/conversation-simulator-custom-templates.mdx.pending.tsv
+  h_04c00a69eeb820 1-40
+docs/conversation-simulator-lifecycle-hooks.mdx
+  h_04c00a69eeb820 5,9,11-12,33,51,64,71,74,77
+docs/conversation-simulator-model-callback.mdx
+  h_04c00a69eeb820 5,8,11,23-25,27,31,33,43,45,57,59,70,74,77,80
+docs/conversation-simulator-model-callback.mdx.pending.tsv
+  h_04c00a69eeb820 1-34
+docs/conversation-simulator-simulation-graph.mdx
+  h_04c00a69eeb820 5,40,44,179
+docs/conversation-simulator-stopping-logic.mdx
+  h_04c00a69eeb820 5,24,27,158
+docs/prompt-optimization-copro.mdx.pending.tsv
+  h_04c00a69eeb820 1-119
+docs/prompt-optimization-gepa.mdx.pending.tsv
+  h_04c00a69eeb820 1-134
+docs/prompt-optimization-miprov2.mdx.pending.tsv
+  h_04c00a69eeb820 1-122
+docs/prompt-optimization-simba.mdx.pending.tsv
+  h_04c00a69eeb820 1-142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "3c9b23ef15b4308204064f4a3bb39e41dcbe2f8f",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
