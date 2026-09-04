@@ -4,15 +4,15 @@ title: Agent Loop Detection
 
 **标签**：社区维护 · LLM-as-a-judge · 单轮 · 无参考 · 智能体 · 多模态
 
-The Agent Loop Detection metric is a **fully deterministic** (no LLM required) agentic metric that detects whether an LLM agent is stuck in an infinite loop or cyclical execution pattern. It analyzes the agent's full execution trace across three independent sub-signals and returns a score from **0.0** (severe looping detected) to **1.0** (clean execution).
+智能体循环检测（Agent Loop Detection）指标是一个**完全确定性**（无需 LLM）的智能体指标，检测 LLM 智能体是否陷入无限循环或循环执行模式。它跨三个独立的子信号分析智能体的完整执行追踪，返回 **0.0**（检测到严重循环）到 **1.0**（执行干净）之间的分数。
 
 <Info>
-Agent Loop Detection analyzes your **agent's full execution trace**, which requires [setting up tracing](/docs/evaluation-llm-tracing). Because it is fully deterministic, it runs in production without any API key or LLM call.
+智能体循环检测会分析你**智能体的完整执行追踪**，这需要[设置追踪](/docs/evaluation-llm-tracing)。由于完全确定性，它在生产环境中运行无需任何 API key 或 LLM 调用。
 </Info>
 
 ## Required Arguments
 
-The `AgentLoopDetectionMetric` is a **trace-only** metric. It reads from the agent trace set via `update_current_trace` and does **not** require `tools_called` or `expected_tools`. It only requires the standard trace-based fields:
+`AgentLoopDetectionMetric` 是**仅追踪**指标。它读取通过 `update_current_trace` 设置的智能体追踪，**不**需要 `tools_called` 或 `expected_tools`。它只需要标准的追踪字段：
 
 - `input`
 - `actual_output`
@@ -51,27 +51,27 @@ for golden in dataset.evals_iterator(metrics=[loop_metric]):
     my_agent(golden.input)
 ```
 
-There are **NINE** optional parameters when creating an `AgentLoopDetectionMetric`:
+创建 `AgentLoopDetectionMetric` 时有**九个**可选参数：
 
-- [Optional] `threshold`: a float representing the minimum passing threshold. Can also be set to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `repetition_threshold`: an integer representing how many identical tool calls (same name + same arguments) must occur before flagging repetition. Defaulted to `3`.
-- [Optional] `similarity_threshold`: a float representing the minimum similarity score between consecutive LLM outputs to flag as stagnating. The metric uses the maximum of bigram Jaccard similarity and `SequenceMatcher` ratio. Defaulted to `0.85`.
-- [Optional] `check_tool_repetition`: a boolean — when `True`, enables the tool repetition sub-signal. Defaulted to `True`.
-- [Optional] `check_reasoning_stagnation`: a boolean — when `True`, enables the reasoning stagnation sub-signal. Defaulted to `True`.
-- [Optional] `check_call_graph_cycles`: a boolean — when `True`, enables the call graph cycle sub-signal. Defaulted to `True`.
-- [Optional] `strict_mode`: a boolean which when set to `True`, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`.
-- [Optional] `verbose_mode`: a boolean which when set to `True`, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`.
-- [Optional] `flaky`: a boolean which when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+- [可选] `threshold`：浮点数，表示最低通过阈值。也可设为 `None`，以[仅分数模式](/docs/metrics-introduction#metric-thresholds)运行指标。默认为 `0.5`。
+- [可选] `repetition_threshold`：整数，表示出现多少次相同的工具调用（同名同参）后才标记重复。默认为 `3`。
+- [可选] `similarity_threshold`：浮点数，表示连续 LLM 输出之间被标记为停滞的最小相似分数。指标取 bigram Jaccard 相似度与 `SequenceMatcher` 比率的最大值。默认为 `0.85`。
+- [可选] `check_tool_repetition`：布尔值——为 `True` 时启用工具重复子信号。默认为 `True`。
+- [可选] `check_reasoning_stagnation`：布尔值——为 `True` 时启用推理停滞子信号。默认为 `True`。
+- [可选] `check_call_graph_cycles`：布尔值——为 `True` 时启用调用图环检测子信号。默认为 `True`。
+- [可选] `strict_mode`：布尔值，设为 `True` 时把指标分数强制为二元：完美为 1，否则为 0。它还会覆盖当前阈值并将其设为 1。默认为 `False`。
+- [可选] `verbose_mode`：布尔值，设为 `True` 时把计算该指标的中间步骤打印到控制台（见 [How Is It Calculated](#how-is-it-calculated) 一节）。默认为 `False`。
+- [可选] `flaky`：布尔值，设为 `True` 时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`。
 
 <Info>
-The `AgentLoopDetectionMetric` does **not** accept a `model` parameter. All three sub-signals are computed deterministically (hashing, n-gram set operations, DFS) — no LLM is involved. See [Why no `model` parameter?](#why-no-model-parameter) for the design rationale.
+`AgentLoopDetectionMetric` **不**接受 `model` 参数。三个子信号都以确定性方式计算（哈希、n-gram 集合运算、DFS）——不涉及任何 LLM。设计理由见[为什么没有 `model` 参数？](#why-no-model-parameter)。
 </Info>
 
-To learn more about how the `evals_iterator` works, [click here.](/docs/evaluation-end-to-end-llm-evals#e2e-evals-for-tracing)
+关于 `evals_iterator` 工作方式的更多内容，[点击这里](/docs/evaluation-end-to-end-llm-evals#e2e-evals-for-tracing)。
 
-### 在组件内
+### Within components
 
-You can also run `AgentLoopDetectionMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation:
+你还可以在嵌套组件内运行 `AgentLoopDetectionMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估：
 
 ```python
 from deepeval.tracing import observe, update_current_span
@@ -92,9 +92,9 @@ def outer_agent(input: str) -> str:
     return inner_agent_component(input)
 ```
 
-### 独立运行
+### As a standalone
 
-You can also run `AgentLoopDetectionMetric` on a single test case as a standalone, one-off execution:
+你还可以把 `AgentLoopDetectionMetric` 作为独立的一次性执行，运行在单个测试用例上：
 
 ```python
 from deepeval.test_case import LLMTestCase
@@ -115,71 +115,71 @@ print(metric.score_breakdown)
 ```
 
 <Warning>
-Running as a standalone is useful for debugging or building a custom pipeline, but you will **NOT** get the benefits of testing reports, Confident AI platform integration, or the optimizations (speed, caching, computation) that `evaluate()` or `deepeval test run` offer.
+独立运行适合调试或构建自定义流水线，但你会**失去** `evaluate()` 或 `deepeval test run` 提供的测试报告、Confident AI 平台集成以及各项优化（速度、缓存、计算）。
 </Warning>
 
 ## How Is It Calculated?
 
-The `AgentLoopDetectionMetric` score is a **weighted combination** of three independent sub-signals:
+`AgentLoopDetectionMetric` 的分数是三个独立子信号的**加权组合**：
 
 $$
 \text{Loop Score} = \frac{0.40 \cdot S_{\text{rep}} + 0.35 \cdot S_{\text{stag}} + 0.25 \cdot S_{\text{cycle}}}{W_{\text{enabled}}}
 $$
 
-Where each sub-score is **1.0** (no issue), **0.5** (mild issue), or **0.0** (severe issue), and $W_{\text{enabled}}$ is the sum of weights for all enabled checks. Disabling a sub-signal removes its weight from the denominator so it never penalizes the overall score.
+其中每个子分数为 **1.0**（无问题）、**0.5**（轻微问题）或 **0.0**（严重问题），$W_{\text{enabled}}$ 是所有启用检查的权重之和。禁用某个子信号会把它的权重从分母中移除，因此它永远不会惩罚总分。
 
-| Sub-signal | Weight | What it detects |
+| 子信号 | 权重 | 检测内容 |
 |---|---|---|
-| Tool Call Repetition | 40% | Same tool called with identical arguments ≥ `repetition_threshold` times |
-| Reasoning Stagnation | 35% | Consecutive LLM outputs share ≥ `similarity_threshold` similarity |
-| Call Graph Cycles | 25% | A span appears twice on the same root-to-leaf ancestry path (true recursion) |
+| 工具调用重复 | 40% | 相同参数的同一工具被调用 ≥ `repetition_threshold` 次 |
+| 推理停滞 | 35% | 相邻 LLM 输出的相似度 ≥ `similarity_threshold` |
+| 调用图环 | 25% | 同一 span 在同一条根到叶祖先路径上出现两次（真递归） |
 
 ### Tool Call Repetition
 
-This sub-signal hashes each tool call as `(tool_name, sorted_args)` and counts how many times each unique call appears in the trace. Only calls with **identical** name and arguments are counted as repeats — calls with different arguments (e.g. a refined search query) are treated as distinct and are never penalized.
+该子信号把每次工具调用哈希为 `(tool_name, sorted_args)`，并统计每个唯一调用在追踪中出现的次数。只有**完全相同**的名称与参数才计为重复——参数不同的调用（例如改进后的搜索查询）被视为不同调用，永不被惩罚。
 
 | Condition | Score |
 |---|---|
-| Max repeats < `repetition_threshold` | **1.0** — within acceptable limits |
-| Max repeats ≥ `repetition_threshold` | **0.5** — mild repetition loop |
-| Max repeats ≥ `repetition_threshold × 2` | **0.0** — severe repetition loop |
+| 最大重复次数 < `repetition_threshold` | **1.0** —— 在可接受范围内 |
+| 最大重复次数 ≥ `repetition_threshold` | **0.5** —— 轻微重复循环 |
+| 最大重复次数 ≥ `repetition_threshold × 2` | **0.0** —— 严重重复循环 |
 
 ### Reasoning Stagnation
 
-This sub-signal compares **consecutive LLM span outputs** using two complementary similarity measures and takes the **maximum** of both:
+该子信号使用两种互补的相似度度量比较**相邻的 LLM span 输出**，并取两者的**最大值**：
 
-1. **Bigram Jaccard similarity** — bag-of-bigrams overlap after stripping common stop words and agent boilerplate phrases. Catches literal repetition. Outputs with fewer than 20 meaningful words are skipped (Jaccard is unreliable at small scale).
-2. **`SequenceMatcher` ratio** (Python `difflib`) — sequence-aware comparison that catches reordered but semantically identical text (e.g. `"I will now search"` ≈ `"Let me search now"`).
+1. **Bigram Jaccard 相似度** —— 去除常见停用词与智能体套话后的 bigram 词袋重叠。捕捉字面重复。少于 20 个有效词的输出会被跳过（小规模下 Jaccard 不可靠）。
+2. **`SequenceMatcher` 比率**（Python `difflib`）—— 序列感知比较，捕捉语序调换但语义相同的文本（例如 `"I will now search"` ≈ `"Let me search now"`）。
 
-Taking the maximum ensures stagnation is flagged whether the agent repeats itself verbatim or merely shuffles its phrasing.
+取最大值确保无论智能体是逐字重复还是仅仅调换措辞，都能标记停滞。
 
 | Condition | Score |
 |---|---|
-| Max similarity < `similarity_threshold` | **1.0** — no stagnation |
-| Max similarity ≥ `similarity_threshold` | **0.5** — high overlap, likely stagnating |
-| Max similarity > 0.95 | **0.0** — outputs are essentially identical |
+| 最大相似度 < `similarity_threshold` | **1.0** —— 无停滞 |
+| 最大相似度 ≥ `similarity_threshold` | **0.5** —— 重叠度高，可能正在停滞 |
+| 最大相似度 > 0.95 | **0.0** —— 输出本质上相同 |
 
 ### Call Graph Cycles
 
-This sub-signal traverses the parent→child span tree from the agent trace and runs a depth-first search (DFS). A **cycle** is detected when a span's `type:name` label appears a second time on the **same root-to-leaf ancestry path** — meaning the agent genuinely called a function that is its own ancestor (true recursion).
+该子信号遍历智能体追踪的父→子 span 树并执行深度优先搜索（DFS）。当某个 span 的 `type:name` 标签在**同一条根到叶祖先路径**上第二次出现时，即检测到**环**——意味着智能体真的调用了自身祖先的函数（真递归）。
 
 <Note>
-Sequential repetition (the same tool appearing at sibling positions) is intentionally **not** flagged here — that is the responsibility of the Tool Call Repetition sub-signal above.
+兄弟位置上出现同一工具的顺序重复在这里被刻意**不**标记——那是上文工具调用重复子信号的职责。
 </Note>
 
 | Condition | Score |
 |---|---|
-| No back-edges in the call tree | **1.0** — clean execution graph |
-| At least one back-edge found | **0.0** — cycle detected; reason includes the full cycle path |
+| 调用树中无回边 | **1.0** —— 执行图干净 |
+| 发现至少一条回边 | **0.0** —— 检测到环；理由中包含完整的环路径 |
 
 ## Score Interpretation
 
 | Score range | Interpretation |
 |---|---|
-| `1.0` | Clean execution — no loop patterns detected |
-| `0.5–1.0` | Mild issues — some repetition or overlap; agent likely recovers |
-| `0.0–0.5` | Severe looping — agent is likely stuck; human review recommended |
-| `0.0` | Critical loop — identical repeated calls or true call graph cycle |
+| `1.0` | 执行干净 —— 未检测到循环模式 |
+| `0.5–1.0` | 轻微问题 —— 存在一些重复或重叠；智能体大概率能自行恢复 |
+| `0.0–0.5` | 严重循环 —— 智能体很可能卡住了；建议人工复查 |
+| `0.0` | 关键循环 —— 完全相同的重复调用或真正的调用图环 |
 
 **Example: clean agent**
 ```
@@ -198,7 +198,7 @@ Reason: Tool 'search_web' called 6 times with identical arguments.
 
 ## Score Breakdown
 
-The `score_breakdown` attribute exposes each sub-signal score independently after evaluation:
+`score_breakdown` 属性在评估后独立暴露每个子信号的分数：
 
 ```python
 metric = AgentLoopDetectionMetric(threshold=0.5)
@@ -215,11 +215,11 @@ print(metric.score)   # 0.4 (weighted: 0.0×0.40 + 1.0×0.35 + 1.0×0.25 = 0.60,
 print(metric.reason)  # "Tool 'search_web' called 6 times with identical arguments."
 ```
 
-A value of `1.0` means no issue was detected for that sub-signal. Lower values indicate degradation proportional to the severity of the loop pattern.
+值为 `1.0` 表示该子信号未检测到问题。更低的值表示退化程度与循环模式的严重性成正比。
 
 ## Configuring Sub-signals
 
-Each of the three sub-signals can be toggled independently. When a sub-signal is disabled, its weight is excluded from the denominator so the score is not penalized:
+三个子信号都可以独立开关。禁用某个子信号时，其权重会从分母中排除，因此分数不会因此被惩罚：
 
 ```python
 # Only check for tool repetition — ignore stagnation and graph cycles
@@ -248,31 +248,34 @@ This metric is **fully deterministic by design**. Every sub-signal is computed w
 - **Deterministic** — identical traces always produce identical scores (critical for CI/CD gates).
 - **Zero latency** — no LLM round-trip; the metric completes in milliseconds.
 
-A future `model` parameter could enable an LLM-as-judge mode for the reasoning stagnation sub-signal, which would catch semantically identical outputs that differ greatly in wording. This is tracked as a potential future enhancement.
+未来的 `model` 参数可以为推理停滞子信号启用 LLM-as-judge 模式，捕捉措辞差异巨大但语义相同的输出。这已作为潜在的后续增强被记录。
 
 ### Cycle detection uses `type:name:input_hash` labels
 
-The call graph cycle detector identifies spans by a `type:name:input_hash` label (where `input_hash` is a 64-character truncated serialization of the span's input). This is a **heuristic** — the trace dict does not expose span UUIDs (they are stripped internally), so exact span identity is unavailable.
+调用图环检测器用 `type:name:input_hash` 标签标识 span（其中 `input_hash` 是 span 输入的 64 字符截断序列化）。这是一种**启发式**——追踪字典不暴露 span UUID（它们在内部被剥离），因此无法获得精确的 span 身份。
 
-**Trade-offs:**
+**权衡：**
 
-- Including the input hash reduces false positives when two genuinely different spans share the same `type:name` (e.g. an outer `"planner"` agent delegating to an inner `"planner"` with different input).
-- A true recursive loop passes the same or similar input back to itself, so the input hash matches and the cycle is correctly detected.
-- In the rare edge case where two unrelated same-name spans happen to receive identical truncated inputs, a false positive could theoretically occur. In practice this is extremely unlikely.
+- 包含输入哈希可以减少误报：当两个真正不同的 span 共享同一 `type:name` 时（例如外层 `"planner"` 智能体委托给输入不同的内层 `"planner"`）。
+- 真正的递归循环会把相同或相似的输入传回自身，因此输入哈希匹配，环能被正确检测。
+- 在极少数边缘情况下，两个无关的同名 span 恰好收到相同的截断输入时，理论上可能出现误报。实际中这种情况极其罕见。
 
 ### Stagnation detection: dual-signal approach
 
-Reasoning stagnation deliberately uses **two** complementary signals and takes the maximum:
+推理停滞刻意使用**两个**互补信号并取最大值：
 
 | Signal | Catches | Misses |
 |---|---|---|
-| Bigram Jaccard | Literal repetition, shared phrase patterns | Word reordering |
-| `SequenceMatcher` ratio | Reordered-but-similar text, insertions/deletions | Semantically identical text with different vocabulary |
+| Bigram Jaccard | 字面重复、共享短语模式 | 语序调换 |
+| `SequenceMatcher` 比率 | 语序调换但相似的文本、插入/删除 | 词汇不同但语义相同的文本 |
 
-This is strictly better than either signal alone, but it will still miss outputs that are **semantically identical but lexically different** (e.g. `"Search for Paris weather"` vs `"Look up the forecast in Paris"`). Catching that class of stagnation would require an LLM-as-judge, which would sacrifice the deterministic and zero-cost properties of this metric.
+（例如 `"Search for Paris weather"` 与 `"Look up the forecast in Paris"`）
 
 ---
 
-::::note Community Metric
-`AgentLoopDetectionMetric` was contributed by [Jeel Thummar](https://github.com/Jeel3011), author of [AGeval](https://pypi.org/project/ageval/) — an episodic evaluation framework for LangGraph agents. The loop detection patterns here are drawn directly from production experience with ReAct and LangGraph agents. See [issue #2643](https://github.com/confident-ai/deepeval/issues/2643) for the original proposal and design discussion.
+<Note>
+
+**Community Metric**
+
+`AgentLoopDetectionMetric` 由 [AGeval](https://pypi.org/project/ageval/)（一个面向 LangGraph 智能体的情景式评估框架）的作者 [Jeel Thummar](https://github.com/Jeel3011) 贡献。这里的循环检测模式直接来自 ReAct 与 LangGraph 智能体的生产经验。原始提案与设计讨论见 [issue #2643](https://github.com/confident-ai/deepeval/issues/2643)。
 </Note>

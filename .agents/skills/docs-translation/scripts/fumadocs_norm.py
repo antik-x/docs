@@ -214,10 +214,15 @@ def normalized_components(src_text):
     if n_faq:
         add("AccordionGroup", n_faq)
         add("Accordion", body.count("question:"))
-    for m in body.split("\n"):
-        cm = _CALLUT_OPEN_RE.match(m.strip())
+    for ln in body.split("\n"):
+        cm = _CALLUT_OPEN_RE.match(ln.strip())
         if cm:
             add(CALLOUT_MAP[cm.group(2)], 1)
+        elif re.match(r"^:::+[a-z]+\s+\S", ln.strip()):
+            # 带尾随标题的指令（::::note Community Metric）也算一次 callout
+            cm2 = re.match(r"^:::+([a-z]+)\s", ln.strip())
+            if cm2 and cm2.group(1) in CALLOUT_MAP:
+                add(CALLOUT_MAP[cm2.group(1)], 1)
     add("Note", len(re.findall(r"<NotImplemented\b", body)))
     # 块级 <Only id="typescript"> → <Info>（与转换器同口径：strip 后判断）
     for m in re.finditer(r'<Only\s+id="typescript"\s*>(.*?)</Only>', body, re.S):

@@ -34,6 +34,7 @@ def mdx_safety(dst_text):
     nb = "\n".join(lines)
     # $$...$$ 数学块内的花括号合法
     nb = re.sub(r"\$\$.*?\$\$", " ", nb, flags=re.S)
+    nb = re.sub(r"\$[^$\n]*\$", " ", nb)
     _, nb = frontmatter(nb)
     # 多行 JSX 标签（<Card\n ...>）先移除，再查裸 <
     nb = re.sub(r"<[A-Za-z/][^>]*>", "", nb, flags=re.S)

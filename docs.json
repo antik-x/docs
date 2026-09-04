@@ -460,11 +460,11 @@
           },
           {
             "page": "docs/(community)/metrics-agent-loop-detection",
-            "title": "Agent Loop Detection"
+            "title": "智能体循环检测"
           },
           {
             "page": "docs/(community)/metrics-tool-permission",
-            "title": "Tool Permission"
+            "title": "工具权限"
           }
         ]
       },
