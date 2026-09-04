@@ -1,0 +1,20 @@
+docs/conversation-simulator-model-callback.mdx
+  h_04c00a69eeb820 2,5,11,21,23-25,29,31,33,43,45,57,59,70,74,77,80
+docs/conversation-simulator-simulation-graph.mdx
+  h_04c00a69eeb820 2,5,40,44,179
+docs/conversation-simulator-stopping-logic.mdx
+  h_04c00a69eeb820 2,70,104,158
+docs/conversation-simulator-voice-personas.mdx
+  h_04c00a69eeb820 2,5,78,80,93,115,117,130,138,151,155,174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "8761580cc55b70b93e3433b8f16cde87ad9644d1",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
