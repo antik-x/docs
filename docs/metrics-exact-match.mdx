@@ -1,0 +1,148 @@
+---
+title: Exact Match
+---
+
+**标签**：单轮
+
+精确匹配（exact match）指标衡量你的 LLM 应用的 `actual_output` 是否与 `expected_output` 完全一致。
+
+<Note>
+`ExactMatchMetric` **不**依赖 LLM 做评估。它纯粹在输出之间执行**字符串级相等性检查**。
+</Note>
+
+## Required Arguments
+
+要使用 `ExactMatchMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+- `expected_output`
+
+Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+
+## Usage
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import ExactMatchMetric
+from deepeval.test_case import LLMTestCase
+from deepeval import evaluate
+
+metric = ExactMatchMetric(
+    threshold=1.0,
+    verbose_mode=True,
+)
+
+test_case = LLMTestCase(
+    input="Translate 'Hello, how are you?' in french",
+    actual_output="Bonjour, comment ça va ?",
+    expected_output="Bonjour, comment allez-vous ?"
+)
+
+# To run metric as a standalone
+# metric.measure(test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { ExactMatchMetric } from "deepeval/metrics";
+import { LLMTestCase } from "deepeval/test-case";
+import { evaluate } from "deepeval";
+
+const metric = new ExactMatchMetric({
+  threshold: 1.0,
+  verboseMode: true,
+});
+
+const testCase = new LLMTestCase({
+  input: "Translate 'Hello, how are you?' in french",
+  actualOutput: "Bonjour, comment ça va ?",
+  expectedOutput: "Bonjour, comment allez-vous ?",
+});
+
+// To run metric as a standalone
+// await metric.measure(testCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([testCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+创建 `ExactMatchMetric` 时有**三个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `1.0`.
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### As a Standalone
+
+你还可以把 `ExactMatchMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(testCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+## How Is It Calculated?
+
+`ExactMatchMetric` 的分数按以下公式计算：
+
+$$
+\text{Exact Match Score} =
+ \begin{cases}
+ 1 & \text{if actual\_output = expected\_output}, \\
+ 0 & \text{otherwise}
+ \end{cases}
+$$
+
+`ExactMatchMetric` 执行严格的相等性检查，判断 `actual_output` 是否与 `expected_output` 一致。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="精确匹配指标会调用 LLM 或产生费用吗？">
+不会。`ExactMatchMetric` 只是 `actual_output` 与 `expected_output` 之间的朴素字符串相等检查——没有模型、无需 API key、零 token 成本、完全确定性。
+</Accordion>
+<Accordion title="比较区分大小写和空白吗？">
+是的。任何差异——大小写、空白、标点、重音符号——都会得 `0` 分。例如 `"Bonjour, comment ça va ?"` 不会匹配 `"Bonjour, comment allez-vous ?"`。
+</Accordion>
+<Accordion title="什么时候该用精确匹配而不是 LLM 裁判指标？">
+当只有一个可接受的答案时——分类标签、枚举值、固定话术。对存在多种合法措辞的开放式输出，请用 [Answer Relevancy](/docs/metrics-answer-relevancy) 这样的语义指标。
+</Accordion>
+<Accordion title="Why does my output fail even though it looks correct?">
+It requires a character-for-character match. Set `verbose_mode=True`（TypeScript 中为 `verboseMode: true`） to print the compared strings and spot invisible differences like trailing newlines, smart quotes, or leading whitespace.
+</Accordion>
+</AccordionGroup>

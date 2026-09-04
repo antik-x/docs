@@ -389,15 +389,15 @@
         "pages": [
           {
             "page": "docs/(non-llm)/metrics-exact-match",
-            "title": "Exact Match"
+            "title": "精确匹配"
           },
           {
             "page": "docs/(non-llm)/metrics-pattern-match",
-            "title": "Pattern Match"
+            "title": "模式匹配"
           },
           {
             "page": "docs/(non-llm)/metrics-json-correctness",
-            "title": "Json Correctness"
+            "title": "JSON 正确性"
           }
         ]
       },

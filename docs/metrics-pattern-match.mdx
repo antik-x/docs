@@ -1,0 +1,149 @@
+---
+title: Pattern Match
+---
+
+**标签**：单轮 · 无参考
+
+模式匹配（pattern match）指标衡量你的 LLM 应用的 `actual_output` 是否**匹配给定的正则表达式模式**。这对测试模型按特定格式、结构或语法产出输出的能力很有用。
+
+<Note>
+`PatternMatchMetric` **不**依赖 LLM 做评估。它使用**正则表达式匹配**来验证 `actual_output` 是否符合给定模式。
+</Note>
+
+## Required Arguments
+
+要使用 `PatternMatchMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+
+Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+
+## Usage
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import PatternMatchMetric
+from deepeval.test_case import LLMTestCase
+from deepeval import evaluate
+
+# Pattern: expects a valid email format
+metric = PatternMatchMetric(
+    pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$",
+    ignore_case=False,
+    threshold=1.0,
+    verbose_mode=True
+)
+
+test_case = LLMTestCase(
+    input="Generate a valid email address.",
+    actual_output="example.user@domain.com"
+)
+
+# To run metric as a standalone
+# metric.measure(test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { PatternMatchMetric } from "deepeval/metrics";
+import { LLMTestCase } from "deepeval/test-case";
+import { evaluate } from "deepeval";
+
+// Pattern: expects a valid email format
+const metric = new PatternMatchMetric({
+  pattern: "^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$",
+  ignoreCase: false,
+  threshold: 1.0,
+  verboseMode: true,
+});
+
+const testCase = new LLMTestCase({
+  input: "Generate a valid email address.",
+  actualOutput: "example.user@domain.com",
+});
+
+// To run metric as a standalone
+// await metric.measure(testCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([testCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+创建 `PatternMatchMetric` 时有**一个**必填参数和**四个**可选参数：
+
+- `pattern`：字符串，表示 `actual_output` 必须匹配的正则表达式模式。
+- [Optional] `ignore_case`: a boolean which when set to `True`（TypeScript 中为 `true`）, performs case-sensitive pattern matching. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `1.0`.
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### As a Standalone
+
+你还可以把 `PatternMatchMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(testCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+## How Is It Calculated?
+
+`PatternMatchMetric` 的分数按以下公式计算：
+
+$$
+\text{Pattern Match Score} = \begin{cases} 1 & \text{if actual output fully matches the regex pattern}, \\ 0 & \text{otherwise} \end{cases}
+$$
+
+匹配由 Python 内置的正则引擎 `re.fullmatch` 判定，确保 `actual_output` 与提供的 `pattern` 完全匹配。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="我的模式明明匹配了输出的一部分，为什么还是失败？">
+它使用 `re.fullmatch`，因此 `pattern` 必须匹配**整个** `actual_output`，而不是子串。`\d+` 对 `"The code is 1234"` 会失败；用 `.*` 包起来（例如 `.*\d+.*`）即可匹配片段。
+</Accordion>
+<Accordion title="模式匹配指标会调用 LLM 或产生费用吗？">
+不会。`PatternMatchMetric` 使用纯正则匹配——没有模型、无需 API key、零 token 成本、完全确定性。
+</Accordion>
+<Accordion title="能让模式匹配忽略大小写吗？">
+Yes. Set `ignore_case=True`（TypeScript 中为 `ignoreCase: true`） to ignore casing when matching `actual_output` against the `pattern` . Defaults to `False`（TypeScript 中为 `false`） .
+</Accordion>
+<Accordion title="什么时候该用模式匹配而不是精确匹配？">
+当输出必须遵循某种*形态*而不是固定字符串时——电子邮件、日期、电话号码、ID。单一固定答案请用 [Exact Match](/docs/metrics-exact-match)。
+</Accordion>
+</AccordionGroup>
