@@ -1,0 +1,282 @@
+.agents/skills/docs-translation/scripts/build_nav.py
+  h_04c00a69eeb820 21-35,70-85,89-93,95-102,104-107,118,127-129,134,137-139
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 85
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 2-177
+docs.json
+  h_04c00a69eeb820 42-44,48-50,52-58,60-61,66,68,71-76,78-82,86-90,92-97,102,104-112,115-123,126-133,136-149,152-161,164-169,172-180,183-188,191-198,201-207,210-216,218-219,222,224,226-232,234,238,240,242-248,251-266,268,274,276-294,296-297,301-308
+docs/benchmarks-arc.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-bbq.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-big-bench-hard.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-bool-q.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-drop.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-gsm8k.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-hellaswag.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-human-eval.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-ifeval.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-introduction.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-lambada.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-logi-qa.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-math-qa.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-mmlu.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-squad.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-truthful-qa.mdx
+  h_04c00a69eeb820 3
+docs/benchmarks-winogrande.mdx
+  h_04c00a69eeb820 3
+docs/command-line-interface.mdx
+  h_04c00a69eeb820 3
+docs/community-metrics-overview.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-custom-templates.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-lifecycle-hooks.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-model-callback.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-simulation-graph.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-stopping-logic.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-voice-connectors.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-voice-interruptions.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-voice-mode/index.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator-voice-personas.mdx
+  h_04c00a69eeb820 3
+docs/conversation-simulator/index.mdx
+  h_04c00a69eeb820 3
+docs/data-privacy.mdx
+  h_04c00a69eeb820 3
+docs/environment-variables.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-arena-test-cases.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-component-level-llm-evals.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-datasets.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-end-to-end-llm-evals/index.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-end-to-end-multi-turn.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-end-to-end-single-turn.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-flags-and-configs.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-introduction.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-llm-tracing.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-mcp.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-multiturn-test-cases.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-prompts.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-test-cases.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-trajectory-based-llm-evals.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-unit-testing-in-ci-cd.mdx
+  h_04c00a69eeb820 3
+docs/evaluation-voice.mdx
+  h_04c00a69eeb820 3
+docs/faq.mdx
+  h_04c00a69eeb820 3
+docs/getting-started-agents.mdx
+  h_04c00a69eeb820 3
+docs/getting-started-chatbots.mdx
+  h_04c00a69eeb820 3
+docs/getting-started-mcp.mdx
+  h_04c00a69eeb820 3
+docs/getting-started-rag.mdx
+  h_04c00a69eeb820 3
+docs/getting-started.mdx
+  h_04c00a69eeb820 3
+docs/golden-synthesizer/index.mdx
+  h_04c00a69eeb820 3
+docs/introduction-comparisons.mdx
+  h_04c00a69eeb820 3
+docs/introduction-design-philosophy.mdx
+  h_04c00a69eeb820 3
+docs/introduction.mdx
+  h_04c00a69eeb820 3
+docs/metrics-agent-loop-detection.mdx
+  h_04c00a69eeb820 3
+docs/metrics-agent-responsiveness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-answer-relevancy.mdx
+  h_04c00a69eeb820 3
+docs/metrics-arena-g-eval.mdx
+  h_04c00a69eeb820 3
+docs/metrics-argument-correctness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-audio-integrity.mdx
+  h_04c00a69eeb820 3
+docs/metrics-bias.mdx
+  h_04c00a69eeb820 3
+docs/metrics-citation-faithfulness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-contextual-precision.mdx
+  h_04c00a69eeb820 3
+docs/metrics-contextual-recall.mdx
+  h_04c00a69eeb820 3
+docs/metrics-contextual-relevancy.mdx
+  h_04c00a69eeb820 3
+docs/metrics-conversation-completeness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-conversational-dag.mdx
+  h_04c00a69eeb820 3
+docs/metrics-conversational-g-eval.mdx
+  h_04c00a69eeb820 3
+docs/metrics-custom.mdx
+  h_04c00a69eeb820 3
+docs/metrics-dag.mdx
+  h_04c00a69eeb820 3
+docs/metrics-exact-match.mdx
+  h_04c00a69eeb820 3
+docs/metrics-faithfulness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-goal-accuracy.mdx
+  h_04c00a69eeb820 3
+docs/metrics-hallucination.mdx
+  h_04c00a69eeb820 3
+docs/metrics-introduction.mdx
+  h_04c00a69eeb820 3
+docs/metrics-json-correctness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-knowledge-retention.mdx
+  h_04c00a69eeb820 3
+docs/metrics-llm-evals.mdx
+  h_04c00a69eeb820 3
+docs/metrics-mcp-task-completion.mdx
+  h_04c00a69eeb820 3
+docs/metrics-mcp-use.mdx
+  h_04c00a69eeb820 3
+docs/metrics-misuse.mdx
+  h_04c00a69eeb820 3
+docs/metrics-multi-turn-mcp-use.mdx
+  h_04c00a69eeb820 3
+docs/metrics-non-advice.mdx
+  h_04c00a69eeb820 3
+docs/metrics-pattern-match.mdx
+  h_04c00a69eeb820 3
+docs/metrics-pii-leakage.mdx
+  h_04c00a69eeb820 3
+docs/metrics-plan-adherence.mdx
+  h_04c00a69eeb820 3
+docs/metrics-plan-quality.mdx
+  h_04c00a69eeb820 3
+docs/metrics-prompt-alignment.mdx
+  h_04c00a69eeb820 3
+docs/metrics-ragas.mdx
+  h_04c00a69eeb820 3
+docs/metrics-role-adherence.mdx
+  h_04c00a69eeb820 3
+docs/metrics-role-violation.mdx
+  h_04c00a69eeb820 3
+docs/metrics-speech-intelligibility.mdx
+  h_04c00a69eeb820 3
+docs/metrics-step-efficiency.mdx
+  h_04c00a69eeb820 3
+docs/metrics-summarization.mdx
+  h_04c00a69eeb820 3
+docs/metrics-task-completion.mdx
+  h_04c00a69eeb820 3
+docs/metrics-tool-correctness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-tool-permission.mdx
+  h_04c00a69eeb820 3
+docs/metrics-tool-use.mdx
+  h_04c00a69eeb820 3
+docs/metrics-topic-adherence.mdx
+  h_04c00a69eeb820 3
+docs/metrics-toxicity.mdx
+  h_04c00a69eeb820 3
+docs/metrics-turn-contextual-precision.mdx
+  h_04c00a69eeb820 3
+docs/metrics-turn-contextual-recall.mdx
+  h_04c00a69eeb820 3
+docs/metrics-turn-contextual-relevancy.mdx
+  h_04c00a69eeb820 3
+docs/metrics-turn-faithfulness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-turn-relevancy.mdx
+  h_04c00a69eeb820 3
+docs/metrics-turn-taking-naturalness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-voice-consistency.mdx
+  h_04c00a69eeb820 3
+docs/metrics-voice-naturalness.mdx
+  h_04c00a69eeb820 3
+docs/metrics-voice-reliability.mdx
+  h_04c00a69eeb820 3
+docs/miscellaneous.mdx
+  h_04c00a69eeb820 3
+docs/multimodal-metrics-image-coherence.mdx
+  h_04c00a69eeb820 3
+docs/multimodal-metrics-image-editing.mdx
+  h_04c00a69eeb820 3
+docs/multimodal-metrics-image-helpfulness.mdx
+  h_04c00a69eeb820 3
+docs/multimodal-metrics-image-reference.mdx
+  h_04c00a69eeb820 3
+docs/multimodal-metrics-text-to-image.mdx
+  h_04c00a69eeb820 3
+docs/prompt-optimization-copro.mdx
+  h_04c00a69eeb820 3
+docs/prompt-optimization-gepa.mdx
+  h_04c00a69eeb820 3
+docs/prompt-optimization-introduction.mdx
+  h_04c00a69eeb820 3
+docs/prompt-optimization-miprov2.mdx
+  h_04c00a69eeb820 3
+docs/prompt-optimization-simba.mdx
+  h_04c00a69eeb820 3
+docs/synthesizer-generate-from-contexts.mdx
+  h_04c00a69eeb820 3
+docs/synthesizer-generate-from-docs.mdx
+  h_04c00a69eeb820 3
+docs/synthesizer-generate-from-goldens.mdx
+  h_04c00a69eeb820 3
+docs/synthesizer-generate-from-scratch.mdx
+  h_04c00a69eeb820 3
+docs/synthetic-data-generation-introduction.mdx
+  h_04c00a69eeb820 3
+docs/troubleshooting.mdx
+  h_04c00a69eeb820 3
+docs/vibe-coder-quickstart.mdx
+  h_04c00a69eeb820 3
+docs/vibe-coding.mdx
+  h_04c00a69eeb820 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "c4f2128d3c5adaafb4d89d29e99083afc2dd5be5",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
