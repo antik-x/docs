@@ -207,27 +207,27 @@
         "pages": [
           {
             "page": "docs/(agentic)/metrics-task-completion",
-            "title": "Task Completion"
+            "title": "任务完成"
           },
           {
             "page": "docs/(agentic)/metrics-step-efficiency",
-            "title": "Step Efficiency"
+            "title": "步骤效率"
           },
           {
             "page": "docs/(agentic)/metrics-argument-correctness",
-            "title": "Argument Correctness"
+            "title": "参数正确性"
           },
           {
             "page": "docs/(agentic)/metrics-tool-correctness",
-            "title": "Tool Correctness"
+            "title": "工具正确性"
           },
           {
             "page": "docs/(agentic)/metrics-plan-adherence",
-            "title": "Plan Adherence"
+            "title": "计划遵循"
           },
           {
             "page": "docs/(agentic)/metrics-plan-quality",
-            "title": "Plan Quality"
+            "title": "计划质量"
           }
         ]
       },

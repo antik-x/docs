@@ -1,0 +1,171 @@
+---
+title: Plan Adherence
+---
+
+**标签**：LLM-as-a-judge · 单轮 · 轨迹 · 无参考 · 智能体 · 多模态
+
+计划遵循（plan adherence）指标是一个智能体指标，它从智能体的追踪中抽取任务与计划，进而评估智能体在完成任务过程中**对计划的遵循程度**。它是会自我解释的评估，会输出指标分数的理由。
+
+<Info>
+计划遵循指标会分析你**智能体的完整追踪**来抽取计划，并分析智能体的执行对该计划的遵循情况，这需要[设置追踪](/docs/evaluation-llm-tracing)。
+</Info>
+
+## Usage
+
+To begin, [set up tracing](/docs/evaluation-llm-tracing) and simply supply the `PlanAdherenceMetric()` to your agent's `@observe` tag or in the `evals_iterator` method.
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from somewhere import llm
+from deepeval.tracing import observe, update_current_trace
+from deepeval.dataset import Golden, EvaluationDataset
+from deepeval.metrics import PlanAdherenceMetric
+from deepeval.test_case import ToolCall
+
+
+@observe
+def tool_call(input):
+    ...
+    return [ToolCall(name="CheckWhether")]
+
+@observe
+def agent(input):
+    tools = tool_call(input)
+    output = llm(input, tools)
+    update_current_trace(
+        input=input,
+        output=output,
+        tools_called=tools
+    )
+    return output
+
+
+# Create dataset
+dataset = EvaluationDataset(goldens=[Golden(input="What's the weather like in SF?")])
+
+# Initialize metric
+metric = PlanAdherenceMetric(threshold=0.7, model="gpt-4o")
+
+# Loop through dataset
+for golden in dataset.evals_iterator(metrics=[metric]):
+    agent(golden.input)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { observe, updateCurrentTrace } from "deepeval/tracing";
+import { Golden, EvaluationDataset } from "deepeval/dataset";
+import { PlanAdherenceMetric } from "deepeval/metrics";
+import { ToolCall } from "deepeval/test-case";
+import { llm } from "./somewhere";
+
+const toolCall = observe({
+  type: "tool",
+  fn: async (input: string) => {
+    // ...
+    return [new ToolCall({ name: "CheckWhether" })];
+  },
+});
+
+const agent = observe({
+  type: "agent",
+  fn: async (input: string) => {
+    const tools = await toolCall(input);
+    const output = await llm(input, tools);
+    updateCurrentTrace({
+      input,
+      output,
+      toolsCalled: tools,
+    });
+    return output;
+  },
+});
+
+// Create dataset
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "What's the weather like in SF?" })],
+});
+
+// Initialize metric
+const metric = new PlanAdherenceMetric({ threshold: 0.7, model: "gpt-4o" });
+
+// Loop through dataset
+for await (const golden of dataset.evalsIterator({ metrics: [metric] })) {
+  await agent((golden as Golden).input);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `PlanAdherenceMetric` 时有**八个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `PlanAdherenceMetric` 时有**七个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-a-metric-in-async) Defaulted to `True`.
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+关于 `evals_iterator` 工作方式的更多内容，[点击这里](/docs/evaluation-end-to-end-llm-evals#e2e-evals-for-tracing)。
+
+<Info>
+`PlanAdherenceMetric` 是只能用于追踪的智能体指标，因此与其他 `deepeval` 指标不同，它不能独立使用，**必须**在 `evals_iterator` 或 `observe` 装饰器中使用。
+</Info>
+
+## How Is It Calculated?
+
+`PlanAdherenceMetric` 的分数按以下步骤计算：
+
+- 从追踪中抽取**任务**，它定义了用户对智能体的目标或意图，并且是可执行的。
+- 从追踪中抽取**计划**，计划抽取自智能体的 `thinking` 或 `reasoning`。如果追踪中没有明确定义或暗示计划的陈述，指标默认以 `1` 的分数通过。
+- 评估追踪中的**智能体执行步骤**，看智能体对计划的遵循有多准确。
+
+$$
+\text{Plan Adherence Score} = \text{AlignmentScore}(\text{(Task, Plan)}, \text{Execution Steps})
+$$
+
+- **对齐分数**由 LLM 结合计划、任务、执行步骤等所有预处理与抽取的信息生成最终分数。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="My agent made a good plan but didn't follow it — which metric catches that?">
+是计划遵循。它为（任务，计划）与实际**执行步骤**之间的 `AlignmentScore` 打分，被无视的计划会得低分。[计划质量](/docs/metrics-plan-quality)仍会给那份计划打高分，因为它只评判计划本身。
+</Accordion>
+<Accordion title="How is Plan Adherence different from Plan Quality?">
+计划遵循是**过程**——执行是否遵循了计划。[计划质量](/docs/metrics-plan-quality)看**计划**——计划本身好不好。两个都跑，才能区分「计划差」与「好计划执行得差」。
+</Accordion>
+<Accordion title="Plan Adherence vs Task Completion — following the plan vs getting it done?">
+没错。计划遵循检查智能体是否坚守了它的**计划**；[任务完成](/docs/metrics-task-completion)检查它是否达成了**结果**。智能体可能偏离计划却完成了任务，也可能遵循计划却失败——这是不同的失败模式。
+</Accordion>
+<Accordion title="What happens if my agent's trace has no plan?">
+计划来自智能体的 `thinking` 或 `reasoning`。若无计划可抽取，就无计划可遵循，指标默认以 `1` 通过——意外出现的满分通常说明你的追踪没有暴露推理过程。
+</Accordion>
+<Accordion title="Can I use Plan Adherence with LangChain, OpenAI, or another framework?">
+可以。`deepeval` 会自动追踪用 [LangChain](/integrations/frameworks/langchain)、[OpenAI](/integrations/frameworks/openai)、LlamaIndex、CrewAI 等构建的智能体——全部[框架集成](/integrations)见相应页面。
+</Accordion>
+</AccordionGroup>

@@ -1,0 +1,295 @@
+---
+title: Argument Correctness
+---
+
+**标签**：LLM-as-a-judge · 单轮 · 无参考 · 智能体 · 多模态
+
+参数正确性（argument correctness）指标是一个智能体 LLM 指标，评估你的 LLM 智能体为所调用的工具生成正确参数的能力。它的计算方式是：依据输入判断每次工具调用的参数是否正确。
+
+<Info>
+`ArgumentCorrectnessMetric` 使用 LLM 判断参数正确性，并且是无参考的。如果你想确定性地评估参数正确性，请改用[工具正确性指标](/docs/metrics-tool-correctness)。
+</Info>
+
+## Required Arguments
+
+要使用 `ArgumentCorrectnessMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+- `tools_called`
+
+Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+
+## Usage
+
+`ArgumentCorrectnessMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import ArgumentCorrectnessMetric
+from deepeval.test_case import LLMTestCase, ToolCall
+from deepeval import evaluate
+
+metric = ArgumentCorrectnessMetric(
+    threshold=0.7,
+    model="gpt-4",
+    include_reason=True
+)
+test_case = LLMTestCase(
+    input="When did Trump first raise tariffs?",
+    actual_output="Trump first raised tariffs in 2018 during the U.S.-China trade war.",
+    tools_called=[
+        ToolCall(
+            name="WebSearch Tool",
+            description="Tool to search for information on the web.",
+            input={"search_query": "Trump first raised tariffs year"}
+        ),
+        ToolCall(
+            name="History FunFact Tool",
+            description="Tool to provide a fun fact about the topic.",
+            input={"topic": "Trump tariffs"}
+        )
+    ]
+)
+
+# To run metric as a standalone
+# metric.measure(test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { ArgumentCorrectnessMetric } from "deepeval/metrics";
+import { LLMTestCase, ToolCall } from "deepeval/test-case";
+import { evaluate } from "deepeval";
+
+const metric = new ArgumentCorrectnessMetric({
+  threshold: 0.7,
+  model: "gpt-4",
+  includeReason: true,
+});
+const testCase = new LLMTestCase({
+  input: "When did Trump first raise tariffs?",
+  actualOutput: "Trump first raised tariffs in 2018 during the U.S.-China trade war.",
+  toolsCalled: [
+    new ToolCall({
+      name: "WebSearch Tool",
+      description: "Tool to search for information on the web.",
+      inputParameters: { search_query: "Trump first raised tariffs year" },
+    }),
+    new ToolCall({
+      name: "History FunFact Tool",
+      description: "Tool to provide a fun fact about the topic.",
+      inputParameters: { topic: "Trump tariffs" },
+    }),
+  ],
+});
+
+// To run metric as a standalone
+// await metric.measure(testCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([testCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `ArgumentCorrectnessMetric` 时有**七个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `ArgumentCorrectnessMetric` 时有**六个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 在组件内
+
+你还可以在嵌套组件内运行 `ArgumentCorrectnessMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.tracing import observe, update_current_span
+...
+
+@observe(metrics=[metric])
+def inner_component():
+    # Set test case at runtime
+    test_case = LLMTestCase(input="...", actual_output="...", tools_called=[...])
+    update_current_span(test_case=test_case)
+    return
+
+@observe
+def llm_app(input: str):
+    # Component can be anything from an LLM call, retrieval, agent, tool use, etc.
+    inner_component()
+    return
+
+dataset = EvaluationDataset(goldens=[Golden(input="Hi!")])
+for golden in dataset.evals_iterator():
+    llm_app(golden.input)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { observe, updateCurrentSpan } from "deepeval/tracing";
+// ...
+
+const innerComponent = observe({
+  metrics: [metric],
+  fn: async () => {
+    // Set test case at runtime
+    const testCase = new LLMTestCase({
+      input: "...",
+      actualOutput: "...",
+      toolsCalled: [new ToolCall({ name: "..." })],
+    });
+    updateCurrentSpan({ testCase });
+  },
+});
+
+const llmApp = observe({
+  fn: async (input: string) => {
+    // Component can be anything from an LLM call, retrieval, agent, tool use, etc.
+    await innerComponent();
+  },
+});
+
+const dataset = new EvaluationDataset({ goldens: [new Golden({ input: "Hi!" })] });
+for await (const golden of dataset.evalsIterator()) {
+  await llmApp((golden as Golden).input);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+### 独立运行
+
+你还可以把 `ArgumentCorrectnessMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(testCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`ArgumentCorrectnessMetric` 的分数按以下公式计算：
+
+$$
+\text{Argument Correctness} = \frac{\text{Number of Correctly Generated Input Parameters}}{\text{Total Number of Tool Calls}}
+$$
+
+`ArgumentCorrectnessMetric` 依据输入中概述的任务，评估每次工具调用的参数（输入参数）的正确性。
+
+<Note>
+You can set the `verbose_mode` of **ANY** `deepeval` metric to `True`（TypeScript 中为 `true`） to debug the `measure()` method:
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric = ArgumentCorrectnessMetric(verbose_mode=True)
+metric.measure(test_case)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+const metric = new ArgumentCorrectnessMetric({ verboseMode: true });
+await metric.measure(testCase);
+```
+
+</Tab>
+
+</Tabs>
+
+</Note>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="My agent called the right tool but passed wrong arguments — which metric catches that?">
+是参数正确性。它为每次工具调用的**参数**打分，由 LLM 对照 `input` 评判。[工具正确性](/docs/metrics-tool-correctness)会因为选对了工具而让这次运行通过。
+</Accordion>
+<Accordion title="Do I need expected tools for Argument Correctness?">
+不需要——它是无参考的。在 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 上只需提供 `input`、`actual_output` 与 `tools_called`。由 LLM 判断每次调用的参数是否符合输入。
+</Accordion>
+<Accordion title="Tool Correctness vs Argument Correctness — right tool vs right inputs?">
+Exactly. [Tool Correctness](/docs/metrics-tool-correctness) checks "right tools?" deterministically against `expected_tools` ; Argument Correctness checks "right inputs?" via an LLM. Use both to verify selection and arguments.
+</Accordion>
+<Accordion title="Is Argument Correctness deterministic or LLM-judged?">
+由 LLM 评判：正确输入参数数 ÷ 工具调用总数，正确与否由 LLM 决定。要对照预期输入做确定性比较，请使用带 `ToolCallParams.INPUT_PARAMETERS` 的[工具正确性](/docs/metrics-tool-correctness)。
+</Accordion>
+<Accordion title="Can I use Argument Correctness with LangChain, OpenAI, or another framework?">
+可以。`deepeval` 会自动追踪用 [LangChain](/integrations/frameworks/langchain)、[OpenAI](/integrations/frameworks/openai)、LlamaIndex、CrewAI 等构建的智能体——全部[框架集成](/integrations)见相应页面。
+</Accordion>
+</AccordionGroup>

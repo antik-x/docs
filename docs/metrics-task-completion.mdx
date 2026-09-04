@@ -1,0 +1,160 @@
+---
+title: Task Completion
+---
+
+**标签**：LLM-as-a-judge · 单轮 · 轨迹 · 无参考 · 智能体 · 多模态
+
+任务完成（task completion）指标使用 LLM-as-a-judge，评估 **LLM 智能体完成任务的效率与效果**。任务完成是会自我解释的 LLM-Eval，会输出指标分数的理由。
+
+<Info>
+任务完成会分析你**智能体的完整追踪**来判断任务是否成功，因此需要[设置追踪](/docs/evaluation-llm-tracing)。
+</Info>
+
+## Usage
+
+To begin, [set up tracing](/docs/evaluation-llm-tracing) and simply supply the `TaskCompletionMetric()` to your agent's `@observe` tag.
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import Golden, EvaluationDataset
+from deepeval.metrics import TaskCompletionMetric
+from deepeval.tracing import observe
+
+@observe()
+def trip_planner_agent(input):
+    destination = "Paris"
+    days = 2
+
+    @observe()
+    def restaurant_finder(city):
+        return ["Le Jules Verne", "Angelina Paris", "Septime"]
+
+    @observe()
+    def itinerary_generator(destination, days):
+        return ["Eiffel Tower", "Louvre Museum", "Montmartre"][:days]
+
+    itinerary = itinerary_generator(destination, days)
+    restaurants = restaurant_finder(destination)
+
+    return itinerary + restaurants
+
+
+# Create dataset
+dataset = EvaluationDataset(goldens=[Golden(input="This is a test query")])
+
+# Initialize metric
+task_completion = TaskCompletionMetric(threshold=0.7, model="gpt-4o")
+
+# Loop through dataset
+for golden in dataset.evals_iterator(metrics=[task_completion]):
+    trip_planner_agent(golden.input)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Golden, EvaluationDataset } from "deepeval/dataset";
+import { TaskCompletionMetric } from "deepeval/metrics";
+import { observe } from "deepeval/tracing";
+
+const tripPlannerAgent = observe({
+  type: "agent",
+  fn: async (input: string) => {
+    const destination = "Paris";
+    const days = 2;
+
+    const restaurantFinder = observe({
+      fn: async (city: string) => ["Le Jules Verne", "Angelina Paris", "Septime"],
+    });
+
+    const itineraryGenerator = observe({
+      fn: async (destination: string, days: number) =>
+        ["Eiffel Tower", "Louvre Museum", "Montmartre"].slice(0, days),
+    });
+
+    const itinerary = await itineraryGenerator(destination, days);
+    const restaurants = await restaurantFinder(destination);
+
+    return [...itinerary, ...restaurants];
+  },
+});
+
+// Create dataset
+const dataset = new EvaluationDataset({ goldens: [new Golden({ input: "This is a test query" })] });
+
+// Initialize metric
+const taskCompletion = new TaskCompletionMetric({ threshold: 0.7, model: "gpt-4o" });
+
+// Loop through dataset
+for await (const golden of dataset.evalsIterator({ metrics: [taskCompletion] })) {
+  await tripPlannerAgent((golden as Golden).input);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `TaskCompletionMetric` 时有**八个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `TaskCompletionMetric` 时有**七个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `task`: a string representing the task to be completed. If no task is supplied, it is automatically inferred from the trace. Defaulted to the `None`（TypeScript 中为 `null`）
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+关于 `evals_iterator` 工作方式的更多内容，[点击这里](/docs/evaluation-end-to-end-llm-evals#e2e-evals-for-tracing)。
+
+## How Is It Calculated?
+
+`TaskCompletionMetric` 的分数按以下公式计算：
+
+$$
+\text{Task Completion Score} = \text{AlignmentScore}(\text{Task}, \text{Outcome})
+$$
+
+- **任务**与**结果**由 LLM 从追踪（端到端则为测试用例）中抽取。
+- **对齐分数**由 LLM 判断结果与抽取（或用户提供）的任务契合程度如何。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="Does Task Completion need me to define the task, or is it inferred?">
+Inferred by default. `task` defaults to `None`（TypeScript 中为 `null`） and is extracted from your agent's trace. Set it explicitly only to pin the agent against a specific goal.
+</Accordion>
+<Accordion title="Why does Task Completion require tracing instead of a plain LLMTestCase?">
+它为整次运行的**结果**打分，任务与结果都从完整追踪中推导。因此你必须[设置追踪](/docs/evaluation-llm-tracing)，并把 `TaskCompletionMetric()` 挂到被 `@observe` 的运行上。
+</Accordion>
+<Accordion title="Task Completion vs Plan Adherence — which one should I use?">
+任务完成看**结果**（是否完成了任务）；[计划遵循](/docs/metrics-plan-adherence)看**过程**（是否遵循了计划）。智能体可能只满足其中之一。
+</Accordion>
+<Accordion title="Is Task Completion deterministic or LLM-judged?">
+LLM-judged and referenceless. The score is the `AlignmentScore` between the extracted **Task** and **Outcome** — no expected outputs to label. Set `include_reason=True`（TypeScript 中为 `includeReason: true`） for the judge's explanation.
+</Accordion>
+<Accordion title="Can I use Task Completion with LangChain, OpenAI, or another framework?">
+可以。`deepeval` 会自动追踪用 [LangChain](/integrations/frameworks/langchain)、[OpenAI](/integrations/frameworks/openai)、LlamaIndex、CrewAI 等构建的智能体——全部[框架集成](/integrations)见相应页面。
+</Accordion>
+</AccordionGroup>
