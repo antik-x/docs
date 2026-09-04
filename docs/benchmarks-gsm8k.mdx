@@ -1,0 +1,63 @@
+---
+title: GSM8K
+---
+
+**GSM8K** 基准包含 1,319 道小学数学应用题，每道题均由专业的人类题目作者精心设计。这些问题涉及基础算术运算（+ − ×÷），需要 2 到 8 步才能解决。该数据集旨在评估 LLM 执行多步数学推理的能力。更多信息可[阅读原始 GSM8K 论文](https://arxiv.org/abs/2110.14168)。
+
+## Arguments
+
+使用 `GSM8K` 基准时有**三个**可选参数：
+
+- [可选] `n_problems`：用于模型评估的题目数量。默认设为 1319（基准中的所有题目）。
+- [可选] `n_shots`：用于少样本学习的 "shots" 数量。严格范围为 0-3，**默认设为 3**。
+- [Optional] `enable_cot`: a boolean that determines if CoT prompting is used for evaluation. This is set to `True` by default.
+
+<Info>
+**思维链（CoT）提示**是一种让模型表达其推理过程以得出答案的方法。更多关于 CoT 的内容见[这里](https://arxiv.org/abs/2201.11903)。
+</Info>
+
+## Usage
+
+以下代码使用 3-shot CoT 提示在 `GSM8K` 的 10 道题上评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM）。
+
+```python
+from deepeval.benchmarks import GSM8K
+
+# Define benchmark with n_problems and shots
+benchmark = GSM8K(
+    n_problems=10,
+    n_shots=3,
+    enable_cot=True
+)
+
+# Replace 'mistral_7b' with your own custom model
+benchmark.evaluate(model=mistral_7b)
+print(benchmark.overall_score)
+```
+
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确答案数值（如 '56'）的数学应用题占总题数的比例来计算。
+
+因此，使用更多少样本提示（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What does the GSM8K benchmark measure?">
+`GSM8K` 评估 LLM 执行**多步数学推理**的能力。它包含 1,319 道涉及基础算术运算、需要 2 到 8 步解决的小学数学应用题。
+</Accordion>
+<Accordion title="How many problems does GSM8K evaluate by default?">
+`n_problems` 参数控制使用的题目数量，默认为 `1319`（基准中的所有题目）。可以调低它（例如 `n_problems=10`）以更快地运行评估。
+</Accordion>
+<Accordion title="How is GSM8K scored?">
+`overall_score` 范围为 0 到 1，基于**精确匹配**：即模型给出精确正确答案数值（如 '56'）的数学应用题比例。跨基准的打分方式见[基准简介](/docs/benchmarks-introduction)。
+</Accordion>
+<Accordion title="What is the default n_shots for GSM8K?">
+`n_shots` 参数严格范围为 0-3，默认设为 `3`。使用更多少样本提示可以提升模型以精确正确格式生成答案的稳健性。
+</Accordion>
+<Accordion title="Does GSM8K support chain-of-thought prompting?">
+可以。`enable_cot` 参数是布尔值，决定是否使用 CoT 提示，默认设为 `True`，提示模型在回答前先表达推理过程。
+</Accordion>
+<Accordion title="How do I run GSM8K on a custom LLM?">
+把你的模型包装在 `DeepEvalBaseLLM` 中，创建 `GSM8K(n_problems=10, n_shots=3, enable_cot=True)` 基准，调用 `benchmark.evaluate(model=mistral_7b)` 后读取 `benchmark.overall_score`。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
+</Accordion>
+</AccordionGroup>

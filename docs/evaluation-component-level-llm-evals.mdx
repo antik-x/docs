@@ -1703,7 +1703,7 @@ Vercel AI SDK 没有出现在这里的标签页中，因为它的根就是生成
 
 Then run your evals exactly as before — `evals_iterator()` in scripts, or `assert_test(golden=golden)`（TypeScript 中为 `expect(golden).toPass()`） [in CI/CD](#in-cicd). Trace-level metrics are optional here since the metrics already live on the sub-agent spans.
 
-## Hyperparameters
+## 超参数
 
 把模型、提示词与其他配置值随每次测试运行一起记录，这样你可以在 Confident AI 上并排比较运行，找出最佳组合。值必须是 `str | int | float` 或 [`Prompt`](/docs/evaluation-prompts)。
 

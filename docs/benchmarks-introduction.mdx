@@ -1,0 +1,261 @@
+---
+title: Introduction to LLM Benchmarks
+---
+
+## Quick Summary
+
+LLM 基准测试提供了一种标准化的方式来量化 LLM 在不同任务上的表现。`deepeval` 提供了多个最先进的、有研究支撑的基准，让你快速评估**任意**你选择的自定义 LLM。这些基准包括：
+
+- BIG-Bench Hard
+- HellaSwag
+- MMLU (Massive Multitask Language Understanding)
+- DROP
+- TruthfulQA
+- HumanEval
+- GSM8K
+
+要对你的 LLM 做基准测试，你需要把你的 LLM 实现（可以是简单的 OpenAI API 调用或 Hugging Face transformers 模型）包装在 `deepeval` 的 `DeepEvalBaseLLM` 类中。详细指南请访问[自定义模型板块](/docs/metrics-introduction#using-a-custom-llm)。
+
+<Info>
+在 `deepeval` 中，任何人都可以只用几行代码对**任意** LLM 做基准测试。`deepeval` 提供的所有基准都遵循原始研究论文的实现。
+
+</Info>
+
+## What are LLM Benchmarks?
+
+LLM 基准测试是一组标准化测试，旨在评估 LLM 在推理、理解等各种技能上的表现。一个基准由以下部分组成：
+
+- 一个或多个**任务**，每个任务都有自己的评估数据集和目标标签（或 `expected_outputs`）
+- 一个**打分器**，通过以目标标签为参照来判断 LLM 的预测是否正确
+- 多种**提示技术**，可以是少样本学习和/或 CoT 提示
+
+被评估的 LLM 会在上述提示技术的辅助下，为基准中的每个任务生成「预测」，打分器则使用目标标签作为参照为这些预测打分。不同基准之间没有统一的打分方式，但大多数直接使用**精确匹配打分器**。
+
+<Tip>
+基准数据集中的目标标签就是 `deepeval` 术语中的 `expected_output`。
+</Tip>
+
+## Benchmarking Your LLM
+
+以下示例展示如何对 [Mistral 7B 模型](https://huggingface.co/docs/transformers/model_doc/mistral)（通过 Hugging Face 的 `transformers` 库暴露）在 `MMLU` 基准上进行评估。
+
+<Danger>
+你想要做基准测试的 LLM 常常无法为这些公开基准生成结构正确的输出。如后文所述，这些公开基准大多要求以单个字母形式输出（因为它们通常以选择题形式呈现），而无法只生成单个字母会导致基准结果失真。如果遇到基准分数低得离谱，很可能是你的 LLM 没有生成有效输出。
+
+有几种解决办法，例如在与目标任务（如选择题）相似的特定任务或数据集上微调模型。但这很复杂，好在 `deepeval` 中不需要这样做。
+
+**只需按照[这份快速指南](/guides/guides-using-custom-llms#json-confinement-for-custom-llms)，了解如何在自定义 LLM 实现中生成正确的输出，即可对你的自定义 LLM 做基准测试。**
+</Danger>
+
+### Create A Custom LLM
+
+首先创建一个**你将要做基准测试**的自定义模型，继承 `DeepEvalBaseLLM` 类（完整指南见[自定义模型板块](/docs/metrics-introduction#using-a-custom-llm)）：
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from deepeval.models.base_model import DeepEvalBaseLLM
+
+class Mistral7B(DeepEvalBaseLLM):
+    def __init__(
+        self,
+        model,
+        tokenizer
+    ):
+        self.model = model
+        self.tokenizer = tokenizer
+
+    def load_model(self):
+        return self.model
+
+    def generate(self, prompt: str) -> str:
+        model = self.load_model()
+
+        device = "cuda" # the device to load the model onto
+
+        model_inputs = self.tokenizer([prompt], return_tensors="pt").to(device)
+        model.to(device)
+
+        generated_ids = model.generate(**model_inputs, max_new_tokens=100, do_sample=True)
+        return self.tokenizer.batch_decode(generated_ids)[0]
+
+    async def a_generate(self, prompt: str) -> str:
+        return self.generate(prompt)
+
+    # This is optional.
+    def batch_generate(self, prompts: List[str]) -> List[str]:
+        model = self.load_model()
+        device = "cuda" # the device to load the model onto
+
+        model_inputs = self.tokenizer(prompts, return_tensors="pt").to(device)
+        model.to(device)
+
+        generated_ids = model.generate(**model_inputs, max_new_tokens=100, do_sample=True)
+        return self.tokenizer.batch_decode(generated_ids)
+
+    def get_model_name(self):
+        return "Mistral 7B"
+
+model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
+tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
+
+mistral_7b = Mistral7B(model=model, tokenizer=tokenizer)
+print(mistral_7b("Write me a joke"))
+```
+
+<Tip>
+注意，如果你的 LLM 提供了批量生成输出的 API，你还可以**可选地**定义 `batch_generate()` 方法。
+</Tip>
+
+接下来，用 `MMLU` 类定义一个 MMLU 基准：
+
+```python
+from deepeval.benchmarks import MMLU
+...
+
+benchmark = MMLU()
+```
+
+最后，调用 `evaluate()` 方法对你的自定义 LLM 做基准测试：
+
+```python
+...
+
+# When you set batch_size, outputs for benchmarks will be generated in batches
+# if `batch_generate()` is implemented for your custom LLM
+results = benchmark.evaluate(model=mistral_7b, batch_size=5)
+print("Overall Score: ", results)
+```
+
+✅ **恭喜！你现在可以在 `deepeval` 提供的所有 LLM 基准上评估任意自定义 LLM。**
+
+<Tip>
+设置 `batch_size` 后，如果你的自定义 LLM 实现了 `batch_generate()`，基准输出会批量生成。这可以大幅加速基准测试。
+
+`batch_size` 参数适用于所有基准，**但** `HumanEval` 与 `GSM8K` 除外。
+</Tip>
+
+运行评估后，你可以通过多种方式访问结果来分析模型表现，包括总分、任务分数以及每个预测的详情。
+
+### Overall Score
+
+`overall_score` 代表你的模型在所有指定任务上的表现，可通过 `overall_score` 属性访问：
+
+```python
+...
+
+print("Overall Score:", benchmark.overall_score)
+```
+
+### Task Scores
+
+各任务分数可通过 `task_scores` 属性访问：
+
+```python
+...
+
+print("Task-specific Scores: ", benchmark.task_scores)
+```
+
+`task_scores` 属性输出一个 pandas DataFrame，包含各任务得分信息。以下是 DataFrame 示例：
+
+| Task                         | Score |
+| ---------------------------- | ----- |
+| high_school_computer_science | 0.75  |
+| astronomy                    | 0.93  |
+
+### Prediction Details
+
+你还可以通过 `predictions` 属性访问模型在各个任务上预测的完整明细：
+
+```python
+...
+
+print("Detailed Predictions: ", benchmark.predictions)
+```
+
+benchmark.predictions 属性同样输出一个 pandas DataFrame，包含模型预测的详细信息。以下是 DataFrame 示例：
+
+| Task                         | Input                                                                              | Prediction | Correct |
+| ---------------------------- | ---------------------------------------------------------------------------------- | ---------- | ------- |
+| high_school_computer_science | In Python 3, which of the following function convert a string to an int in python? | A          | 0       |
+| high_school_computer_science | Let x = 1. What is `x << 3` in Python 3?                                           | B          | 1       |
+| ...                          | ...                                                                                | ...        | ...     |
+
+## Configuring LLM Benchmarks
+
+所有基准都可以以某种方式配置，`deepeval` 提供了简易的配置接口。
+
+<Note>
+You'll notice although tasks and prompting techniques are configurable, scorers are not. This is because the type of scorer is an universal standard within any LLM benchmark.
+</Note>
+
+### Tasks
+
+A task for an LLM benchmark is a challenge or problem is designed to assess an LLM's capabilities on a specific area of focus. For example, you can specify which **subset** of the the `MMLU` benchmark to evaluate your LLM on by providing a list of `MMLUTASK`:
+
+```python
+from deepeval.benchmarks import MMLU
+from deepeval.benchmarks.task import MMLUTask
+
+tasks = [MMLUTask.HIGH_SCHOOL_COMPUTER_SCIENCE, MMLUTask.ASTRONOMY]
+benchmark = MMLU(tasks=tasks)
+```
+
+In this example, we're only evaluating our Mistral 7B model on the MMLU `HIGH_SCHOOL_COMPUTER_SCIENCE` and `ASTRONOMY` tasks.
+
+<Info>
+Each benchmark is associated with a unique **Task** enum which can be found on each benchmark's individual documentation pages. These tasks are 100% drawn from the original research papers for each respective benchmark, and maps one-to-one to the benchmark datasets available on Hugging Face.
+
+By default, `deepeval` will evaluate your LLM on all available tasks for a particular benchmark.
+</Info>
+
+### Few-Shot Learning
+
+Few-shot learning, also known as in-context learning, is a prompting technique that involves supplying your LLM a few examples as part of the prompt template to help its generation. These examples can help guide accuracy or behavior. The number of examples to provide, can be specified in the `n_shots` parameter:
+
+```python
+from deepeval.benchmarks import HellaSwag
+
+benchmark = HellaSwag(n_shots=3)
+```
+
+<Note>
+Each benchmark has a range of allowed `n_shots` values. `deepeval` handles all the logic with respect to the `n_shots` value according to the original research papers for each respective benchmark.
+</Note>
+
+### CoTs Prompting
+
+Chain of thought prompting is an approach where the model is prompted to articulate its reasoning process to arrive at an answer. This usually results in an increase in prediction accuracy.
+
+```python
+from deepeval.benchmarks import BigBenchHard
+
+benchmark = BigBenchHard(enable_cot=True)
+```
+
+<Note>
+Not all benchmarks offers CoTs as a prompting technique, but the [original paper for BIG-Bench Hard](https://arxiv.org/abs/2210.09261) found major improvements when using CoTs prompting during benchmarking.
+</Note>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What LLM benchmarks does deepeval offer?">
+`deepeval` provides several research-backed benchmarks including [BIG-Bench Hard](/docs/benchmarks-big-bench-hard) , [HellaSwag](/docs/benchmarks-hellaswag) , [MMLU](/docs/benchmarks-mmlu) , [DROP](/docs/benchmarks-drop) , [TruthfulQA](/docs/benchmarks-truthful-qa) , [HumanEval](/docs/benchmarks-human-eval) , and [GSM8K](/docs/benchmarks-gsm8k) . Each one follows the implementation of its original research paper.
+</Accordion>
+<Accordion title="How do I benchmark a custom LLM with deepeval?">
+Wrap your model in the `DeepEvalBaseLLM` class, instantiate a benchmark (e.g. `MMLU()` ), and call its `evaluate()` method with your model. This works for any LLM, whether it is an API call to OpenAI or a Hugging Face `transformers` model.
+</Accordion>
+<Accordion title="What does a benchmark consist of?">
+A benchmark is made up of one or more **tasks** (each its own dataset with target labels), a **scorer** to judge predictions against those labels, and various **prompting techniques** such as few-shot learning and/or CoT prompting. Most benchmarks use the **exact match** scorer.
+</Accordion>
+<Accordion title="How do I access benchmark results?">
+After calling `evaluate()` , you can read the `overall_score` for performance across all tasks, `task_scores` for a per-task pandas DataFrame, and `predictions` for a detailed breakdown of every prediction your model made.
+</Accordion>
+<Accordion title="What does the batch_size argument do?">
+When you set `batch_size` , outputs are generated in batches if you have implemented `batch_generate()` on your custom LLM, which can speed up benchmarking significantly. The `batch_size` parameter is available for all benchmarks **except** `HumanEval` and `GSM8K` .
+</Accordion>
+<Accordion title="Can I configure tasks, few-shot prompting, and CoT?">
+Yes. Use the `tasks` argument to choose a subset of a benchmark's tasks (by default all tasks run), `n_shots` to set the number of few-shot examples, and `enable_cot` for benchmarks that support chain-of-thought prompting. Scorers, however, are **not** configurable since the scorer is a universal standard within each benchmark.
+</Accordion>
+</AccordionGroup>

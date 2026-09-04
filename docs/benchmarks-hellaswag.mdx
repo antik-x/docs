@@ -1,0 +1,271 @@
+---
+title: HellaSwag
+---
+
+**HellaSwag** 基准通过句子补全任务评估语言模型的常识推理能力。它提供跨越多个主题领域的 10,000 个挑战。更多详情可[访问 Hellaswag 的 GitHub 页面](https://github.com/rowanz/hellaswag)。
+
+<Info>
+`Hellaswag` 强调现实情境中的常识推理与理解深度，是定位模型**在细微或复杂上下文中表现不佳**的绝佳工具。
+</Info>
+
+## Arguments
+
+使用 `HellaSwag` 基准时有**两个**可选参数：
+
+- [可选] `tasks`：任务列表（`HellaSwagTask` 枚举），指定句子补全评估的主题领域。默认为所有任务。`HellaSwagTask` 枚举列表见[这里](#hellaswag-tasks)。
+- [可选] `n_shots`：用于少样本学习的 "shots" 数量。**默认设为 10**，**不能超过 15**。
+
+<Note>
+注意，与 `BIGBenchHard` 不同，`HellaSwag` 基准不使用 CoT 提示。
+</Note>
+
+## Usage
+
+以下代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM）使用 5-shot 学习完成 'Trimming Branches or Hedges' 与 'Baton Twirling' 主题句子的能力。
+
+```python
+from deepeval.benchmarks import HellaSwag
+from deepeval.benchmarks.tasks import HellaSwagTask
+
+# Define benchmark with specific tasks and shots
+benchmark = HellaSwag(
+    tasks=[HellaSwagTask.TRIMMING_BRANCHES_OR_HEDGES, HellaSwagTask.BATON_TWIRLING],
+    n_shots=5
+)
+
+# Replace 'mistral_7b' with your own custom model
+benchmark.evaluate(model=mistral_7b)
+print(benchmark.overall_score)
+```
+
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确字母答案（如 'A'）的多选句子补全题占总题数的比例来计算。
+
+因此，使用更多少样本提示（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
+
+## HellaSwag Tasks
+
+HellaSwagTask 枚举分类了 HellaSwag 基准涵盖的多样化类别。
+
+```python
+from deepeval.benchmarks.tasks import HellaSwagTask
+
+hella_tasks = [HellaSwagTask.APPLYING_SUNSCREEN]
+```
+
+以下是所有可用任务的完整列表：
+
+- `APPLYING_SUNSCREEN`
+- `TRIMMING_BRANCHES_OR_HEDGES`
+- `DISC_DOG`
+- `WAKEBOARDING`
+- `SKATEBOARDING`
+- `WATERSKIING`
+- `WASHING_HANDS`
+- `SAILING`
+- `PLAYING_CONGAS`
+- `BALLET`
+- `ROOF_SHINGLE_REMOVAL`
+- `HAND_CAR_WASH`
+- `KITE_FLYING`
+- `PLAYING_POOL`
+- `PLAYING_LACROSSE`
+- `LAYUP_DRILL_IN_BASKETBALL`
+- `HOME_AND_GARDEN`
+- `PLAYING_BEACH_VOLLEYBALL`
+- `CALF_ROPING`
+- `SCUBA_DIVING`
+- `MIXING_DRINKS`
+- `PUTTING_ON_SHOES`
+- `MAKING_A_LEMONADE`
+- `UNCATEGORIZED`
+- `ZUMBA`
+- `PLAYING_BADMINTON`
+- `PLAYING_BAGPIPES`
+- `FOOD_AND_ENTERTAINING`
+- `PERSONAL_CARE_AND_STYLE`
+- `CRICKET`
+- `SHOVELING_SNOW`
+- `PING_PONG`
+- `HOLIDAYS_AND_TRADITIONS`
+- `ICE_FISHING`
+- `BEACH_SOCCER`
+- `TABLE_SOCCER`
+- `SWIMMING`
+- `BATON_TWIRLING`
+- `JAVELIN_THROW`
+- `SHOT_PUT`
+- `DOING_CRUNCHES`
+- `POLISHING_SHOES`
+- `TRAVEL`
+- `USING_UNEVEN_BARS`
+- `PLAYING_HARMONICA`
+- `RELATIONSHIPS`
+- `HIGH_JUMP`
+- `MAKING_A_SANDWICH`
+- `POWERBOCKING`
+- `REMOVING_ICE_FROM_CAR`
+- `SHAVING`
+- `SHARPENING_KNIVES`
+- `WELDING`
+- `USING_PARALLEL_BARS`
+- `HOME_CATEGORIES`
+- `ROCK_CLIMBING`
+- `SNOW_TUBING`
+- `WASHING_FACE`
+- `ASSEMBLING_BICYCLE`
+- `TENNIS_SERVE_WITH_BALL_BOUNCING`
+- `SHUFFLEBOARD`
+- `DODGEBALL`
+- `CAPOEIRA`
+- `PAINTBALL`
+- `DOING_A_POWERBOMB`
+- `DOING_MOTOCROSS`
+- `PLAYING_ICE_HOCKEY`
+- `PHILOSOPHY_AND_RELIGION`
+- `ARCHERY`
+- `CARS_AND_OTHER_VEHICLES`
+- `RUNNING_A_MARATHON`
+- `THROWING_DARTS`
+- `PAINTING_FURNITURE`
+- `HAVING_AN_ICE_CREAM`
+- `SLACKLINING`
+- `CAMEL_RIDE`
+- `ARM_WRESTLING`
+- `HULA_HOOP`
+- `SURFING`
+- `PLAYING_PIANO`
+- `GARGLING_MOUTHWASH`
+- `PLAYING_ACCORDION`
+- `HORSEBACK_RIDING`
+- `PUTTING_IN_CONTACT_LENSES`
+- `PLAYING_SAXOPHONE`
+- `FUTSAL`
+- `LONG_JUMP`
+- `LONGBOARDING`
+- `POLE_VAULT`
+- `BUILDING_SANDCASTLES`
+- `PLATFORM_DIVING`
+- `PAINTING`
+- `SPINNING`
+- `CARVING_JACK_O_LANTERNS`
+- `BRAIDING_HAIR`
+- `YOUTH`
+- `PLAYING_VIOLIN`
+- `CANOEING`
+- `CHEERLEADING`
+- `PETS_AND_ANIMALS`
+- `KAYAKING`
+- `CLEANING_SHOES`
+- `KNITTING`
+- `BAKING_COOKIES`
+- `DOING_FENCING`
+- `PLAYING_GUITARRA`
+- `USING_THE_ROWING_MACHINE`
+- `GETTING_A_HAIRCUT`
+- `MOOPING_FLOOR`
+- `RIVER_TUBING`
+- `CLEANING_SINK`
+- `GROOMING_DOG`
+- `DISCUS_THROW`
+- `CLEANING_WINDOWS`
+- `FINANCE_AND_BUSINESS`
+- `HANGING_WALLPAPER`
+- `ROPE_SKIPPING`
+- `WINDSURFING`
+- `KNEELING`
+- `GETTING_A_PIERCING`
+- `ROCK_PAPER_SCISSORS`
+- `SPORTS_AND_FITNESS`
+- `BREAKDANCING`
+- `WALKING_THE_DOG`
+- `PLAYING_DRUMS`
+- `PLAYING_WATER_POLO`
+- `BMX`
+- `SMOKING_A_CIGARETTE`
+- `BLOWING_LEAVES`
+- `BULLFIGHTING`
+- `DRINKING_COFFEE`
+- `BATHING_DOG`
+- `TANGO`
+- `WRAPPING_PRESENTS`
+- `PLASTERING`
+- `PLAYING_BLACKJACK`
+- `FUN_SLIDING_DOWN`
+- `WORK_WORLD`
+- `TRIPLE_JUMP`
+- `TUMBLING`
+- `SKIING`
+- `DOING_KICKBOXING`
+- `BLOW_DRYING_HAIR`
+- `DRUM_CORPS`
+- `SMOKING_HOOKAH`
+- `MOWING_THE_LAWN`
+- `VOLLEYBALL`
+- `LAYING_TILE`
+- `STARTING_A_CAMPFIRE`
+- `SUMO`
+- `HURLING`
+- `PLAYING_KICKBALL`
+- `MAKING_A_CAKE`
+- `FIXING_THE_ROOF`
+- `PLAYING_POLO`
+- `REMOVING_CURLERS`
+- `ELLIPTICAL_TRAINER`
+- `HEALTH`
+- `SPREAD_MULCH`
+- `CHOPPING_WOOD`
+- `BRUSHING_TEETH`
+- `USING_THE_POMMEL_HORSE`
+- `SNATCH`
+- `CLIPPING_CAT_CLAWS`
+- `PUTTING_ON_MAKEUP`
+- `HAND_WASHING_CLOTHES`
+- `HITTING_A_PINATA`
+- `TAI_CHI`
+- `GETTING_A_TATTOO`
+- `DRINKING_BEER`
+- `SHAVING_LEGS`
+- `DOING_KARATE`
+- `PLAYING_RUBIK_CUBE`
+- `FAMILY_LIFE`
+- `ROLLERBLADING`
+- `EDUCATION_AND_COMMUNICATIONS`
+- `FIXING_BICYCLE`
+- `BEER_PONG`
+- `IRONING_CLOTHES`
+- `CUTTING_THE_GRASS`
+- `RAKING_LEAVES`
+- `PLAYING_SQUASH`
+- `HOPSCOTCH`
+- `INSTALLING_CARPET`
+- `POLISHING_FURNITURE`
+- `DECORATING_THE_CHRISTMAS_TREE`
+- `PREPARING_SALAD`
+- `PREPARING_PASTA`
+- `VACUUMING_FLOOR`
+- `CLEAN_AND_JERK`
+- `COMPUTERS_AND_ELECTRONICS`
+- `CROQUET`
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What does the HellaSwag benchmark measure?">
+`HellaSwag` evaluates an LLM's **commonsense reasoning** through sentence completion tasks. It provides 10,000 challenges spanning various subject areas, making it useful for pinpointing where models struggle with nuanced or complex contexts.
+</Accordion>
+<Accordion title="Which tasks can I run with HellaSwag?">
+You can pass a list of `HellaSwagTask` enums to the `tasks` argument, for example `TRIMMING_BRANCHES_OR_HEDGES` or `BATON_TWIRLING` . By default, all available tasks are evaluated.
+</Accordion>
+<Accordion title="How is HellaSwag scored?">
+The `overall_score` ranges from 0 to 1 and is based on **exact matching**: it is the proportion of multiple-choice sentence-completion questions for which the model produces the precise correct letter answer (e.g. 'A'). See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+</Accordion>
+<Accordion title="What is the default n_shots for HellaSwag?">
+The `n_shots` argument is set to `10` by default and **cannot exceed 15**. Using more few-shot prompts can improve the model's robustness in generating answers in the exact correct format.
+</Accordion>
+<Accordion title="Does HellaSwag support chain-of-thought prompting?">
+No. Unlike `BigBenchHard` , there is no CoT prompting for the `HellaSwag` benchmark. Its only optional arguments are `tasks` and `n_shots` .
+</Accordion>
+<Accordion title="How do I run HellaSwag on a custom LLM?">
+Wrap your model in `DeepEvalBaseLLM` , create a benchmark with `HellaSwag(tasks=[...], n_shots=5)` , and call `benchmark.evaluate(model=mistral_7b)` before reading `benchmark.overall_score` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+</Accordion>
+</AccordionGroup>

@@ -1,0 +1,105 @@
+---
+title: Generate Goldens From Contexts
+---
+
+If you already have prepared contexts, you can skip document processing. Simply provide these contexts to `deepeval`'s `Synthesizer`, and it will generate goldens directly without processing documents.
+
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  ![LangChain](https://deepeval-docs.s3.amazonaws.com/synthesize-from-contexts.svg)
+</div>
+
+<Tip>
+This is especially helpful if you **already have an embedded knowledge base**. For example, if you have documents parsed and stored in a vector database, you may handle retrieving text chunks yourself.
+</Tip>
+
+## Generate Your Goldens
+
+To generate synthetic single or multi-turn goldens from documents, simply provide a list of contexts:
+
+<Tabs>
+<Tab title="单轮">
+
+```python
+from deepeval.synthesizer import Synthesizer
+
+synthesizer = Synthesizer()
+goldens = synthesizer.generate_goldens_from_contexts(
+    # Provide a list of context for synthetic data generation
+    contexts=[
+        ["The Earth revolves around the Sun.", "Planets are celestial bodies."],
+        ["Water freezes at 0 degrees Celsius.", "The chemical formula for water is H2O."],
+    ]
+)
+```
+
+There are **ONE** mandatory and **THREE** optional parameters when using the `generate_goldens_from_contexts` method:
+
+- `contexts`: a list of context, where each context is itself a list of strings, ideally sharing a common theme or subject area.
+- [Optional] `include_expected_output`: a boolean which when set to `True`, will additionally generate an `expected_output` for each synthetic `Golden`. Defaulted to `True`.
+- [Optional] `max_goldens_per_context`: the maximum number of goldens to be generated per context. Defaulted to 2.
+- [Optional] `source_files`: a list of strings specifying the source of the contexts. Length of `source_files` **MUST** be the same as the length of `contexts`.
+
+<Info>
+
+**DID YOU KNOW?**
+
+The `generate_goldens_from_docs()` method calls the `generate_goldens_from_contexts()` method under the hood, and the only difference between the two is the `generate_goldens_from_contexts()` method does not contain a [context construction step](synthesizer-generate-from-docs#how-does-context-construction-work), but instead uses the provided contexts directly for generation.
+</Info>
+
+</Tab>
+<Tab title="多轮">
+
+```python
+from deepeval.synthesizer import Synthesizer
+
+synthesizer = Synthesizer()
+conversational_goldens = synthesizer.generate_conversational_goldens_from_contexts(
+    # Provide a list of context for synthetic data generation
+    contexts=[
+        ["The Earth revolves around the Sun.", "Planets are celestial bodies."],
+        ["Water freezes at 0 degrees Celsius.", "The chemical formula for water is H2O."],
+    ]
+)
+```
+
+There are **ONE** mandatory and **THREE** optional parameters when using the `generate_conversational_goldens_from_contexts` method:
+
+- `contexts`: a list of context, where each context is itself a list of strings, ideally sharing a common theme or subject area.
+- [Optional] `include_expected_outcome`: a boolean which when set to `True`, will additionally generate an `expected_outcome` for each synthetic `ConversationalGolden`. Defaulted to `True`.
+- [Optional] `max_goldens_per_context`: the maximum number of goldens to be generated per context. Defaulted to 2.
+- [Optional] `source_files`: a list of strings specifying the source of the contexts. Length of `source_files` **MUST** be the same as the length of `contexts`.
+
+<Info>
+
+**DID YOU KNOW?**
+
+The `generate_conversational_goldens_from_docs()` method calls the `generate_conversational_goldens_from_contexts()` method under the hood, and the only difference between the two is the `generate_conversational_goldens_from_contexts()` method does not contain a [context construction step](synthesizer-generate-from-docs#how-does-context-construction-work), but instead uses the provided contexts directly for generation.
+</Info>
+
+</Tab>
+</Tabs>
+
+Remember, single-turn generations produces single-turn `Golden`s, while multi-turn generations produces multi-turn `ConversationalGolden`s. To learn more about goldens, [click here.](/docs/evaluation-datasets#what-are-goldens)
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What format should my contexts be in?">
+`contexts` is a list of contexts, where each context is itself a list of strings that ideally share a common theme. Each context produces up to `max_goldens_per_context` goldens.
+</Accordion>
+<Accordion title="When should I use this instead of generate_goldens_from_docs?">
+Use `generate_goldens_from_contexts` when you already have prepared contexts (e.g. an embedded knowledge base) and want to control chunking yourself. [generate_goldens_from_docs](/docs/synthesizer-generate-from-docs) calls this method under the hood after an extra context construction step.
+</Accordion>
+<Accordion title="Are the generated goldens grounded in my contexts?">
+Yes. The provided `contexts` are used directly to generate and ground each golden, and to produce `expected_output` s when `include_expected_output` is enabled.
+</Accordion>
+<Accordion title="Can my team generate goldens from our contexts without code?">
+Yes. On [Confident AI](https://www.confident-ai.com) you can connect your knowledge bases and run the generation pipeline no-code — tweak filtration, evolutions, and styling, experiment with variations, and collaborate on the resulting dataset as a team.
+</Accordion>
+</AccordionGroup>

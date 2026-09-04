@@ -108,6 +108,11 @@
     "(community)/community-metrics-overview": "社区指标概览",
     "(community)/metrics-citation-faithfulness": "引用忠实度",
     "(community)/metrics-agent-loop-detection": "智能体循环检测",
-    "(community)/metrics-tool-permission": "工具权限"
+    "(community)/metrics-tool-permission": "工具权限",
+    "(benchmarks)/benchmarks-arc": "ARC",
+    "(benchmarks)/benchmarks-winogrande": "Winogrande",
+    "(benchmarks)/benchmarks-bool-q": "BoolQ",
+    "(benchmarks)/benchmarks-lambada": "LAMBADA",
+    "(benchmarks)/benchmarks-ifeval": "IFEval"
   }
 }

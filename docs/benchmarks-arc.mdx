@@ -1,0 +1,65 @@
+---
+title: ARC
+---
+
+**ARC or AI2 Reasoning Challenge** is a dataset used to benchmark language models' reasoning abilities. The benchmark consists of 8,000 multiple-choice questions from science exams for grades 3 to 9. The dataset includes two modes: _easy_ and _challenge_, with the latter featuring more difficult questions that require advanced reasoning.
+
+<Tip>
+要了解数据集及其构建方式的更多信息，可[阅读原始论文](https://arxiv.org/pdf/1803.05457v1)。
+</Tip>
+
+
+## 参数
+使用 `ARC` 基准时有**三个**可选参数：
+- [可选] `n_problems`：用于模型评估的题目数量。默认为每种基准模式下所有可用题目。
+- [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
+- [Optional] mode: a `ARCMode` enum that selects the evaluation mode. This is set to `ARCMode.EASY` by default. `deepeval` currently supports 2 modes: **EASY and CHALLENGE**.
+
+<Info>
+Both `EASY` and `CHALLENGE` modes consist of **multiple-choice** questions. However, `CHALLENGE` questions are more difficult and require more advanced reasoning.
+</Info>
+
+## 用法
+
+The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on 100 problems in `ARC` in EASY mode.
+
+```python
+from deepeval.benchmarks import ARC
+from deepeval.benchmarks.modes import ARCMode
+
+# Define benchmark with specific n_problems and n_shots in easy mode
+benchmark = ARC(
+    n_problems=100,
+    n_shots=3,
+    mode=ARCMode.EASY
+)
+
+# Replace 'mistral_7b' with your own custom model
+benchmark.evaluate(model=mistral_7b)
+print(benchmark.overall_score)
+```
+
+The `overall_score` ranges from 0 to 1, signifying the fraction of accurate predictions across tasks. Both modes' performances are measured using an **exact match** scorer, focusing on the quantity of correct answers.
+
+## 常见问题
+
+<AccordionGroup>
+<Accordion title="What does the ARC benchmark measure?">
+ARC（AI2 推理挑战）通过来自 3-9 年级科学考试的 8,000 道多选题来评估 LLM 的**推理能力**。
+</Accordion>
+<Accordion title="EASY 和 CHALLENGE 模式是什么？">
+`mode` 参数接受一个 `ARCMode` 枚举，默认为 `ARCMode.EASY`。`EASY` 与 `CHALLENGE` 都由多选题组成，但 `CHALLENGE` 的题目更难，需要更高级的推理。
+</Accordion>
+<Accordion title="ARC 如何打分？">
+`overall_score` 范围为 0 到 1，表示各任务中准确预测的比例。两种模式都用**精确匹配**打分器衡量正确答案的数量。跨基准的打分方式见[基准简介](/docs/benchmarks-introduction)。
+</Accordion>
+<Accordion title="ARC 的默认 n_shots 是多少？">
+`n_shots` 参数默认设为 `5`，**不能超过 5**。它控制少样本学习使用的示例数量。
+</Accordion>
+<Accordion title="ARC 默认评估多少道题？">
+`n_problems` 参数默认为每种基准模式下所有可用题目。可以调低它（例如 `n_problems=100`）以更快地运行评估。
+</Accordion>
+<Accordion title="如何在自定义 LLM 上运行 ARC？">
+把你的模型包装在 `DeepEvalBaseLLM` 中，创建 `ARC(n_problems=100, n_shots=3, mode=ARCMode.EASY)` 基准，调用 `benchmark.evaluate(model=mistral_7b)` 后读取 `benchmark.overall_score`。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
+</Accordion>
+</AccordionGroup>

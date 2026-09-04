@@ -1,0 +1,63 @@
+---
+title: BoolQ
+---
+
+**BoolQ** is a reading comprehension dataset containing 16K yes/no questions (3.3K in the validation set). BoolQ features naturally occurring questions, meaning they are generated in an unprompted setting, with each question accompanied by a passage.
+
+<Info>
+要了解数据集及其构建方式的更多信息，可[阅读原始论文](https://arxiv.org/pdf/1905.10044)。
+</Info>
+
+## Arguments
+
+使用 `BoolQ` 基准时有**两个**可选参数：
+
+- [可选] `n_problems`：用于模型评估的题目数量。默认为 3270（所有题目）。
+- [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
+
+## Usage
+
+The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on 10 problems in `BoolQ` using 3-shot CoT prompting.
+
+```python
+from deepeval.benchmarks import BoolQ
+
+# Define benchmark with n_problems and shots
+benchmark = BoolQ(
+    n_problems=10,
+    n_shots=3,
+)
+
+# Replace 'mistral_7b' with your own custom model
+benchmark.evaluate(model=mistral_7b)
+print(benchmark.overall_score)
+```
+
+The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on **exact matching**, is calculated by determining the proportion of questions for which the model produces the precise correct answer (i.e. 'Yes' or 'No') in relation to the total number of questions.
+
+<Tip>
+As a result, utilizing more few-shot prompts (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="What does the BoolQ benchmark measure?">
+BoolQ is a reading comprehension benchmark of 16K naturally occurring yes/no questions (3.3K in the validation set), each accompanied by a passage. The questions are generated in an unprompted setting. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+</Accordion>
+<Accordion title="How is BoolQ scored?">
+打分基于**精确匹配**：`overall_score` 是模型给出精确正确答案（即 'Yes' 或 'No'）的题目占总数的比例。范围为 0 到 1，1 表示完美表现。
+</Accordion>
+<Accordion title="What is the default n_shots for BoolQ?">
+它默认为 `5`，不能超过该数量。使用 `n_shots` 参数可以在少样本提示中调低它。
+</Accordion>
+<Accordion title="How many problems does BoolQ evaluate by default?">
+默认 `n_problems` 设为 3270，评估所有题目。可以传入较小的 `n_problems` 值来评估更少的题目。
+</Accordion>
+<Accordion title="Can using more few-shot prompts improve the BoolQ score?">
+可以。通过 `n_shots` 使用更多少样本提示可以大幅提升模型以精确正确格式生成答案的稳健性，并提高 `overall_score`。
+</Accordion>
+<Accordion title="How do I run BoolQ on a custom LLM?">
+定义基准，然后用你的模型调用 `evaluate()` 并读取 `overall_score`。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
+</Accordion>
+</AccordionGroup>

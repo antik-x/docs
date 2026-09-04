@@ -1302,7 +1302,7 @@ for golden in dataset.evals_iterator(
 `evalsIterator()` 仅支持异步，因此没有同步变体可选——金标被并发评估，由循环等待完成。
 
 <Tabs>
-<Tab title="Manual Instrumentation">
+<Tab title="手动埋点">
 
 用 `observe` 包装顶层函数，并调用 `updateCurrentTrace(...)` 设置追踪级测试用例字段：
 

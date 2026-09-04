@@ -311,10 +311,6 @@
    "dst": "docs/getting-started-chatbots.mdx"
   },
   {
-   "src": "(use-cases)/getting-started-llm-arena.mdx",
-   "dst": "docs/getting-started-llm-arena.mdx"
-  },
-  {
    "src": "(use-cases)/getting-started-rag.mdx",
    "dst": "docs/getting-started-rag.mdx"
   }

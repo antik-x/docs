@@ -1,77 +1,20 @@
 1	---
-2	title: End-to-End LLM Evaluation
 3	---
-5	End-to-end evaluation assesses the **observable inputs and outputs** of your LLM application and treats it as a black box — you only care about what goes in and what comes out, not the path the system took to get there. The shape of "input" and "output" depends entirely on what your app does:
-7	- **Tool-using agent treated as a black box** — input is the user's task, output is the final answer plus the tools that were called.
-8	- **Multi-turn chatbot / support agent** — input is the scenario the user is in, output is the full conversation.
-9	- **RAG / QA app** — input is a question, output is the answer (and the retrieved context, if you want to score faithfulness).
-10	- **Document summarization** — input is the source document, output is the summary.
-11	- **Classifier / extractor** — input is a chunk of text, output is the label or the structured fields you pulled out.
-12	- **Writing assistant / rewriter** — input is the draft (and any instructions), output is the rewritten text.
-14	![end-to-end evals](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:end-to-end-llm-evals.png)
-16	This page explains the **concepts** behind end-to-end evaluation. For the actual step-by-step walkthroughs, jump to the right flavor for your application:
-18	- [**Single-Turn End-to-End Evals**](/docs/evaluation-end-to-end-single-turn) — for any LLM app where one input maps to one output (agents treated as a black box, RAG / QA, summarization, classifiers, etc.).
-19	- [**Multi-Turn End-to-End Evals**](/docs/evaluation-end-to-end-multi-turn) — for chatbots and conversational agents where the unit of evaluation is the _whole conversation_.
-21	If you need to evaluate the internal path taken by an AI agent or long-horizon agent, use [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals) instead.
-23	## Treating Your App as a Black Box
-25	In end-to-end evaluation, you only describe **what's observable from outside** your LLM application — the input you sent, the output that came back, and any context that was used along the way. You do not describe the retrieval algorithm, the chain of LLM calls inside an agent, or any internal reasoning steps. That's the whole point of "end-to-end": you're grading the _result_, not the _path the system took to get there_.
-27	Concretely, the parameters you populate on a test case are the entire surface your metrics see.
-29	For **single-turn** apps, you populate fields on an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases):
-31	- `input` — what you sent into your app (the question, document, draft, task, etc.).
-32	- `actual_output` — what your app produced (the answer, summary, label, rewritten text, agent's final reply).
-33	- `retrieval_context` — for RAG-style apps, the chunks your retriever returned. Required by metrics like `FaithfulnessMetric` and `ContextualRelevancyMetric`.
-34	- `tools_called` — for agentic apps, the tools the agent invoked. Required by metrics like `ToolCorrectnessMetric` and `ArgumentCorrectnessMetric`.
-35	- `expected_output` / `expected_tools` — optional gold references, used by reference-based metrics.
-36	- `context` — optional extra background, used by some reference-based metrics.
-38	For **multi-turn** apps, you populate fields on a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases):
-40	- `scenario` — what the simulated user is trying to do.
-41	- `expected_outcome` — what success looks like.
-42	- `turns` — the sequence of `Turn` objects (each with a `role` and `content`) that make up the conversation.
-44	Notice what's _not_ there: there's no place to describe "the retriever's prompt", "the tool argument schema", or "the inner LLM call that produced this answer." If a metric needs to score one of those things in isolation, end-to-end isn't the right fit.
 46	<Tip>
-47	End-to-end means **black box, by design**. To score the complete chain of decisions and actions inside an agent, use [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals). To score one retriever, tool call, LLM generation, or sub-agent in isolation, use [component-level evaluation](/docs/evaluation-component-level-llm-evals). Many real applications combine all three scopes.
 48	</Tip>
-50	## Single-Turn vs Multi-Turn
-52	Pick the flavor that matches your application:
 54	|                             | Single-Turn                                                                    | Multi-Turn                                                                                                                            |
 55	| --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 56	| **Test case**               | [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases)                    | [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases)                                                                     |
 57	| **Dataset entry**           | [`Golden`](/docs/evaluation-datasets#what-are-goldens)                         | [`ConversationalGolden`](/docs/evaluation-datasets#what-are-goldens)                                                                  |
-58	| **What's evaluated**        | One input → one output                                                         | A full conversation (a sequence of `Turn`s)                                                                                           |
-59	| **How test cases are made** | You invoke your app on each golden and build the test case from the result     | The [`ConversationSimulator`](/docs/conversation-simulator) drives a synthetic user against your chatbot until the scenario plays out |
-60	| **Typical apps**            | Agents-as-black-box, RAG / QA, summarization, classifiers, writing assistants | Chatbots, support agents, multi-turn assistants                                                                                       |
 61	| **Metric base class**       | `BaseMetric`                                                                   | `BaseConversationalMetric`                                                                                                            |
 62	| **Walkthrough**             | [Single-Turn E2E Evals →](/docs/evaluation-end-to-end-single-turn)             | [Multi-Turn E2E Evals →](/docs/evaluation-end-to-end-multi-turn)                                                                      |
-64	The two flavors live on **different test case classes** because the unit of evaluation is genuinely different (one exchange vs many), and `deepeval` will refuse to mix them in the same test run.
-66	## End-to-End vs Trajectory-Based vs Component-Level
-68	End-to-end, [trajectory-based](/docs/evaluation-trajectory-based-llm-evals), and [component-level evaluation](/docs/evaluation-component-level-llm-evals) use different scopes. End-to-end sees the system as a black box, trajectory-based sees the complete chain inside an agent, and component-level isolates one internal span.
-70	In each case, you attach metrics to a different unit of work:
-72	- **End-to-end** — the unit is the whole app. One test case per run of your app, scoring the final input → final output.
-73	- **Trajectory-based** — the unit is the agent's complete ordered execution path, scoring how its internal steps work together.
 76	|                              | End-to-End                                                                   | [Trajectory-Based](/docs/evaluation-trajectory-based-llm-evals)                     | [Component-Level](/docs/evaluation-component-level-llm-evals)                              |
 77	| ---------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-78	| **What you score**           | The final user-visible output (the system as one black-box component)        | The complete ordered chain of decisions, tool calls, and intermediate steps         | Individual internal spans (retriever, tool call, sub-agent, etc.)                          |
-80	| **Best for**                 | Flat applications, multi-turn conversations, or final-output quality checks  | AI agents and long-horizon agents where the execution path affects quality          | Complex applications where individual components need to be diagnosed or graded           |
-81	| **Tracing required**         | No                                                                           | Yes                                                                                 | Yes                                                                                        |
 85	<details>
 86	<summary><strong>When should you choose end-to-end?</strong></summary>
 88	Choose end-to-end evaluation when:
-90	- Your LLM application has a "flat" architecture that fits naturally into a single `LLMTestCase` (agents treated as a black box, RAG / QA, summarization, single-shot classifiers, writing assistants, etc.)
-91	- Your application is multi-turn (chatbots, support agents) and you want to score the whole conversation rather than each step.
-92	- Your application is a complex agent, but you've concluded that [component-level evaluation](/docs/evaluation-component-level-llm-evals) gives you too much noise and you'd rather grade the final outcome.
-94	In short: **you care about the result, not the path the system took to get there.** Most of the [quickstart](/docs/getting-started) is end-to-end evaluation.
 96	</details>
-98	## Two Ways to Run a Test Run
-100	Both single-turn and (for `evaluate()`) multi-turn give you a choice between two equivalent code paths:
 102	| Approach                                                                                                                       | What it looks like                                                                                                                                                                             | When to choose it                                                                                                                                          |
 103	| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-104	| **`evaluate()`**                                                                                                               | Build a list of `LLMTestCase`s (or `ConversationalTestCase`s) up front, hand them to a single `evaluate()` call.                                                                               | You want a self-contained script with no tracing dependency.                                                                                               |
-107	For new single-turn projects we recommend the iterator — same amount of code, plus traces, plus the same setup carries over to [component-level evaluation](/docs/evaluation-component-level-llm-evals) later.
-109	Multi-turn end-to-end evaluation only uses `evaluate()` today; the iterator form is single-turn only.
 111	<Info>
 113	</Info>
-115	## What's Next
-117	- Walk through a [single-turn end-to-end evaluation](/docs/evaluation-end-to-end-single-turn).
-118	- Walk through a [multi-turn end-to-end evaluation](/docs/evaluation-end-to-end-multi-turn) using the `ConversationSimulator`.
-119	- Evaluate the complete internal path of an agent with [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals).
-121	- Compare with [component-level evaluation](/docs/evaluation-component-level-llm-evals) if your app has internal structure worth grading.

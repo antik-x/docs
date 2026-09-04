@@ -69,7 +69,7 @@ for golden in dataset.evals_iterator(metrics=[loop_metric]):
 
 关于 `evals_iterator` 工作方式的更多内容，[点击这里](/docs/evaluation-end-to-end-llm-evals#e2e-evals-for-tracing)。
 
-### Within components
+### 在组件内
 
 你还可以在嵌套组件内运行 `AgentLoopDetectionMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估：
 
@@ -92,7 +92,7 @@ def outer_agent(input: str) -> str:
     return inner_agent_component(input)
 ```
 
-### As a standalone
+### 独立运行
 
 你还可以把 `AgentLoopDetectionMetric` 作为独立的一次性执行，运行在单个测试用例上：
 
