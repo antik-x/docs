@@ -1,0 +1,24 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 75-79
+docs.json
+  h_04c00a69eeb820 292,296,300,304
+docs/metrics-turn-contextual-precision.mdx
+  h_04c00a69eeb820 7,11,16,20,92,98,108,111,116,150,156,158-159,167-169,173,175,181,184,187,190
+docs/metrics-turn-contextual-recall.mdx
+  h_04c00a69eeb820 7,11,16,20,92,98,108,111,116,150,156,158-160,166,172,175,178,181
+docs/metrics-turn-contextual-relevancy.mdx
+  h_04c00a69eeb820 7,11,15,19,91,97,107,110,115,149,155,157-159,165,171,174,177,180
+docs/metrics-turn-faithfulness.mdx
+  h_04c00a69eeb820 7,11,15,19,77,83,93,98,103,137,143,145-148,154,160,163,166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "7745f330f827a5e84fb785b7033e3c87d78d87fa",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
