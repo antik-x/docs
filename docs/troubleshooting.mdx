@@ -2,11 +2,11 @@
 title: Troubleshooting
 ---
 
-This page covers the most common failure modes and how to debug them quickly.
+本页涵盖最常见的故障模式以及如何快速调试它们。
 
 ## TLS Errors
 
-If `deepeval` fails to upload results to Confident AI with an error like:
+如果 `deepeval` 上传结果到 Confident AI 失败，报错类似：
 
 <Tabs>
 
@@ -28,21 +28,21 @@ Error: unable to verify the first certificate (UNABLE_TO_VERIFY_LEAF_SIGNATURE)
 
 </Tabs>
 
-it usually means certificate verification is failing in the local environment (not inside `deepeval`).
+这通常意味着本地环境（而非 `deepeval` 内部）的证书校验失败。
 
-Run these checks from the same machine and environment where you run `deepeval`.
+请在你运行 `deepeval` 的同一台机器和环境中执行以下检查。
 
-1. Check with `curl`
+1. 用 `curl` 检查
 
 ```bash
 curl -v https://api.confident-ai.com/
 ```
 
-If `curl` reports an SSL / certificate error, copy the full output.
+如果 `curl` 报告 SSL/证书错误，请复制完整输出。
 
-2. Check in code
+2. 在代码中检查
 
-Reach the API through the same HTTP stack `deepeval` uses:
+通过 `deepeval` 使用的同一套 HTTP 栈访问 API：
 
 <Tabs>
 
@@ -71,37 +71,37 @@ node -e "require('https').get('https://api.confident-ai.com', r => console.log(r
 
 </Tabs>
 
-If this fails with a certificate error, copy the full output.
+如果这一步因证书错误失败，请复制完整输出。
 
 <Info>
 **TypeScript**
 
-When your organization terminates TLS with a private CA, point Node at that CA bundle:
+当你的组织用私有 CA 终结 TLS 时，让 Node 指向该 CA 证书包：
 
 ```bash
 export NODE_EXTRA_CA_CERTS=/path/to/your-ca.pem
 ```
 </Info>
 
-3. Re-run `deepeval`
+3. 重新运行 `deepeval`
 
-If that snippet succeeds, re-run your `deepeval` evaluation from the same terminal session and see whether the upload still fails. If you still get the TLS error, please include the full error and the output of the two checks above when reporting the issue.
+如果上面的代码片段成功了，请在同一个终端会话中重新运行你的 `deepeval` 评估，看上传是否仍然失败。如果仍出现 TLS 错误，请在报告问题时附上完整错误以及上述两项检查的输出。
 
 ### When to disable SSL verification
 
-`CONFIDENT_DISABLE_SSL=1` turns off certificate verification for requests from `deepeval` to the Confident AI API.
+`CONFIDENT_DISABLE_SSL=1` 会关闭 `deepeval` 对 Confident AI API 请求的证书校验。
 
 <Warning>
-Disabling SSL verification should only be a temporary workaround while you fix the trusted certificate chain. Do not use this as a permanent setting, especially outside internal/self-hosted environments.
+禁用 SSL 校验只应作为修复受信任证书链期间的临时手段。不要把它当作永久设置，尤其是在内部/自托管环境之外。
 </Warning>
 
-You may need to turn it on when:
+以下情况你可能需要开启它：
 
-- You are using `CONFIDENT_BASE_URL` to point `deepeval` at an internal or self-hosted Confident AI API.
-- That endpoint uses a self-signed certificate, private CA, or certificate chain that your runtime's certificate store does not trust.
-- You have confirmed the failure is certificate verification related.
+- 你在用 `CONFIDENT_BASE_URL` 把 `deepeval` 指向内部或自托管的 Confident AI API。
+- 该端点使用自签名证书、私有 CA，或你的运行时证书存储不信任的证书链。
+- 你已确认失败与证书校验有关。
 
-Prefer fixing the trusted certificate chain instead of disabling verification. For public Confident AI endpoints (`https://api.confident-ai.com`, `https://eu.api.confident-ai.com`, or `https://au.api.confident-ai.com`), leave SSL verification enabled and report the full TLS diagnostics if errors persist.
+优先修复受信任的证书链，而不是禁用校验。对于公共 Confident AI 端点（`https://api.confident-ai.com`、`https://eu.api.confident-ai.com` 或 `https://au.api.confident-ai.com`），请保持 SSL 校验开启；如错误持续，请附上完整的 TLS 诊断信息。
 
 ```bash
 export CONFIDENT_BASE_URL=https://your-self-hosted-confident-api.example.com
@@ -114,7 +114,7 @@ export CONFIDENT_DISABLE_SSL=1
 
 <Tab title="Python">
 
-`deepeval` uses the standard Python `logging` module. To see logs, your application (or test runner) needs to configure logging output.
+`deepeval` 使用标准的 Python `logging` 模块。要看到日志，你的应用（或测试运行器）需要配置日志输出。
 
 ```python
 import logging
@@ -126,7 +126,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 <Tab title="TypeScript">
 
-`deepeval` writes to the console with no setup, at `WARNING` and above. Lower `LOG_LEVEL` to see the rest.
+`deepeval` 无需任何配置即可写入控制台，级别为 `WARNING` 及以上。调低 `LOG_LEVEL` 可以看到其余日志。
 
 ```bash
 export LOG_LEVEL=DEBUG
@@ -136,32 +136,32 @@ export LOG_LEVEL=DEBUG
 
 </Tabs>
 
-`deepeval` also exposes a few environment flags that can make debugging easier:
+`deepeval` 还暴露了几个便于调试的环境开关：
 
-- `LOG_LEVEL`: sets the global log level used by `deepeval` (accepts standard names like `DEBUG`, `INFO`, etc.).
-- `DEEPEVAL_VERBOSE_MODE`: enables additional warnings and diagnostics.
-- `DEEPEVAL_LOG_STACK_TRACES`: includes stack traces in retry logs.
-- `DEEPEVAL_RETRY_BEFORE_LOG_LEVEL`: log level for retry "before sleep" messages.
-- `DEEPEVAL_RETRY_AFTER_LOG_LEVEL`: log level for retry "after attempt" messages.
+- `LOG_LEVEL`：设置 `deepeval` 使用的全局日志级别（接受 `DEBUG`、`INFO` 等标准名称）。
+- `DEEPEVAL_VERBOSE_MODE`：启用额外的警告与诊断。
+- `DEEPEVAL_LOG_STACK_TRACES`：在重试日志中包含堆栈跟踪。
+- `DEEPEVAL_RETRY_BEFORE_LOG_LEVEL`：重试"休眠前"消息的日志级别。
+- `DEEPEVAL_RETRY_AFTER_LOG_LEVEL`：重试"尝试后"消息的日志级别。
 
-Note that retry logging levels are read at call-time.
+注意重试日志级别是在调用时读取的。
 
 ## Timeout Tuning
 
-If evaluations frequently time out (or appear to hang), the quickest fix is usually to increase the overall per-task time budget and reduce the number of retries.
+如果评估频繁超时（或看起来卡住），最快的解决办法通常是增大单任务总时间预算并减少重试次数。
 
-`deepeval` uses an outer time budget per task (metric / test case). It can also apply a per-attempt timeout to individual provider calls. If you don’t set a per-attempt override, `deepeval` may derive one from the outer budget and the retry settings.
+`deepeval` 对每个任务（指标/测试用例）使用外层时间预算。它还可以对单个提供商调用施加单次尝试超时。如果你没有设置单次尝试覆盖，`deepeval` 可能会根据外层预算和重试设置推导出一个。
 
-Key settings:
+关键设置：
 
-- `DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE`: total time budget per task (seconds), including retries.
-- `DEEPEVAL_PER_ATTEMPT_TIMEOUT_SECONDS_OVERRIDE`: per-attempt timeout for provider calls (seconds).
-- `DEEPEVAL_TASK_GATHER_BUFFER_SECONDS_OVERRIDE`: extra buffer reserved for async gather / cleanup.
-- `DEEPEVAL_RETRY_MAX_ATTEMPTS`: total attempts (first try + retries).
-- `DEEPEVAL_RETRY_INITIAL_SECONDS`, `DEEPEVAL_RETRY_EXP_BASE`, `DEEPEVAL_RETRY_JITTER`, `DEEPEVAL_RETRY_CAP_SECONDS`: retry backoff tuning.
-- `DEEPEVAL_SDK_RETRY_PROVIDERS`: list of provider slugs that should use SDK-managed retries instead of `deepeval` retries (use `['*']` for all).
+- `DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE`：每个任务的总时间预算（秒），包括重试。
+- `DEEPEVAL_PER_ATTEMPT_TIMEOUT_SECONDS_OVERRIDE`：提供商调用的单次尝试超时（秒）。
+- `DEEPEVAL_TASK_GATHER_BUFFER_SECONDS_OVERRIDE`：为异步 gather/清理预留的额外缓冲。
+- `DEEPEVAL_RETRY_MAX_ATTEMPTS`：总尝试次数（首次尝试 + 重试）。
+- `DEEPEVAL_RETRY_INITIAL_SECONDS`、`DEEPEVAL_RETRY_EXP_BASE`、`DEEPEVAL_RETRY_JITTER`、`DEEPEVAL_RETRY_CAP_SECONDS`：重试退避调节。
+- `DEEPEVAL_SDK_RETRY_PROVIDERS`：应改用 SDK 管理重试而非 `deepeval` 重试的提供商标识列表（`['*']` 表示全部）。
 
-A common debugging setup is to temporarily increase budgets:
+常见的调试做法是临时增大预算：
 
 ```bash
 export LOG_LEVEL=DEBUG
@@ -172,23 +172,23 @@ export DEEPEVAL_RETRY_MAX_ATTEMPTS=2
 ```
 
 <Tip>
-On a high-latency or heavily rate-limited network, increasing the outer budget (`DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE`) is usually the safest starting point.
+在高延迟或重度限流的网络上，增大外层预算（`DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE`）通常是最稳妥的起点。
 </Tip>
 
 <Note>
-If you only set `DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE`, `deepeval` may derive a per-attempt timeout from the total budget and retry settings.
-If the per-attempt timeout is unset or resolves to `0`, `deepeval` skips the inner `asyncio.wait_for` and relies on the outer per-task budget.
-For sync timeouts, `deepeval` uses a bounded semaphore. See `DEEPEVAL_TIMEOUT_THREAD_LIMIT` and `DEEPEVAL_TIMEOUT_SEMAPHORE_WARN_AFTER_SECONDS`.
+如果只设置 `DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE`，`deepeval` 可能根据总预算和重试设置推导出单次尝试超时。
+如果单次尝试超时未设置或解析为 `0`，`deepeval` 会跳过内层的 `asyncio.wait_for`，只依赖外层的单任务预算。
+对于同步超时，`deepeval` 使用有界信号量。参见 `DEEPEVAL_TIMEOUT_THREAD_LIMIT` 和 `DEEPEVAL_TIMEOUT_SEMAPHORE_WARN_AFTER_SECONDS`。
 </Note>
 
 ## Dotenv Loading
 
-`deepeval` loads dotenv files the first time it is imported, which can pull in a project `.env` you didn’t intend to load when running your test suite. Dotenv never overrides existing process env vars. Lowest to highest: `.env`, `.env.{APP_ENV}`, `.env.local`.
+`deepeval` 在首次导入时加载 dotenv 文件，这可能会在你运行测试套件时带入并非有意加载的项目 `.env`。dotenv 永远不覆盖已有的进程环境变量。优先级从低到高：`.env`、`.env.{APP_ENV}`、`.env.local`。
 
-Controls: `DEEPEVAL_DISABLE_DOTENV=1` (skip) and `ENV_DIR_PATH` (dotenv directory, default: current working directory).
+控制项：`DEEPEVAL_DISABLE_DOTENV=1`（跳过加载）和 `ENV_DIR_PATH`（dotenv 目录，默认：当前工作目录）。
 
 <Tip>
-Set `DEEPEVAL_DISABLE_DOTENV=1` **before** anything imports `deepeval`.
+请在任何东西导入 `deepeval` **之前**设置 `DEEPEVAL_DISABLE_DOTENV=1`。
 </Tip>
 
 <Tabs>
@@ -217,13 +217,13 @@ APP_ENV=production npx deepeval test run tests/evals
 
 ## Save Config
 
-`deepeval` settings are cached. If you change environment variables at runtime and don’t see the change, restart the process.
+`deepeval` 的设置会被缓存。如果你在运行时修改了环境变量但没有看到变化，请重启进程。
 
 <Tabs>
 
 <Tab title="Python">
 
-You can also reload them in place:
+你也可以原地重新加载：
 
 ```python
 from deepeval.config.settings import reset_settings
@@ -231,7 +231,7 @@ from deepeval.config.settings import reset_settings
 reset_settings(reload_dotenv=True)
 ```
 
-To persist settings changes from code, use `edit()`:
+要从代码持久化设置变更，使用 `edit()`：
 
 ```python
 from deepeval.config.settings import get_settings
@@ -241,13 +241,13 @@ with settings.edit(save="dotenv"):
     settings.DEEPEVAL_VERBOSE_MODE = True
 ```
 
-Computed fields (like the derived timeout settings) are not persisted.
+计算字段（如派生的超时设置）不会被持久化。
 
 </Tab>
 
 <Tab title="TypeScript">
 
-To persist a setting instead of exporting it every session, write it to your dotenv file with the CLI:
+要持久化某个设置而不是每次会话都导出，用 CLI 把它写入你的 dotenv 文件：
 
 ```bash
 npx deepeval settings --set DEEPEVAL_VERBOSE_MODE=1 --save
@@ -259,13 +259,13 @@ npx deepeval settings --set DEEPEVAL_VERBOSE_MODE=1 --save
 
 ## Report issue
 
-If you open a GitHub issue, please include:
+如果你要提 GitHub issue，请包含：
 
-- `deepeval` version
+- `deepeval` 版本
 - Your OS, plus the output of `python --version`（TypeScript 中为 `node --version`）
-- A minimal repro script
-- Full stack trace
-- Logs with `LOG_LEVEL=DEBUG`
-- Any non-default `deepeval` env vars you have set
+- 一个最小复现脚本
+- 完整堆栈跟踪
+- `LOG_LEVEL=DEBUG` 下的日志
+- 你设置过的任何非默认 `deepeval` 环境变量
 
-Please redact API keys and any other secrets.
+请对 API key 和其他任何密钥做脱敏处理。

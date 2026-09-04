@@ -4,24 +4,24 @@ title: CLI Settings
 
 ## Quick Summary
 
-`deepeval` provides a CLI for managing common tasks directly from the terminal. You can use it for:
+`deepeval` 提供了一套 CLI，让你直接在终端管理常见任务。你可以用它：
 
-- Logging in/out and viewing test runs
-- Running evaluations from test files
-- Checking a project against its governance policy (`deepeval gate`)
-- Diagnosing your environment (`deepeval diagnose`): default models, effective settings, and where each value comes from
-- Enabling/disabling debug
-- Selecting an LLM provider (OpenAI, Azure OpenAI, Gemini, Grok, DeepSeek, OpenRouter, local/Ollama)
-- Setting/unsetting provider-specific options (model, endpoint, deployment, etc.)
-- Listing and updating any deepeval setting (`deepeval settings -l`, `deepeval settings --set KEY=VALUE`)
-- Saving settings and secrets persistently to `.env` files
-- Inspecting saved test runs in a terminal TUI (`deepeval inspect`)
+- 登录/登出并查看测试运行
+- 从测试文件运行评估
+- 按治理策略检查项目（`deepeval gate`）
+- 诊断你的环境（`deepeval diagnose`）：默认模型、生效设置以及每个值的来源
+- 启用/禁用调试
+- 选择 LLM 提供商（OpenAI、Azure OpenAI、Gemini、Grok、DeepSeek、OpenRouter、本地/Ollama）
+- 设置/取消提供商专属选项（模型、端点、部署等）
+- 列出并更新任意 deepeval 设置（`deepeval settings -l`、`deepeval settings --set KEY=VALUE`）
+- 把设置和密钥持久化保存到 `.env` 文件
+- 在终端 TUI 中检查已保存的测试运行（`deepeval inspect`）
 
-- Generating synthetic goldens from docs, contexts, scratch, or existing goldens
-- Selecting an embeddings provider (Azure OpenAI, local, Ollama)
+- 从文档、上下文、零起点或既有 golden 生成合成 golden
+- 选择嵌入提供商（Azure OpenAI、本地、Ollama）
 
 <Tip>
-For the full and most up-to-date list of flags for any command, append `--help` to it.
+要获取任何命令完整且最新的参数列表，请在命令后追加 `--help`。
 </Tip>
 
 ## Install & Update
@@ -34,7 +34,7 @@ For the full and most up-to-date list of flags for any command, append `--help` 
 pip install -U deepeval
 ```
 
-To review available commands consult the CLI built in help:
+要查看可用命令，请查阅 CLI 内置帮助：
 
 ```bash
 deepeval --help
@@ -48,7 +48,7 @@ deepeval --help
 npm install --save-dev deepeval
 ```
 
-The package ships a `deepeval` binary, so every command below runs through `npx`. To review available commands consult the CLI built in help:
+该包自带 `deepeval` 二进制，因此下面的每个命令都通过 `npx` 运行。要查看可用命令，请查阅 CLI 内置帮助：
 
 ```bash
 npx deepeval --help
@@ -60,24 +60,24 @@ npx deepeval --help
 
 ## Read & Write Settings
 
-deepeval reads settings from dotenv files in the current working directory, without overriding existing process environment variables. Dotenv precedence (lowest → highest) is: `.env` → `.env.<APP_ENV>` → `.env.local`.
+deepeval 从当前工作目录的 dotenv 文件读取设置，不覆盖已有的进程环境变量。dotenv 优先级（从低到高）为：`.env` → `.env.<APP_ENV>` → `.env.local`。
 
-deepeval also uses a legacy JSON keystore at `.deepeval/.deepeval` for **non-secret** keys. This keystore is treated as a fallback (dotenv/process env take precedence). Secrets are never written to the JSON keystore.
+deepeval 还在 `.deepeval/.deepeval` 使用一个旧版 JSON keystore 存放**非密钥**。该 keystore 仅作为兜底（dotenv/进程环境变量优先）。密钥永远不会写入 JSON keystore。
 
 <Tip>
-Point deepeval at a different directory with `ENV_DIR_PATH=/path/to/project`, or disable dotenv autoloading entirely with `DEEPEVAL_DISABLE_DOTENV=1` (useful in CI to avoid loading local `.env*` files on import).
+用 `ENV_DIR_PATH=/path/to/project` 让 deepeval 指向别的目录，或用 `DEEPEVAL_DISABLE_DOTENV=1` 完全禁用 dotenv 自动加载（在 CI 中避免导入时加载本地 `.env*` 文件很有用）。
 </Tip>
 
 ## Core Commands
 
 ### `generate`
 
-Use `deepeval generate` to generate synthetic goldens from the terminal with the Golden Synthesizer. The command requires two selectors:
+使用 `deepeval generate` 在终端用 Golden Synthesizer 生成合成 golden。该命令需要两个选择器：
 
-- `--method`: where goldens come from: `docs`, `contexts`, `scratch`, or `goldens`
-- `--variation`: what to generate: `single-turn` or `multi-turn`
+- `--method`：golden 的来源：`docs`、`contexts`、`scratch` 或 `goldens`
+- `--variation`：生成什么：`single-turn` 或 `multi-turn`
 
-Generate single-turn goldens from documents:
+从文档生成单轮 golden：
 
 ```bash
 deepeval generate \
@@ -88,7 +88,7 @@ deepeval generate \
   --output-dir ./synthetic_data
 ```
 
-Generate multi-turn goldens from scratch:
+从零生成多轮 golden：
 
 ```bash
 deepeval generate \
@@ -100,31 +100,31 @@ deepeval generate \
   --participant-roles "User and assistant"
 ```
 
-Common options:
+通用选项：
 
-| Option                                       | Description                                                                  |
+| 选项                                       | 说明                                                                  |
 | -------------------------------------------- | ---------------------------------------------------------------------------- |
-| `--method docs\|contexts\|scratch\|goldens`  | Select the generation method.                                                |
-| `--variation single-turn\|multi-turn`        | Select whether to generate `Golden`s or `ConversationalGolden`s.             |
-| `--output-dir`                               | Directory where generated goldens are saved. Defaults to `./synthetic_data`. |
-| `--file-type json\|csv\|jsonl`               | Output file type. Defaults to `json`.                                        |
-| `--file-name`                                | Optional output filename without extension.                                  |
-| `--model`                                    | Model to use for generation.                                                 |
-| `--async-mode / --sync-mode`                 | Enable or disable concurrent generation.                                     |
-| `--max-concurrent`                           | Maximum number of concurrent generation tasks.                               |
-| `--include-expected / --no-include-expected` | Generate or skip expected outputs/outcomes.                                  |
-| `--cost-tracking`                            | Print generation cost when supported by the model.                           |
+| `--method docs\|contexts\|scratch\|goldens`  | 选择生成方法。                                                |
+| `--variation single-turn\|multi-turn`        | 选择生成 `Golden` 还是 `ConversationalGolden`。             |
+| `--output-dir`                               | 生成 golden 的保存目录。默认为 `./synthetic_data`。 |
+| `--file-type json\|csv\|jsonl`               | 输出文件类型。默认为 `json`。                                        |
+| `--file-name`                                | 可选的输出文件名（不含扩展名）。                                  |
+| `--model`                                    | 用于生成的模型。                                                 |
+| `--async-mode / --sync-mode`                 | 启用或禁用并发生成。                                     |
+| `--max-concurrent`                           | 并发生成任务的最大数量。                               |
+| `--include-expected / --no-include-expected` | 生成或跳过期望输出/结果。                                  |
+| `--cost-tracking`                            | 模型支持时打印生成成本。                           |
 
-Method-specific options:
+方法专属选项：
 
-| Method     | Required Options                     | Useful Optional Options                                                                                                                                                                                               |
+| 方法     | 必需选项                     | 常用可选选项                                                                                                                                                                                               |
 | ---------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs`     | `--documents`                        | `--max-goldens-per-context`, `--max-contexts-per-document`, `--min-contexts-per-document`, `--chunk-size`, `--chunk-overlap`, `--context-quality-threshold`, `--context-similarity-threshold`, `--max-retries`        |
+| `docs`     | `--documents`                        | `--max-goldens-per-context`、`--max-contexts-per-document`、`--min-contexts-per-document`、`--chunk-size`、`--chunk-overlap`、`--context-quality-threshold`、`--context-similarity-threshold`、`--max-retries`        |
 | `contexts` | `--contexts-file`                    | `--max-goldens-per-context`                                                                                                                                                                                           |
-| `scratch`  | `--num-goldens` plus styling options | Single-turn: `--scenario`, `--task`, `--input-format`, `--expected-output-format`. Multi-turn: `--scenario-context`, `--conversational-task`, `--participant-roles`, `--scenario-format`, `--expected-outcome-format` |
+| `scratch`  | `--num-goldens` 加样式选项 | 单轮：`--scenario`、`--task`、`--input-format`、`--expected-output-format`。多轮：`--scenario-context`、`--conversational-task`、`--participant-roles`、`--scenario-format`、`--expected-outcome-format` |
 | `goldens`  | `--goldens-file`                     | `--max-goldens-per-golden`                                                                                                                                                                                            |
 
-For a deeper walkthrough, see the [Golden Synthesizer](/docs/golden-synthesizer#generate-goldens-from-the-cli) docs.
+更深入的讲解见 [Golden Synthesizer](/docs/golden-synthesizer#generate-goldens-from-the-cli) 文档。
 
 ### `test`
 
@@ -132,49 +132,49 @@ For a deeper walkthrough, see the [Golden Synthesizer](/docs/golden-synthesizer#
 
 <Tab title="Python">
 
-Use `deepeval test run` to run evaluation test files through `pytest` with the `deepeval` pytest plugin enabled.
+使用 `deepeval test run` 在启用 `deepeval` pytest 插件的情况下通过 `pytest` 运行评估测试文件。
 
 ```bash
 deepeval test --help
 deepeval test run --help
 ```
 
-Run a single test file:
+运行单个测试文件：
 
 ```bash
 deepeval test run test_chatbot.py
 ```
 
-Run a test directory:
+运行测试目录：
 
 ```bash
 deepeval test run tests/evals
 ```
 
-Run a specific test:
+运行特定测试：
 
 ```bash
 deepeval test run test_chatbot.py::test_answer_relevancy
 ```
 
-Useful options:
+常用选项：
 
-| Option                           | Description                                                    |
+| 选项                           | 说明                                                    |
 | -------------------------------- | -------------------------------------------------------------- |
-| `--verbose`, `-v`                | Show verbose pytest output and turn on deepeval verbose mode.  |
-| `--exit-on-first-failure`, `-x`  | Stop after the first failed test.                              |
-| `--show-warnings`, `-w`          | Show pytest warnings instead of disabling them.                |
-| `--identifier`, `-id`            | Attach an identifier to the test run.                          |
-| `--num-processes`, `-n`          | Run tests with multiple pytest-xdist processes.                |
-| `--repeat`, `-r`                 | Rerun each test case the specified number of times.            |
-| `--use-cache`, `-c`              | Use cached evaluation results when `--repeat` is not set.      |
-| `--ignore-errors`, `-i`          | Continue when deepeval evaluation errors occur.                |
-| `--skip-on-missing-params`, `-s` | Skip test cases with missing metric parameters.                |
-| `--display`, `-d`                | Control final result display. Defaults to showing all results. |
-| `--mark`, `-m`                   | Run tests matching a pytest marker expression.                 |
-| `--official`, `-o`               | Mark this test run as the official baseline on Confident AI.   |
+| `--verbose`, `-v`                | 显示详细的 pytest 输出并开启 deepeval 详细模式。  |
+| `--exit-on-first-failure`, `-x`  | 第一个失败的测试后停止。                              |
+| `--show-warnings`, `-w`          | 显示 pytest 警告而不是禁用它们。                |
+| `--identifier`, `-id`            | 为测试运行附加标识符。                          |
+| `--num-processes`, `-n`          | 使用多个 pytest-xdist 进程运行测试。                |
+| `--repeat`, `-r`                 | 按指定次数重复运行每个测试用例。            |
+| `--use-cache`, `-c`              | 未设置 `--repeat` 时使用缓存的评估结果。      |
+| `--ignore-errors`, `-i`          | 出现 deepeval 评估错误时继续。                |
+| `--skip-on-missing-params`, `-s` | 跳过缺少指标参数的测试用例。                |
+| `--display`, `-d`                | 控制最终结果展示。默认显示全部结果。 |
+| `--mark`, `-m`                   | 运行匹配 pytest 标记表达式的测试。                 |
+| `--official`, `-o`               | 把这次测试运行标记为 Confident AI 上的官方基线。   |
 
-You can pass additional pytest flags after the `deepeval` options. For example:
+你可以在 `deepeval` 选项之后传入额外的 pytest 参数。例如：
 
 ```bash
 deepeval test run tests/evals \
@@ -187,43 +187,43 @@ deepeval test run tests/evals \
 
 <Tab title="TypeScript">
 
-Use `npx deepeval test run` to run evaluation test files through [Vitest](https://vitest.dev) with the `deepeval` reporter enabled.
+使用 `npx deepeval test run` 在启用 `deepeval` reporter 的情况下通过 [Vitest](https://vitest.dev) 运行评估测试文件。
 
 ```bash
 npx deepeval test --help
 npx deepeval test run --help
 ```
 
-Run a single test file:
+运行单个测试文件：
 
 ```bash
 npx deepeval test run chatbot.test.ts
 ```
 
-Run a test directory:
+运行测试目录：
 
 ```bash
 npx deepeval test run tests/evals
 ```
 
-Useful options:
+常用选项：
 
-| Option                           | Description                                                  |
+| 选项                           | 说明                                                  |
 | -------------------------------- | ------------------------------------------------------------ |
-| `--verbose`, `-v`                | Turn on verbose logs for every metric.                       |
-| `--identifier`, `-i`             | Attach an identifier to the test run.                        |
-| `--use-cache`, `-c`              | Reuse cached metric results where possible.                  |
-| `--ignore-errors`                | Continue when deepeval evaluation errors occur.              |
-| `--skip-on-missing-params`, `-s` | Skip test cases with missing metric parameters.              |
-| `--display`, `-d`                | Control final result display (`all`, `passing`, `failing`).  |
-| `--max-concurrent`               | Maximum number of metrics evaluated at once (default: 100).  |
-| `--official`, `-o`               | Mark this test run as the official baseline on Confident AI. |
+| `--verbose`, `-v`                | 为每个指标开启详细日志。                       |
+| `--identifier`, `-i`             | 为测试运行附加标识符。                        |
+| `--use-cache`, `-c`              | 尽可能复用缓存的指标结果。                  |
+| `--ignore-errors`                | 出现 deepeval 评估错误时继续。              |
+| `--skip-on-missing-params`, `-s` | 跳过缺少指标参数的测试用例。                |
+| `--display`, `-d`                | 控制最终结果展示（`all`、`passing`、`failing`）。  |
+| `--max-concurrent`               | 一次评估的指标数上限（默认：100）。  |
+| `--official`, `-o`               | 把这次测试运行标记为 Confident AI 上的官方基线。 |
 
 <Note>
-`--ignore-errors` has no short form here, because `-i` is bound to `--identifier`.
+`--ignore-errors` 在这里没有短形式，因为 `-i` 已绑定给 `--identifier`。
 </Note>
 
-For anything Vitest already handles — stopping on first failure, filtering by test name, changing the reporter — use its native flags (`--bail=1`, `-t`, `--reporter`) in your Vitest config or a plain `vitest` invocation. Vitest also runs test files in parallel by default.
+对于 Vitest 本来就能处理的事情——首个失败即停止、按测试名过滤、更换 reporter——请在你的 Vitest 配置或直接的 `vitest` 调用中使用它的原生参数（`--bail=1`、`-t`、`--reporter`）。Vitest 默认也会并行运行测试文件。
 
 </Tab>
 
@@ -231,15 +231,15 @@ For anything Vitest already handles — stopping on first failure, filtering by 
 
 ### `inspect`
 
-Use `deepeval inspect` to open a saved test run inside a terminal TUI — a trace-tree viewer for metric scores, reasons, inputs/outputs, tool calls, and retriever context, all without leaving the terminal.
+使用 `deepeval inspect` 在终端 TUI 中打开已保存的测试运行——一个针对指标分数、原因、输入/输出、工具调用和检索上下文的追踪树查看器，全程无需离开终端。
 
-The TUI is a **trace** viewer, so it's only useful for runs whose test cases captured a trace from an instrumented app. Every such run writes a rolling snapshot into the gitignored `.deepeval` cache dir, so the zero-arg form picks up the most recent one automatically:
+TUI 是**追踪**查看器，因此只对测试用例从带插桩的应用捕获了追踪的运行有用。每个这样的运行都会把滚动快照写入被 gitignore 的 `.deepeval` 缓存目录，因此无参数形式会自动选取最近一次：
 
 <Tabs>
 
 <Tab title="Python">
 
-Traces come from `evals_iterator()` against an agent instrumented with `@observe` (see [single-turn end-to-end evals](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended)). Each call rewrites `.deepeval/.latest_run_full.json`.
+追踪来自对带 `@observe` 插桩的智能体调用 `evals_iterator()`（见[单轮端到端评估](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended)）。每次调用都会重写 `.deepeval/.latest_run_full.json`。
 
 ```bash
 deepeval inspect
@@ -249,7 +249,7 @@ deepeval inspect
 
 <Tab title="TypeScript">
 
-Traces come from an app instrumented with `observe()` (see [single-turn end-to-end evals](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended)). Each run rewrites `.deepeval/.latest_test_run.json`.
+追踪来自带 `observe()` 插桩的应用（见[单轮端到端评估](/docs/evaluation-end-to-end-single-turn#approach-1-evals_iterator-with-tracing-recommended)）。每次运行都会重写 `.deepeval/.latest_test_run.json`。
 
 ```bash
 npx deepeval inspect
@@ -259,7 +259,7 @@ npx deepeval inspect
 
 </Tabs>
 
-You can also point it at a specific file or folder:
+你也可以把它指向特定的文件或文件夹：
 
 <Tabs>
 
@@ -285,7 +285,7 @@ npx deepeval inspect --folder ./experiments # same, via explicit flag
 
 </Tabs>
 
-This allows you to inspect traces and spans locally on your machine:
+这让你可以在本地机器上检查追踪与 span：
 
 ![deepeval inspect TUI 显示带每个 Span 分数与指标原因的追踪树](https://deepeval-docs.s3.us-east-1.amazonaws.com/docs:tui-trace-inspect.png)
 
@@ -293,11 +293,11 @@ This allows you to inspect traces and spans locally on your machine:
 
 <Tab title="Python">
 
-Move with `↑`/`↓` or `j`/`k`, fold a span with `h`/`l`, and cycle between traces with `←`/`→` or `n`/`p`. Press `/` to filter spans by name, `y` to copy the selected node as JSON (`Y` for the whole trace), `?` for the keybinding list, and `q` to quit.
+用 `↑`/`↓` 或 `j`/`k` 移动，用 `h`/`l` 折叠 span，用 `←`/`→` 或 `n`/`p` 在追踪间切换。按 `/` 按名称过滤 span，`y` 把选中节点复制为 JSON（`Y` 复制整个追踪），`?` 查看按键列表，`q` 退出。
 
-Resolution order when no path is passed: `--folder` → `DEEPEVAL_RESULTS_FOLDER` → `.deepeval/.latest_run_full.json` → `./experiments` (legacy fallback).
+未传路径时的解析顺序：`--folder` → `DEEPEVAL_RESULTS_FOLDER` → `.deepeval/.latest_run_full.json` → `./experiments`（旧版兜底）。
 
-The TUI needs an optional extras bundle (Textual + clipboard support):
+TUI 需要一个可选的扩展包（Textual + 剪贴板支持）：
 
 ```bash
 pip install 'deepeval[inspect]'
@@ -307,11 +307,11 @@ pip install 'deepeval[inspect]'
 
 <Tab title="TypeScript">
 
-Move with `↑`/`↓` or `j`/`k`, fold a span with `←`/`→` or `h`/`l`, and cycle between traces with `n`/`p`. Press `PgUp`/`PgDn` to scroll a long detail pane, `g`/`G` to jump to the top or bottom, and `q` to quit. The footer lists the full set.
+用 `↑`/`↓` 或 `j`/`k` 移动，用 `←`/`→` 或 `h`/`l` 折叠 span，用 `n`/`p` 在追踪间切换。按 `PgUp`/`PgDn` 滚动较长的详情面板，`g`/`G` 跳到顶部或底部，`q` 退出。页脚列出了全部按键。
 
-Resolution order when no path is passed: `--folder` → `DEEPEVAL_RESULTS_FOLDER` → `.deepeval/.latest_test_run.json`.
+未传路径时的解析顺序：`--folder` → `DEEPEVAL_RESULTS_FOLDER` → `.deepeval/.latest_test_run.json`。
 
-The TUI is built on [Ink](https://github.com/vadimdemedes/ink), declared as an optional dependency. `npm install` pulls it in by default, so there's usually nothing extra to do — but if you installed with `--omit=optional`, add it back:
+该 TUI 基于可选依赖 [Ink](https://github.com/vadimdemedes/ink) 构建。`npm install` 默认会拉取它，所以通常无需额外操作——但如果你用 `--omit=optional` 安装，请把它加回来：
 
 ```bash
 npm install ink react
@@ -322,12 +322,12 @@ npm install ink react
 </Tabs>
 
 <Tip>
-When an `evals_iterator()` run finishes in an interactive terminal and at least one test case captured a trace, deepeval offers to open it in the TUI for you. Disable per-call with `DisplayConfig(inspect_after_run=False)` or globally with `DEEPEVAL_NO_INSPECT_PROMPT=1` (e.g. in CI). See [display configs](/docs/evaluation-flags-and-configs#display-configs).
+当 `evals_iterator()` 运行在交互式终端结束且至少一个测试用例捕获了追踪时，deepeval 会主动询问是否在 TUI 中打开它。可用 `DisplayConfig(inspect_after_run=False)` 按调用禁用，或用 `DEEPEVAL_NO_INSPECT_PROMPT=1`（例如 CI 中）全局禁用。见 [display 配置](/docs/evaluation-flags-and-configs#display-configs)。
 </Tip>
 
 ### `diagnose`
 
-Use `deepeval diagnose` to print the configuration your environment actually resolves to — and where each value comes from. Reach for it when evals are using the wrong model, credentials, or data region, or when you're not sure which `.env` file is winning.
+使用 `deepeval diagnose` 打印你的环境实际解析出的配置——以及每个值来自哪里。当评估用错了模型、凭证或数据区域，或不确定哪个 `.env` 文件生效时，就用它。
 
 <Tabs>
 
@@ -349,47 +349,43 @@ npx deepeval diagnose
 
 </Tabs>
 
-The report shows:
+报告会显示：
 
-- **Versions**: deepeval and the runtime it's running on.
-- **Evaluation model**: the model deepeval will use when a metric (or synthesizer, simulator, etc.) is constructed without an explicit model, plus the reason it won. The default embedding model is listed alongside it, and the selected text-to-speech and speech-to-text models below those, with what each is used by.
-- **Configuration sources**: the precedence order every variable is resolved against, independently (process environment → `.env.local` → `.env.<APP_ENV>` → `.env` → JSON keystore → built-in defaults), which dotenv files were loaded, and where the keystore lives.
-- **Configured settings**: every deepeval setting that is explicitly set, with secrets masked (only the last 6 characters shown) and the **winning source** for each — the report uses the same resolvers as the runtime, so what you see is what your evals get.
-- **Confident AI**: login status, masked API key, data region, and the API endpoint. The OTEL endpoint is shown too, with warnings if either endpoint looks like it belongs to a different region than your API key.
+- **版本**：deepeval 及其运行时的版本。
+- **评估模型**：当指标（或合成器、模拟器等）在构造时未显式指定模型时 deepeval 将使用的模型，以及它胜出的原因。旁边列出默认嵌入模型，其下是选定的文本转语音和语音转文本模型，并说明各自的用途。
+- **配置来源**：每个变量被独立解析时依据的优先级顺序（进程环境 → `.env.local` → `.env.<APP_ENV>` → `.env` → JSON keystore → 内置默认值）、加载了哪些 dotenv 文件，以及 keystore 的位置。
+- **已配置的设置**：每个显式设置的 deepeval 设置，密钥打码（只显示最后 6 个字符），并标出每个设置的**生效来源**——报告使用的解析器与运行时相同，所以你看到的就是评估得到的。
+- **Confident AI**：登录状态、打码的 API key、数据区域和 API 端点。同时显示 OTEL 端点，若任一端点看起来与你的 API key 不属于同一区域会给出警告。
 
-Options:
+选项：
 
-| Option   | Description                                                             |
+| 选项   | 说明                                                             |
 | -------- | ----------------------------------------------------------------------- |
-| `--json` | Output the full report as JSON (machine-readable, secrets stay masked). |
+| `--json` | 以 JSON 输出完整报告（机器可读，密钥保持打码）。 |
 
 <Tip>
-Adding `--json` is handy in CI or bug reports — it's safe to share since all secrets are masked.
+在 CI 或缺陷报告里加上 `--json` 很方便——所有密钥都已打码，可以安全分享。
 </Tip>
 
 ## Confident AI Commands
 
-Use these commands to connect `deepeval` to **Confident AI** (`deepeval` Cloud) so your local evaluations can be uploaded, organized, and viewed as rich test run reports on the cloud. If you don’t have an account yet, [sign up here](https://app.confident-ai.com?utm_source=deepeval&utm_medium=docs&utm_content=cli_confident_commands_signup&ref_page=/docs/command-line-interface).
+使用这些命令把 `deepeval` 连接到 **Confident AI**（`deepeval` 云），这样你的本地评估就能上传到云端，组织并在云端查看为丰富的测试运行报告。如果你还没有账号，请[在这里注册](https://app.confident-ai.com?utm_source=deepeval&utm_medium=docs&utm_content=cli_confident_commands_signup&ref_page=/docs/command-line-interface)。
 
 ### `login` & `logout`
 
 - `deepeval login [--api-key ...] [--save=dotenv[:path]]`
-  : Log in to Confident AI. The interactive flow opens a browser for
-  authentication, then returns to the terminal to create an organization and
-  first project or select an existing project. DeepEval creates a dedicated
-  project API key and saves it as `CONFIDENT_API_KEY`. Use `--api-key` for CI,
-  headless automation, or manual fallback.
-- `deepeval logout [--save=dotenv[:path]]`: Remove your Confident AI credentials from local persistence — the JSON keystore and every dotenv file deepeval auto-loads (`.env`, `.env.<APP_ENV>`, `.env.local`). If `CONFIDENT_API_KEY` is exported by your shell itself, deepeval cannot unset it and will tell you to run `unset CONFIDENT_API_KEY`.
+  : 登录 Confident AI。交互式流程会打开浏览器完成认证，然后回到终端创建组织和首个项目，或选择已有项目。DeepEval 会创建专属的项目 API key 并保存为 `CONFIDENT_API_KEY`。CI、无头自动化或手动兜底场景请使用 `--api-key`。
+- `deepeval logout [--save=dotenv[:path]]`：从本地持久化中移除你的 Confident AI 凭证——包括 JSON keystore 以及 deepeval 自动加载的每个 dotenv 文件（`.env`、`.env.<APP_ENV>`、`.env.local`）。如果 `CONFIDENT_API_KEY` 是你的 shell 自己导出的，deepeval 无法取消它，并会提示你运行 `unset CONFIDENT_API_KEY`。
 
 ### `view`
 
-`deepeval view` opens the latest test run on Confident
-AI in your browser. If needed, it uploads the cached run artifacts first. It takes
-no flags.
+`deepeval view` 在浏览器中打开 Confident
+AI 上的最新测试运行。如有需要，它会先上传缓存的运行工件。它不接受
+任何参数。
 
 ### `set-confident-region`
 
-Set the data region your project's data lives in, which also determines the Confident AI endpoint deepeval talks to. See [data residency](https://www.confident-ai.com/docs/settings/data-residency?utm_source=deepeval&utm_medium=docs&utm_content=cli_set_confident_region&ref_page=/docs/command-line-interface) for what each region means.
+设置项目数据所在的数据区域，这也决定了 deepeval 与哪个 Confident AI 端点通信。各区域的含义见[数据驻留](https://www.confident-ai.com/docs/settings/data-residency?utm_source=deepeval&utm_medium=docs&utm_content=cli_set_confident_region&ref_page=/docs/command-line-interface)。
 
 <Tabs>
 
@@ -411,19 +407,19 @@ npx deepeval set-confident-region EU --save=dotenv
 
 </Tabs>
 
-| Option          | Description                                                          |
+| 选项          | 说明                                                          |
 | --------------- | -------------------------------------------------------------------- |
-| `REGION`        | Positional argument. <Tabs><Tab title="Python">One of `US` or `EU`.</Tab><Tab title="TypeScript">One of `US`, `EU`, or `AU`.</Tab></Tabs> |
-| `--save`, `-s`  | Persist `CONFIDENT_REGION` to a dotenv file. Usage: `dotenv[:path]`. |
-| `--quiet`, `-q` | Suppress printing to the terminal (useful for CI).                   |
+| `REGION`        | 位置参数。<Tabs><Tab title="Python">`US` 或 `EU` 之一。</Tab><Tab title="TypeScript">`US`、`EU` 或 `AU` 之一。</Tab></Tabs> |
+| `--save`, `-s`  | 把 `CONFIDENT_REGION` 持久化到 dotenv 文件。用法：`dotenv[:path]`。 |
+| `--quiet`, `-q` | 抑制终端输出（CI 中有用）。                   |
 
 <Warning>
-Your API key is issued for a single region. Pointing deepeval at a region your key doesn't belong to will fail to authenticate. Run `diagnose` to see the region and endpoint currently in effect.
+你的 API key 只为单一区域签发。把 deepeval 指向 key 不所属的区域将无法通过认证。运行 `diagnose` 查看当前生效的区域和端点。
 </Warning>
 
 ### `gate`
 
-Check your project against its governance policy and exit with a non-zero code when it doesn't pass, which makes it usable as a CI gate. See [policies](https://www.confident-ai.com/docs/ai-governance/policies?utm_source=deepeval&utm_medium=docs&utm_content=cli_gate&ref_page=/docs/command-line-interface) for how to define one.
+按治理策略检查你的项目，不通过时以非零码退出，因此可以用作 CI 门禁。如何定义策略见 [policies](https://www.confident-ai.com/docs/ai-governance/policies?utm_source=deepeval&utm_medium=docs&utm_content=cli_gate&ref_page=/docs/command-line-interface)。
 
 <Tabs>
 
@@ -445,34 +441,34 @@ npx deepeval gate
 
 </Tabs>
 
-| Option          | Description                                                |
+| 选项          | 说明                                                |
 | --------------- | ---------------------------------------------------------- |
-| `--quiet`, `-q` | Suppress output. The exit code still reflects the verdict. |
+| `--quiet`, `-q` | 抑制输出。退出码仍然反映结论。 |
 
 <Note>
-Your project must be associated with a governance policy. If it isn't, the command exits non-zero and tells you to contact your organization administrator.
+你的项目必须关联一个治理策略。如果没有，命令会以非零码退出并提示你联系组织管理员。
 </Note>
 
 ## Persistence & Secrets
 
-All `set-*` / `unset-*` commands follow the same rules:
+所有 `set-*` / `unset-*` 命令遵循相同的规则：
 
-- Non-secrets (model name, endpoint, deployment, etc.) may be mirrored into `.deepeval/.deepeval`.
-- Secrets (API keys) are never written to `.deepeval/.deepeval`.
-- Pass `--save=dotenv[:path]` to write settings (including secrets) to a dotenv file (default: `.env.local`).
-- If `--save` is omitted, deepeval will use `DEEPEVAL_DEFAULT_SAVE` if set; otherwise it won’t write a dotenv file (some commands like `login` still default to `.env.local`).
-- Unsetting one provider only removes that provider’s keys. Leftover credentials from other providers (e.g. `OPENAI_API_KEY`) don’t select anything on their own — the `USE_*` flags decide which provider is active.
+- 非密钥（模型名称、端点、部署等）可以镜像写入 `.deepeval/.deepeval`。
+- 密钥（API key）永远不会写入 `.deepeval/.deepeval`。
+- 传入 `--save=dotenv[:path]` 把设置（包括密钥）写入 dotenv 文件（默认：`.env.local`）。
+- 省略 `--save` 时，deepeval 会使用 `DEEPEVAL_DEFAULT_SAVE`（如果设置）；否则不会写 dotenv 文件（某些命令如 `login` 仍默认写 `.env.local`）。
+- 取消某个提供商只会移除该提供商的键。其他提供商遗留的凭证（例如 `OPENAI_API_KEY`）本身不会选中任何东西——由 `USE_*` 开关决定哪个提供商生效。
 
 <Tip>
-You can set a default save target via `DEEPEVAL_DEFAULT_SAVE=dotenv:.env.local` so you don’t have to pass `--save` each time.
+你可以通过 `DEEPEVAL_DEFAULT_SAVE=dotenv:.env.local` 设置默认保存目标，这样就不必每次传 `--save`。
 </Tip>
 
 <Info>
-Token costs are expressed in **USD per token**. If you're using published pricing in **$/MTok** (million tokens), divide by **1,000,000**.
-For example, **&#36;3 / MTok = 0.000003**.
+token 成本以**每 token 美元**表示。如果你使用的是以 **$/MTok**（百万 token）计的公开定价，请除以 **1,000,000**。
+例如，**&#36;3 / MTok = 0.000003**。
 </Info>
 
-To set the model and token cost for Anthropic, and then view the settings it wrote, you would run:
+要为 Anthropic 设置模型和 token 成本，然后查看它写入了哪些设置，可以运行：
 
 <Tabs>
 
@@ -529,7 +525,7 @@ USE_ANTHROPIC_MODEL               true                       Use Anthropic as th
 
 ## Debug Controls
 
-Use these to turn on structured logs, gRPC wire tracing, and Confident tracing (all optional).
+使用这些命令开启结构化日志、gRPC 线路追踪和 Confident 追踪（均为可选）。
 
 <Tabs>
 
@@ -565,15 +561,15 @@ npx deepeval set-debug \
 
 </Tabs>
 
-- **Immediate effect** in the current process
-- **Optional persistence** via `--save=dotenv[:path]`
-- **No-op guard**: If nothing would change, you’ll see **No changes to save …** (and nothing is written).
+- 对当前进程**立即生效**
+- 通过 `--save=dotenv[:path]` **可选持久化**
+- **无操作保护**：如果没有任何变化，你会看到 **No changes to save …**（且不写入任何内容）。
 
 <Info>
-To see all available debug flags, run `deepeval set-debug --help`.
+要查看所有可用的调试开关，运行 `deepeval set-debug --help`。
 </Info>
 
-To filter (substring match) settings by name, displaying each setting's current value and description, pass the filter to `settings -l`:
+要按名称（子串匹配）过滤设置并显示每项设置的当前值和描述，把过滤词传给 `settings -l`：
 
 <Tabs>
 
@@ -613,7 +609,7 @@ LOG_LEVEL                         DEBUG   Global log level
 
 </Tabs>
 
-To restore defaults and clean persisted values:
+要恢复默认值并清除持久化的设置：
 
 <Tabs>
 
@@ -637,7 +633,7 @@ npx deepeval unset-debug --save=dotenv
 
 ## Model Provider Configs
 
-All provider commands come in pairs:
+所有提供商命令都是成对出现的：
 
 <Tabs>
 
@@ -657,21 +653,21 @@ All provider commands come in pairs:
 
 </Tabs>
 
-This switches the active provider **within its family**:
+这会在**同一家族内**切换活跃提供商：
 
-- It sets that provider's `USE_*` flag, such as `USE_ANTHROPIC_MODEL`, and
-- Turns off the other `USE_*` flags in the same family, so only one provider per family is enabled at a time.
+- 设置该提供商的 `USE_*` 开关，例如 `USE_ANTHROPIC_MODEL`，并且
+- 关闭同一家族中其他 `USE_*` 开关，因此每个家族同一时间只启用一个提供商。
 
-The four families are the LLM judge, embeddings, text-to-speech and speech-to-text. They are independent, so `deepeval set-openai` leaves a configured embedding or speech provider exactly as it was, and each family falls back to OpenAI when none of its flags are set.
+四个家族分别是 LLM 评审、嵌入、文本转语音和语音转文本。它们相互独立，因此 `deepeval set-openai` 不会影响已配置的嵌入或语音提供商，且任一家族在没有任何开关设置时回退到 OpenAI。
 
-（TypeScript：Every `USE_*` flag here belongs to the LLM family, so setting one provider turns off all the others. With none set, `deepeval` falls back to OpenAI.）
+（TypeScript：这里的每个 `USE_*` 开关都属于 LLM 家族，设置一个提供商会关闭其他所有提供商。全都不设置时，`deepeval` 回退到 OpenAI。）
 
-When you **unset** a provider, it disables only that provider’s `USE_*` flag and leaves all others untouched. If you manually set env vars (or edit dotenv files) it’s possible to end up with multiple `USE_*` flags enabled within one family.
+**取消**一个提供商时，只会禁用该提供商的 `USE_*` 开关，其他一概不动。如果你手动设置环境变量（或编辑 dotenv 文件），可能出现同一家族内多个 `USE_*` 开关同时启用的情况。
 
 <Warning>
-Because of how `deepeval` manages your model related environment variables, **using the CLI is 100% the recommended way to configure evaluation models in `deepeval`.** It handles all the necessary environment variables for you, ensuring consistent and correct setup across different providers.
+由于 `deepeval` 以特定方式管理你的模型相关环境变量，**使用 CLI 是在 `deepeval` 中配置评估模型 100% 推荐的方式。**它会替你处理所有必需的环境变量，确保不同提供商之间配置一致且正确。
 
-If you want to see what environment variables `deepeval` manages under the hood, refer to the [Model Settings](/docs/environment-variables#model-settings) documentation.
+如果你想了解 `deepeval` 底层管理哪些环境变量，参见 [模型设置](/docs/environment-variables#model-settings)文档。
 </Warning>
 
 ### Full model list
@@ -680,78 +676,78 @@ If you want to see what environment variables `deepeval` manages under the hood,
 
 <Tab title="Python">
 
-| Provider (LLM)   | Set                | Unset                |
+| 提供商（LLM）   | 设置                | 取消                |
 | ---------------- | ------------------ | -------------------- |
 | OpenAI           | `set-openai`       | `unset-openai`       |
 | Azure OpenAI     | `set-azure-openai` | `unset-azure-openai` |
 | Anthropic        | `set-anthropic`    | `unset-anthropic`    |
 | AWS Bedrock      | `set-bedrock`      | `unset-bedrock`      |
-| Ollama (local)   | `set-ollama`       | `unset-ollama`       |
-| Local HTTP model | `set-local-model`  | `unset-local-model`  |
+| Ollama（本地）   | `set-ollama`       | `unset-ollama`       |
+| 本地 HTTP 模型 | `set-local-model`  | `unset-local-model`  |
 | Grok             | `set-grok`         | `unset-grok`         |
-| Moonshot (Kimi)  | `set-moonshot`     | `unset-moonshot`     |
+| Moonshot（Kimi）  | `set-moonshot`     | `unset-moonshot`     |
 | DeepSeek         | `set-deepseek`     | `unset-deepseek`     |
 | Gemini           | `set-gemini`       | `unset-gemini`       |
 | LiteLLM          | `set-litellm`      | `unset-litellm`      |
 | Portkey          | `set-portkey`      | `unset-portkey`      |
 | OpenRouter       | `set-openrouter`   | `unset-openrouter`   |
 
-**Embeddings:**
+**嵌入：**
 
-| Provider (Embeddings) | Set                          | Unset                          |
+| 提供商（嵌入） | 设置                          | 取消                          |
 | --------------------- | ---------------------------- | ------------------------------ |
 | Azure OpenAI          | `set-azure-openai-embedding` | `unset-azure-openai-embedding` |
-| Local (HTTP)          | `set-local-embeddings`       | `unset-local-embeddings`       |
+| 本地（HTTP）          | `set-local-embeddings`       | `unset-local-embeddings`       |
 | Ollama                | `set-ollama-embeddings`      | `unset-ollama-embeddings`      |
 
-**Speech (voice simulation):**
+**语音（语音模拟）：**
 
-Speech takes the provider as an argument instead of a command per provider, and text-to-speech and speech-to-text are selected independently of each other and of the LLM:
+语音类命令把提供商作为参数传入，而不是每个提供商一条命令；文本转语音与语音转文本的选择彼此独立，也独立于 LLM：
 
-| Family         | Set                                                            | Unset        |
+| 家族         | 设置                                                            | 取消        |
 | -------------- | -------------------------------------------------------------- | ------------ |
-| Text-to-speech | `set-tts <openai\|elevenlabs\|cartesia\|deepgram>`              | `unset-tts`  |
-| Speech-to-text | `set-stt <openai\|elevenlabs\|cartesia\|deepgram\|assemblyai>`  | `unset-stt`  |
+| 文本转语音 | `set-tts <openai\|elevenlabs\|cartesia\|deepgram>`              | `unset-tts`  |
+| 语音转文本 | `set-stt <openai\|elevenlabs\|cartesia\|deepgram\|assemblyai>`  | `unset-stt`  |
 
 ```bash
 deepeval set-stt deepgram --model nova-3
 ```
 
-The model name is optional and defaults to that provider's own default. `unset-tts` and `unset-stt` clear their whole family rather than one provider, since the provider is an argument rather than part of the command name.
+模型名称是可选的，默认为该提供商自己的默认值。`unset-tts` 和 `unset-stt` 会清空整个家族而不是单个提供商，因为提供商是参数而不是命令名的一部分。
 
 </Tab>
 
 <Tab title="TypeScript">
 
-| Provider (LLM)   | Set                | Unset                |
+| 提供商（LLM）   | 设置                | 取消                |
 | ---------------- | ------------------ | -------------------- |
 | OpenAI           | `set-openai`       | `unset-openai`       |
 | Azure OpenAI     | `set-azure-openai` | `unset-azure-openai` |
 | Anthropic        | `set-anthropic`    | `unset-anthropic`    |
 | AWS Bedrock      | `set-bedrock`      | `unset-bedrock`      |
-| Ollama (local)   | `set-ollama`       | `unset-ollama`       |
-| Local HTTP model | `set-local-model`  | `unset-local-model`  |
+| Ollama（本地）   | `set-ollama`       | `unset-ollama`       |
+| 本地 HTTP 模型 | `set-local-model`  | `unset-local-model`  |
 | Grok             | `set-grok`         | `unset-grok`         |
-| Moonshot (Kimi)  | `set-moonshot`     | `unset-moonshot`     |
+| Moonshot（Kimi）  | `set-moonshot`     | `unset-moonshot`     |
 | DeepSeek         | `set-deepseek`     | `unset-deepseek`     |
 | Gemini           | `set-gemini`       | `unset-gemini`       |
 | Portkey          | `set-portkey`      | `unset-portkey`      |
 | OpenRouter       | `set-openrouter`   | `unset-openrouter`   |
 
-To evaluate with a provider that has no entry above, wrap any [Vercel AI SDK](/integrations/models/ai-sdk) `LanguageModel` in an `AISDKModel` and pass it to a metric in code.
+要使用上表没有的提供商，请把任意 [Vercel AI SDK](/integrations/models/ai-sdk) 的 `LanguageModel` 包装进 `AISDKModel` 并在代码中传给指标。
 
 </Tab>
 
 </Tabs>
 
 <Tip>
-For provider-specific flags, run any of the `set-*` commands above with `--help`.
+要查看提供商专属参数，对上面任意 `set-*` 命令运行 `--help`。
 </Tip>
 
 ## Common Issues
 
-- **Nothing printed?** For `set-*` / `unset-*` / `set-debug`, a clean exit with no output often means you are passing the `--quiet` / `-q` flag.
-- **Provider still active after unsetting?** Unsetting turns off that provider's `USE_*` flag only; if another provider in the same family still has its flag on, it becomes the active one for that family. With no flag enabled in a family, deepeval falls back to OpenAI for it. To force a provider, run the corresponding `set-<provider>` command.
-- **Dotenv edits not picked up?** deepeval loads dotenv files from the current working directory by default, or `ENV_DIR_PATH` if set. Ensure your process runs in that context.
+- **没有输出？** 对 `set-*` / `unset-*` / `set-debug` 来说，干净退出且无输出通常意味着你传了 `--quiet` / `-q` 参数。
+- **取消设置后提供商仍然生效？** 取消设置只关闭该提供商的 `USE_*` 开关；如果同一家族中另一个提供商的开关仍开启，它就成为该家族的活跃提供商。家族内没有任何开关启用时，deepeval 对该家族回退到 OpenAI。要强制某个提供商，请运行对应的 `set-<provider>` 命令。
+- **dotenv 修改未生效？** deepeval 默认从当前工作目录加载 dotenv 文件，或使用 `ENV_DIR_PATH`（如果设置）。请确保你的进程在该上下文中运行。
 
-If you’re still stuck, the dedicated [Troubleshooting](/docs/troubleshooting) page covers deeper debugging (TLS errors, logging, timeouts, dotenv loading, and config caching).
+如果仍然卡住，专门的 [Troubleshooting](/docs/troubleshooting) 页面涵盖更深入的调试（TLS 错误、日志、超时、dotenv 加载和配置缓存）。

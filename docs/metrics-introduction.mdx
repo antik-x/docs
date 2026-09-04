@@ -16,11 +16,11 @@ title: LLM 评估指标简介
 自定义指标让你用日常语言定义**自定义标准**，底层使用 LLM-as-a-Judge 指标的 SOTA 实现：
 
 - G-Eval
-- DAG (Deep Acyclic Graph)
+- DAG（Deep Acyclic Graph，深度无环图）
 - Conversational G-Eval
 - Conversational DAG
 - Arena G-Eval
-- Do it yourself, 100% self-coded metrics (e.g. if you want to use BLEU, ROUGE)
+- 完全自己编码的 DIY 指标（例如想使用 BLEU、ROUGE 时）
 
 
 </Tab>
@@ -47,13 +47,13 @@ title: LLM 评估指标简介
 
 RAG（检索增强生成）指标独立关注**检索器与生成器组件**。
 
-- Retriever:
+- 检索器（Retriever）：
 
   - Contextual Relevancy
   - Contextual Precision
   - Contextual Recall
 
-- Generator:
+- 生成器（Generator）：
   - Answer Relevancy
   - Faithfulness
 
@@ -718,7 +718,7 @@ deepeval set-gemini \
 这包括你喜欢的任何模型，例如：
 
 - Azure OpenAI
-- Claude via AWS Bedrock
+- Claude（经 AWS Bedrock）
 - Google Vertex AI
 - Mistral 7B
 
@@ -940,7 +940,7 @@ npx deepeval unset-ollama
 这包括你喜欢的任何模型，例如：
 
 - Azure OpenAI
-- Claude via AWS Bedrock
+- Claude（经 AWS Bedrock）
 - Google Vertex AI
 - Mistral 7B
 
@@ -1350,7 +1350,7 @@ console.log(metric.score, metric.reason);
 `deepeval` 中的每个指标本身就是异步的，没有任何开关要打开。指标的算法由多次 LLM 调用组成，`measure()` 会同时发起彼此不依赖的调用，而不是一个接一个。
 
 <Info>
-Take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-calculated) for example:
+以 [`FaithfulnessMetric` 算法](/docs/metrics-faithfulness#how-is-it-calculated)为例：
 
 1. **抽取所有事实声明**（来自 `actualOutput`）
 2. **抽取所有事实真相**（来自 `retrievalContext`）
@@ -1364,7 +1364,7 @@ Take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-c
 </Tabs>
 
 <Info>
-Let's take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-calculated) for example:
+以 [`FaithfulnessMetric` 算法](/docs/metrics-faithfulness#how-is-it-calculated)为例：
 
 1. **抽取所有事实声明**（来自 `actual_output`）
 2. **抽取所有事实真相**（来自 `retrieval_context`）
