@@ -2,12 +2,12 @@
 title: GEPA
 ---
 
-**GEPA（Genetic-Pareto）**是 `deepeval` 中的一种提示优化算法，改编自同等名称的研究论文。它使用**遗传帕累托**选择来迭代进化一批提示候选——在每个迭代中选择父提示、生成子变体、并根据帕累托支配关系接受或拒绝。
+**GEPA（Genetic-Pareto）**是 `deepeval` 中的一种提示优化算法，改编自[研究论文](https://arxiv.org/pdf/2507.19457)。它使用**遗传帕累托**选择来迭代进化一批提示候选——在每个迭代中选择父提示、生成子变体、并根据帕累托支配关系接受或拒绝。
 
 核心洞察是不同的提示可能擅长不同类型的问题——一个提示在特定金标上表现良好但在其他金标上表现不佳。GEPA 通过维持一个多样化的人口而非收敛到单一的最佳提示来利用这一点。
 
 <Info>
-**帕累托**一词来自经济学和多目标优化。想象你在用多个标准评分一批提示——没有单一的「最佳」，只有不同的权衡。帕累托选择防止优化收敛到局部最大值。
+**帕累托**一词来自经济学和多目标优化。想象你在用多个标准评分一批提示——没有单一的「最佳」，只有不同的权衡。[帕累托选择](#step-2-pareto-selection)防止优化收敛到局部最大值。
 
 Pareto selection in GEPA prevents optimization from converging at a local maximum.
 </Info>
@@ -65,8 +65,8 @@ gepa = GEPA(
 - [可选] `minibatch_size`：每次迭代为反馈抽取的金标数量。自动调整。
 - [可选] `patience`：在连续拒绝这么多子代后提前停止。默认为 `None`。
 - [可选] `random_seed`：可复现性种子。控制金标分割、小批量采样和变异。
-- [可选] `tie_breaker`：平局裁决策略（`PREFER_ROOT`、`PREFER_CHILD` 或 `RANDOM`）。
-- [可选] `aggregate_instances`：聚合提示的逐金标帕累托分数的函数。
+- [可选] `tie_breaker`：平局裁决策略（`PREFER_ROOT`、`PREFER_CHILD` 或 `RANDOM`）（`PREFER_ROOT`、`PREFER_CHILD` 或 `RANDOM`）。
+- [可选] `aggregate_instances`：聚合提示的逐金标帕累托分数的函数，用于排名/平局处理。默认为 `mean_of_all`。
 - [可选] `reflection_model`：用于诊断/反馈生成的 LLM。默认为 `gpt-4o-mini`。
 - [可选] `mutation_model`：用于重写提示的 LLM。默认为 `gpt-4o`。
 - [可选] `scorer`：自定义打分器实例。在大多数工作流中由 `PromptOptimizer` 注入。
