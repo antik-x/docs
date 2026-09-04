@@ -1,5 +1,5 @@
 {
   "last_synced_commit": "ec59d76643b806a2f4b14afeff6abc666d5af822",
-  "last_synced_date": "2026-09-03",
-  "notes": "DeepEval 项目首次适配基线：上游 confident-ai/deepeval main 分支 docs/content/docs/，与 /tmp/deepeval-src 克隆 HEAD 一致。翻译全部完成后由全量校验收尾确认。"
+  "last_synced_date": "2026-09-04",
+  "notes": "DeepEval 中文翻译：131 页全部包含中文内容。基础设施完整（转换器+校验器+翻译记忆 1758+条）。部分页面仍需补全 EN 样板段的翻译。"
 }
