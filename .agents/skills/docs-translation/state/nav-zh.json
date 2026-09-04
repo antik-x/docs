@@ -83,6 +83,9 @@
     "(voice)/metrics-audio-integrity": "音频完整性",
     "(voice)/metrics-voice-reliability": "语音可靠性",
     "(voice)/metrics-turn-taking-naturalness": "轮次切换自然度",
-    "(voice)/metrics-agent-responsiveness": "智能体响应性"
+    "(voice)/metrics-agent-responsiveness": "智能体响应性",
+    "(mcp)/metrics-mcp-use": "MCP 使用",
+    "(mcp)/metrics-multi-turn-mcp-use": "多轮 MCP 使用",
+    "(mcp)/metrics-mcp-task-completion": "MCP 任务完成"
   }
 }

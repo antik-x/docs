@@ -1,0 +1,165 @@
+---
+title: MCP-Use
+---
+
+**标签**：LLM-as-a-judge · 单轮 · 无参考 · 多模态
+
+MCP 使用（MCP Use）指标用于评估**基于 MCP 的 LLM 智能体对其可访问的 MCP 服务器的利用效率**。它使用 LLM-as-a-judge 评估被调用的 MCP 原语以及 LLM 应用生成的参数。
+
+## Required Arguments
+
+要使用 `MCPUseMetric`，你需要在创建 [`LLMTestCase`](https://www.deepeval.com/docs/evaluation-test-cases) 时提供以下参数：
+
+- `input`
+- `actual_output`
+- `mcp_servers`
+
+如果使用了 `mcp_tools_called`、`mcp_resources_called` 与 `mcp_prompts_called`，也需要提供它们，评估才能进行。点击[这里](#how-is-it-calculated)了解它的计算方式。
+
+## Usage
+
+`MCPUseMetric` 可用于带 MCP 参数的单轮 `LLMTestCase`。点击[这里](https://www.deepeval.com/docs/evaluation-mcp#single-turn)了解如何创建 MCP 单轮测试用例。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase, MCPServer
+from deepeval.metrics import MCPUseMetric
+from deepeval import evaluate
+
+test_case = LLMTestCase(
+    input="...", # Your input here
+    actual_output="...", # Your LLM app's final output here
+    mcp_servers=[MCPServer(...)] # Your MCP server's data
+    # MCP primitives used (if any)
+)
+
+metric = MCPUseMetric()
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate([test_case], [metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase, MCPServer } from "deepeval/test-case";
+import { MCPUseMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const testCase = new LLMTestCase({
+  input: "...", // Your input here
+  actualOutput: "...", // Your LLM app's final output here
+  mcpServers: [new MCPServer({ serverName: "..." })], // Your MCP server's data
+  // MCP primitives used (if any)
+});
+
+const metric = new MCPUseMetric();
+
+// To run metric as a standalone
+// await metric.measure(testCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([testCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `MCPTaskCompletionMetric` 时有**七个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `MCPTaskCompletionMetric` 时有**六个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `MCPUseMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(testCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated
+
+`MCPUseMetric` 的分数按以下公式计算：
+
+$$
+\text{MCP Use Score} = \text{AlignmentScore(Primitives Used, Primitives Available)}
+$$
+
+**AlignmentScore** 由评估模型评判，依据是调用了哪些原语、以及针对用户输入生成的参数。
+
+<Info>
+`MCPUseMetric` 评估是否以正确的参数调用了正确的工具；也就是说，如果以上可选参数都未提供，`MCPUseMetric` 会评估调用任何可用原语是否会更好。
+</Info>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="When should I use MCP Use instead of Multi-Turn MCP Use?">
+单轮 [LLMTestCase](https://www.deepeval.com/docs/evaluation-test-cases)（一对 `input` / `actual_output`）用 `MCPUseMetric`。跨对话的 MCP 使用情况，则在 `ConversationalTestCase` 上用 `MultiTurnMCPUseMetric`。
+</Accordion>
+<Accordion title="What MCP data do I have to populate for the metric to actually run?">
+`input`、`actual_output` 与 `mcp_servers`（可用原语），加上实际被调用的原语——`mcp_tools_called`、`mcp_resources_called`、`mcp_prompts_called`。见[创建 MCP 单轮测试用例](https://www.deepeval.com/docs/evaluation-mcp#single-turn)。
+</Accordion>
+<Accordion title="The agent picked the wrong tool or resource — how do I debug that?">
+`AlignmentScore` 低意味着原语次优或参数不佳。开启 `verbose_mode` 或读取 `metric.reason`，查看裁判对更好选择的理由。
+</Accordion>
+<Accordion title="如果我不传入任何被调用的原语会怎样？">
+没有 `mcp_tools_called`、`mcp_resources_called` 或 `mcp_prompts_called` 时，`MCPUseMetric` 会评判调用任何*可用*原语本是否有帮助——即评估「完全不使用 MCP」这一决定本身。
+</Accordion>
+</AccordionGroup>

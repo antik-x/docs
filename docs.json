@@ -343,15 +343,15 @@
         "pages": [
           {
             "page": "docs/(mcp)/metrics-mcp-use",
-            "title": "MCP-Use"
+            "title": "MCP 使用"
           },
           {
             "page": "docs/(mcp)/metrics-multi-turn-mcp-use",
-            "title": "Multi-Turn MCP-Use"
+            "title": "多轮 MCP 使用"
           },
           {
             "page": "docs/(mcp)/metrics-mcp-task-completion",
-            "title": "MCP Task Completion"
+            "title": "MCP 任务完成"
           }
         ]
       },

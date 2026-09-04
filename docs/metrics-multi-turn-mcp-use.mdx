@@ -1,0 +1,157 @@
+---
+title: Multi-Turn MCP-Use
+---
+
+**标签**：LLM-as-a-judge · 多轮 · 无参考 · 聊天机器人 · 多模态
+
+多轮 MCP 使用（Multi-Turn MCP Use）指标是一个对话式指标，使用 LLM-as-a-judge 评估**基于 MCP 的 LLM 智能体对其可访问的 MCP 服务器的利用效率**。它评估被调用的 MCP 原语以及 LLM 应用生成的参数。
+
+## Required Arguments
+
+要使用 `MultiTurnMCPUseMetric`，你需要在创建 [`ConversationalTestCase`](https://www.deepeval.com/docs/evaluation-multiturn-test-cases) 时提供以下参数：
+
+- `turns`
+- `mcp_servers`
+
+只要智能体工作流中出现 MCP 交互，就需要在轮次内提供 `mcp_tools_called`、`mcp_resources_called` 与 `mcp_prompts_called`。创建 MCP 测试用例的更多内容见[这里](https://www.deepeval.com/docs/evaluation-mcp)。
+
+其计算方式的更多信息见[这里](#how-is-it-calculated)。
+
+## Usage
+
+`MultiTurnMCPUseMetric()` 可用于基于 MCP 的智能体的[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, ConversationalTestCase, MCPServer
+from deepeval.metrics import MultiTurnMCPUseMetric
+from deepeval import evaluate
+
+convo_test_case = ConversationalTestCase(
+    turns=[Turn(role="...", content="..."), Turn(role="...", content="...")],
+    mcp_servers=[MCPServer(...)]
+)
+metric = MultiTurnMCPUseMetric(threshold=0.5)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Turn, ConversationalTestCase, MCPServer } from "deepeval/test-case";
+import { MultiTurnMCPUseMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const convoTestCase = new ConversationalTestCase({
+  turns: [new Turn({ role: "user", content: "..." }), new Turn({ role: "assistant", content: "..." })],
+  mcpServers: [new MCPServer({ serverName: "..." })],
+});
+const metric = new MultiTurnMCPUseMetric({ threshold: 0.5 });
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `MultiTurnMCPUseMetric` 时有**七个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `MultiTurnMCPUseMetric` 时有**六个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `MultiTurnMCPUseMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated
+
+`MultiTurnMCPUseMetric` 的分数按以下公式计算：
+
+$$
+\text{MCP Use Score} = \frac{\text{AlignmentScore(Primitives Used, Primitives Available)}}{\text{Total Number of MCP Interactions}}
+$$
+
+- **AlignmentScore** 由评估模型评判，依据是调用了哪些原语、以及针对任务生成的参数。
+- **MCP 交互**是 LLM 应用使用 MCP 服务器能力的次数。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="Should I reach for this over the single-turn MCP Use metric?">
+当 MCP 使用跨越多个 `turns`、想要一个综合分数时用 `MultiTurnMCPUseMetric`。单个 `input` / `actual_output` 则在 `LLMTestCase` 上用单轮 `MCPUseMetric`。
+</Accordion>
+<Accordion title="Where do the called primitives go in a ConversationalTestCase?">
+`turns` 与 `mcp_servers` 放在 [ConversationalTestCase](https://www.deepeval.com/docs/evaluation-multiturn-test-cases) 上，但 `mcp_tools_called`、`mcp_resources_called` 与 `mcp_prompts_called` 放在*每个轮次内部*，而不是顶层。
+</Accordion>
+<Accordion title="One turn misused a tool — how do I find which turn dragged the score down?">
+一次糟糕的调用会拉低平均分数。开启 `verbose_mode` 打印逐交互的推理，精确定位出问题的轮次。
+</Accordion>
+<Accordion title="Why is my score lower when the agent makes more MCP calls?">
+分母是 MCP 交互总数，因此每一次额外的调用都要接受同样的对齐标准。嘈杂或冗余的调用会拉低平均值。
+</Accordion>
+</AccordionGroup>
