@@ -1,0 +1,22 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 92-95
+docs.json
+  h_04c00a69eeb820 371,375,379
+docs/metrics-misuse.mdx
+  h_04c00a69eeb820 7,10,15,24,80,86,92,97,100,104,109,177,211,217,221,223-225,227-229,231-233,235-237,239-241,243-245,251,253-254,256-257,259-260
+docs/metrics-non-advice.mdx
+  h_04c00a69eeb820 7,9,13,22,78,84,90,95,98,102,107,175,209,215,219,221-223,225-227,229-231,233-235,237-239,241-243,248-249,251-252,254-255,257-258
+docs/metrics-pii-leakage.mdx
+  h_04c00a69eeb820 7,10,15,24,80,86,96,99,103,108,176,210,216,220,222-224,226-228,230-232,234-236,238-240,242-244,247,253-254,256-257,259-260,262-263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "562ea6f231280e69de56ef27ba97baf0c0893478",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
