@@ -1,0 +1,152 @@
+---
+title: Turn Relevancy
+---
+
+**标签**：LLM-as-a-judge · 多轮 · 无参考 · RAG · 聊天机器人 · 多模态
+
+轮次相关性（turn relevancy）指标是一个对话式指标，判断你的 LLM 聊天机器人能否**在整个对话过程中**持续生成相关的回复。
+
+## Required Arguments
+
+要使用 `TurnRelevancyMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
+
+- `turns`
+
+你必须提供每个轮次的 `role` 与 `content`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+`TurnRelevancyMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, ConversationalTestCase
+from deepeval.metrics import TurnRelevancyMetric
+from deepeval import evaluate
+
+convo_test_case = ConversationalTestCase(
+    turns=[Turn(role="...", content="..."), Turn(role="...", content="...")]
+)
+metric = TurnRelevancyMetric(threshold=0.5)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Turn, ConversationalTestCase } from "deepeval/test-case";
+import { TurnRelevancyMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const convoTestCase = new ConversationalTestCase({
+  turns: [new Turn({ role: "user", content: "..." }), new Turn({ role: "assistant", content: "..." })],
+});
+const metric = new TurnRelevancyMetric({ threshold: 0.5 });
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `TurnRelevancyMetric` 时有**八个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `TurnRelevancyMetric` 时有**七个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `window_size`：整数，定义评估期间使用的轮次滑动窗口大小。默认为 `10`。
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `ContextualRelevancyMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`TurnRelevancyMetric` 的分数按以下公式计算：
+
+$$
+\text{Conversation Relevancy} = \frac{\text{Number of Turns with Relevant Assistant Content}}{\text{Total Number of Assistant Turns}}
+$$
+
+`TurnRelevancyMetric` 首先为每个轮次构建轮次滑动窗口，再用 LLM 判断每个滑动窗口中最后一条 `"assistant"` 内容是否与该窗口内的先前对话上下文相关。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="When should I use TurnRelevancyMetric instead of the single-turn AnswerRelevancyMetric?">
+在 `ConversationalTestCase` 上、且每条助手回复都需要结合先前轮次保持相关时使用。单轮的 [AnswerRelevancyMetric](/docs/metrics-answer-relevancy) 只孤立地评判一对输入/输出。
+</Accordion>
+<Accordion title="Which turns actually get scored?">
+只评 `"assistant"` 轮次——相关助手轮次数除以助手轮次总数。用户与工具轮次从不影响分子。
+</Accordion>
+<Accordion title="Each reply looks fine on its own but my score is low — why?">
+相关性是对照先前轮次的滑动窗口来判断的，而不只看最后一条消息。一条无视几轮之前建立的上下文的回复会被判为不相关。用 `verbose_mode` 可以看到是哪个窗口拖低了分数。
+</Accordion>
+<Accordion title="What does window size control and when should I change it?">
+`window_size` (default `10` ) sets how many recent turns are bundled per judgment. Lower it when only recent exchanges matter; raise it when older context still counts.
+</Accordion>
+</AccordionGroup>

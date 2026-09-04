@@ -1,0 +1,157 @@
+---
+title: Conversation Completeness
+---
+
+**标签**：LLM-as-a-judge · 多轮 · 无参考 · 聊天机器人 · 多模态
+
+对话完整性（conversation completeness）指标是一个对话式指标，判断你的 LLM 聊天机器人能否通过**在整个对话过程中**满足用户需求来完整地进行一场端到端对话。
+
+<Note>
+`ConversationCompletenessMetric` 可以作为衡量对话中用户满意度的代理指标。对话式指标对 LLM 聊天机器人用例特别有用。
+</Note>
+
+## Required Arguments
+
+要使用 `ConversationCompletenessMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
+
+- `turns`
+
+你必须提供每个轮次的 `role` 与 `content`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+`ConversationCompletenessMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, ConversationalTestCase
+from deepeval.metrics import ConversationCompletenessMetric
+from deepeval import evaluate
+
+convo_test_case = ConversationalTestCase(
+    turns=[Turn(role="...", content="..."), Turn(role="...", content="...")]
+)
+metric = ConversationCompletenessMetric(threshold=0.5)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Turn, ConversationalTestCase } from "deepeval/test-case";
+import { ConversationCompletenessMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const convoTestCase = new ConversationalTestCase({
+  turns: [new Turn({ role: "user", content: "..." }), new Turn({ role: "assistant", content: "..." })],
+});
+const metric = new ConversationCompletenessMetric({ threshold: 0.5 });
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `ConversationCompletenessMetric` 时有**七个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `ConversationCompletenessMetric` 时有**六个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `ConversationCompletenessMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`ConversationCompletenessMetric` 的分数按以下公式计算：
+
+$$
+\text{Conversation Completeness} = \frac{\text{Number of Satisfied User Intentions in Conversation}}{\text{Total Number of User Intentions in Conversation}}
+$$
+
+`ConversationCompletenessMetric` 假设只有当用户意图（例如向 LLM 聊天机器人求助）都被聊天机器人满足时，对话才算完整。
+
+因此，`ConversationCompletenessMetric` 首先用 LLM 从 `turns` 中（`"user"` 角色）抽取一组高层用户意图，再用同一个 LLM 判断每个意图在对话中是否被 `"assistant"` 满足。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="How is Conversation Completeness different from Goal Accuracy?">
+完整性衡量的是*广度*——助手是否满足了提出的**每一个**意图。[Goal Accuracy](/docs/metrics-goal-accuracy) 衡量的是是否达成单一的总目标。机器人可能完成了主目标却忽略了次要请求。
+</Accordion>
+<Accordion title="What does an incomplete conversation look like?">
+用户表达了多个意图但只有部分被满足——例如要求重置密码*并*更新账单信息，而机器人只处理了重置。未被满足的意图会拉低分数。
+</Accordion>
+<Accordion title="How does the metric decide what the user wanted?">
+由 LLM 从 `"user"` 轮次中抽取高层意图，再逐个对照 `"assistant"` 轮次检查。分数是已满足意图数除以总意图数。
+</Accordion>
+<Accordion title="Can I use this as a user-satisfaction proxy?">
+可以。由于它反映端到端有多少用户需求被满足，`ConversationCompletenessMetric` 在聊天机器人用例中很适合作为整体满意度的代理指标。
+</Accordion>
+</AccordionGroup>

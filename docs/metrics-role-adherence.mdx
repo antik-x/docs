@@ -1,0 +1,158 @@
+---
+title: Role Adherence
+---
+
+**标签**：LLM-as-a-judge · 多轮 · 无参考 · 聊天机器人 · 多模态
+
+角色遵循（role adherence）指标是一个对话式指标，判断你的 LLM 聊天机器人能否**在整个对话过程中**坚持其被赋予的角色。
+
+<Tip>
+`RoleAdherenceMetric` 在角色扮演用例中特别有用。
+</Tip>
+
+## Required Arguments
+
+要使用 `RoleAdherenceMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
+
+- `turns`
+- `chatbot_role`
+
+你必须提供每个轮次的 `role` 与 `content`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+`RoleAdherenceMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, ConversationalTestCase
+from deepeval.metrics import RoleAdherenceMetric
+from deepeval import evaluate
+
+convo_test_case = ConversationalTestCase(
+    chatbot_role="...",
+    turns=[Turn(role="...", content="..."), Turn(role="...", content="...")]
+)
+metric = RoleAdherenceMetric(threshold=0.5)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Turn, ConversationalTestCase } from "deepeval/test-case";
+import { RoleAdherenceMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const convoTestCase = new ConversationalTestCase({
+  chatbotRole: "...",
+  turns: [new Turn({ role: "user", content: "..." }), new Turn({ role: "assistant", content: "..." })],
+});
+const metric = new RoleAdherenceMetric({ threshold: 0.5 });
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `RoleAdherenceMetric` 时有**七个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `RoleAdherenceMetric` 时有**六个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `RoleAdherenceMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`RoleAdherenceMetric` 的分数按以下公式计算：
+
+$$
+\text{Role Adherence} = \frac{\text{Number of Assistant Turns that Adhered to Chatbot Role in Conversation}}{\text{Total Number of Assistant Turns in Conversation}}
+$$
+
+`RoleAdherenceMetric` 遍历每条助手轮次，用 LLM 以先前的对话轮次为上下文，评估内容是否符合指定的 `chatbot_role`。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="Why does my bot break character partway through a conversation?">
+随着对话变长或用户施压，后面的轮次容易慢慢跑偏。`RoleAdherenceMetric` 会以先前轮次为上下文，对每条助手轮次对照你的 `chatbot_role` 打分，输出的 reason 会标出是哪一轮出了戏。
+</Accordion>
+<Accordion title="How is this different from the single-turn Role Violation metric?">
+角色违规（Role Violation）孤立地检查单条输出，而 `RoleAdherenceMetric` 会遍历 `ConversationalTestCase` 的每条助手轮次，衡量机器人保持 `chatbot_role` 的一致程度。
+</Accordion>
+<Accordion title="Which turns are scored, and how?">
+只评助手轮次——保持 `chatbot_role` 的助手轮次数除以助手轮次总数，每条轮次都对照其前序对话来判断。
+</Accordion>
+<Accordion title="What should chatbot role contain?">
+你期望机器人维持的人设（例如 `"a 1920s detective"` 或 `"a formal banking assistant"`）。它是每条助手轮次的对照参考，所以请写得具体。
+</Accordion>
+</AccordionGroup>

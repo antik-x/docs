@@ -1,0 +1,139 @@
+---
+title: Knowledge Retention
+---
+
+**标签**：LLM-as-a-judge · 多轮 · 无参考 · 聊天机器人 · 多模态
+
+知识保留（knowledge retention）指标是一个对话式指标，判断你的 LLM 聊天机器人能否**在整个对话过程中**保留已呈现的事实信息。
+
+<Info>
+这非常适合由 LLM 驱动的问卷调查用例。
+</Info>
+
+## Required Arguments
+
+要使用 `KnowledgeRetentionMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
+
+- `turns`
+
+你必须提供每个轮次的 `role` 与 `content`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+`KnowledgeRetentionMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, ConversationalTestCase
+from deepeval.metrics import KnowledgeRetentionMetric
+from deepeval import evaluate
+
+convo_test_case = ConversationalTestCase(
+    turns=[Turn(role="...", content="..."), Turn(role="...", content="...")]
+)
+metric = KnowledgeRetentionMetric(threshold=0.5)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Turn, ConversationalTestCase } from "deepeval/test-case";
+import { KnowledgeRetentionMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const convoTestCase = new ConversationalTestCase({
+  turns: [new Turn({ role: "user", content: "..." }), new Turn({ role: "assistant", content: "..." })],
+});
+const metric = new KnowledgeRetentionMetric({ threshold: 0.5 });
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+创建 `KnowledgeRetentionMetric` 时有**六个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 0. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `KnowledgeRetentionMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`KnowledgeRetentionMetric` 的分数按以下公式计算：
+
+$$
+\text{Knowledge Retention} = \frac{\text{Number of Assistant Turns without Knowledge Attritions}}{\text{Total Number of Assistant Turns}}
+$$
+
+`KnowledgeRetentionMetric` 首先用 LLM 抽取 `turns` 全程中 `"user"` 角色在 `"content"` 里提供的信息，再用同一个 LLM 判断每条对应的 `"assistant"` 内容是否表现出无法回忆起该信息。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="Why does my chatbot keep asking for information the user already gave it?">
+这正是 `KnowledgeRetentionMetric` 捕捉的失败模式。它抽取用户早前提供的事实，并标记其后再次询问这些事实的助手轮次，量化你的机器人「遗忘」的频率。
+</Accordion>
+<Accordion title="How does the metric detect that the bot forgot something?">
+由 LLM 抽取 `"user"` 轮次中陈述的信息，然后检查其后每条 `"assistant"` 轮次是否存在*知识流失*（knowledge attrition）——即未能回忆起已提供的信息。
+</Accordion>
+<Accordion title="Which turns are scored?">
+（无知识流失的助手轮次数）÷（助手轮次总数），因此只要有一轮重新询问已知信息，就会拉低整段对话的分数。
+</Accordion>
+<Accordion title="Why does strict mode set the threshold to 0?">
+With `strict_mode` set to `True`（TypeScript 中为 `true`） the metric is binary (1 only for zero attritions, else 0), so the threshold is `0` and any single forgotten fact fails the test case.
+</Accordion>
+</AccordionGroup>
