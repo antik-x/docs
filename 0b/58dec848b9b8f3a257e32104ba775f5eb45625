@@ -1,0 +1,46 @@
+.agents/skills/docs-translation/state/translation-memory.json
+  h_04c00a69eeb820 2562-2719
+docs/benchmarks-arc.mdx
+  h_04c00a69eeb820 5,16,19,24,42
+docs/benchmarks-bbq.mdx
+  h_04c00a69eeb820 8,10-11,17,19,24,49,57,75,78,81,84,87,90
+docs/benchmarks-big-bench-hard.mdx
+  h_04c00a69eeb820 9,11,16,21,41,44,49,57,91,94,97,100,103,106
+docs/benchmarks-bool-q.mdx
+  h_04c00a69eeb820 5,20,36,39,46
+docs/benchmarks-drop.mdx
+  h_04c00a69eeb820 8,13,15,19,24,47,55,644,647,650,653,656,659
+docs/benchmarks-gsm8k.mdx
+  h_04c00a69eeb820 13
+docs/benchmarks-hellaswag.mdx
+  h_04c00a69eeb820 254,257,260,263,266,269
+docs/benchmarks-human-eval.mdx
+  h_04c00a69eeb820 8,13,15-16,19,24,41,66,72,74,78,86,250,253,256,259,262,265
+docs/benchmarks-ifeval.mdx
+  h_04c00a69eeb820 5-8,11,16,18,22,39,42,45,48,51,54,57
+docs/benchmarks-introduction.mdx
+  h_04c00a69eeb820 11,161,178,189,194,204,207,209,214,223,228,237,244,247,250,253,256,259
+docs/benchmarks-lambada.mdx
+  h_04c00a69eeb820 5,20,36,39,46,58
+docs/benchmarks-logi-qa.mdx
+  h_04c00a69eeb820 8,13,15,20,45,53,65,68,71,74,77,80
+docs/benchmarks-math-qa.mdx
+  h_04c00a69eeb820 8,13,15,20,45,53,66,69,72,75,78,81
+docs/benchmarks-mmlu.mdx
+  h_04c00a69eeb820 115,118,121,124,127,130
+docs/benchmarks-squad.mdx
+  h_04c00a69eeb820 8,13,15,17,20,25,44,48,56,111,114,117,120,123,126
+docs/benchmarks-truthful-qa.mdx
+  h_04c00a69eeb820 9,11-12,15,20,40,43,48,56,101,104,107,110,113,116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "0b58dec848b9b8f3a257e32104ba775f5eb45625",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
