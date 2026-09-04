@@ -1,5 +1,5 @@
 {
   "last_synced_commit": "ec59d76643b806a2f4b14afeff6abc666d5af822",
   "last_synced_date": "2026-09-04",
-  "notes": "DeepEval 中文翻译：131 页全部包含中文内容。基础设施完整（转换器+校验器+翻译记忆 1758+条）。部分页面仍需补全 EN 样板段的翻译。"
+  "notes": "DeepEval 中文翻译第一轮完成：131/131 页全部翻译（结构校验 131/131 通过）；英文残留仅剩有意保留项（产品名词/数学公式/图片引用）；翻译记忆 3253 条；docs.json 导航重构 + 全站中文 sidebarTitle；mint dev 真实构建通过（127 导航 URL 全部 200）。部署目标 zh-docs-deepeval.mintlifysite.com。"
 }
