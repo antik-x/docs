@@ -1,0 +1,14 @@
+docs/prompt-optimization-gepa.mdx
+  h_04c00a69eeb820 5,10,68-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "1a630ddbf39466f0407420316366bdf1f4da9ebc",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
