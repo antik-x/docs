@@ -6,19 +6,19 @@ title: BIG-Bench Hard
 
 ## 参数
 
-There are **THREE** optional arguments when using the `BigBenchHard` benchmark:
+使用 `BigBenchHard` 基准时有**三个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`BigBenchHardTask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `BigBenchHardTask` enums can be found [here](#big-bench-hard-tasks).
+- [可选] `tasks`：任务列表（`BigBenchHardTask` 枚举），指定模型评估的主题领域。默认为所有任务。`BigBenchHardTask` 枚举列表见[这里](#big-bench-hard-tasks)。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 - [可选] `enable_cot`：布尔值，决定评估是否使用 CoT 提示。默认设为 `True`。
 
 <Info>
-**Chain-of-Thought (CoT) prompting** is an approach where the model is prompted to articulate its reasoning process to arrive at an answer. Meanwhile, **few-shot prompting** is a method where the model is provided with a few examples (or "shots") to learn from before making predictions. When combined, few-shot prompting and CoT can significantly enhance performance. You can learn more about CoT [here](https://arxiv.org/abs/2201.11903).
+**思维链（CoT）提示**是一种让模型表达其推理过程以得出答案的方法。而**少样本提示**是在预测前向模型提供少量示例（"shots"）供其学习的方法。两者结合时，少样本提示与 CoT 可以显著提升表现。关于 CoT 的更多内容见[这里](https://arxiv.org/abs/2201.11903)。
 </Info>
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on Boolean Expressions and Causal Judgement in `BigBenchHard` using 3-shot CoT prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），使用 3-shot CoT 提示评估其在 `BigBenchHard` 布尔表达式与因果判断任务上的表现。
 
 ```python
 from deepeval.benchmarks import BigBenchHard
@@ -38,15 +38,15 @@ print(benchmark.overall_score)
 
 该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确选项的多选题占总题数的比例来计算。
 
-BBH answers exhibit a greater variety of answers compared to benchmarks that use multiple-choice questions, since different tasks in BBH require different types of outputs (for example, boolean values in boolean expression tasks versus numbers in arithmetic tasks). To enhance benchmark performance, employing **CoT** prompting will prove to be extremely helpful.
+与使用多选题的基准相比，BBH 答案呈现出更丰富的多样性，因为 BBH 中不同任务需要不同类型的输出（例如布尔表达式任务输出布尔值，算术任务输出数字）。要提升基准表现，采用 **CoT** 提示会极其有效。
 
 <Tip>
-Utilizing more few-shot examples (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+使用更多少样本示例（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
 </Tip>
 
 ## BIG-Bench Hard Tasks
 
-The `BigBenchHardTask` enum classifies the diverse range of tasks covered in the BIG-Bench Hard benchmark.
+`BigBenchHardTask` 枚举分类了 BIG-Bench Hard 基准涵盖的多样化任务。
 
 ```python
 from deepeval.benchmarks.tasks import BigBenchHardTask
@@ -54,7 +54,7 @@ from deepeval.benchmarks.tasks import BigBenchHardTask
 big_tasks = [BigBenchHardTask.BOOLEAN_EXPRESSIONS]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `BOOLEAN_EXPRESSIONS`
 - `CAUSAL_JUDGEMENT`
@@ -88,21 +88,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the BigBenchHard benchmark measure?">
-BIG-Bench Hard comprises **23 challenging** BIG-Bench tasks where prior language model evaluations did not outperform the average human rater. `BigBenchHard` evaluates models using both few-shot and chain-of-thought (CoT) prompting techniques.
+BIG-Bench Hard 包含 **23 个挑战性** BIG-Bench 任务，此前的语言模型评估在这些任务上未能超越人类评分者的平均水平。`BigBenchHard` 同时使用少样本和思维链（CoT）提示技术评估模型。
 </Accordion>
 <Accordion title="Which tasks can I run with BigBenchHard?">
-You can pass a list of `BigBenchHardTask` enums to the `tasks` argument, for example `BOOLEAN_EXPRESSIONS` or `CAUSAL_JUDGEMENT` . By default, all 23 tasks are evaluated.
+你可以向 `tasks` 参数传入一组 `BigBenchHardTask` 枚举，例如 `BOOLEAN_EXPRESSIONS` 或 `CAUSAL_JUDGEMENT` 。默认评估全部 23 个任务。
 </Accordion>
 <Accordion title="How is BigBenchHard scored?">
-The `overall_score` ranges from 0 to 1 and is the proportion of total correct predictions according to the target labels for each task. The **exact match** scorer is used, even though BBH answers vary widely (e.g. booleans for boolean expression tasks versus numbers for arithmetic tasks). See the [benchmarks introduction](/docs/benchmarks-introduction) for more on scoring.
+`overall_score` 范围为 0 到 1，是按各任务目标标签计算的预测正确比例。使用**精确匹配**评分器，尽管 BBH 的答案差异很大（例如布尔表达式任务输出布尔值，算术任务输出数字）。评分详见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="What is the default n_shots for BigBenchHard?">
-The `n_shots` argument ranges strictly from 0-3 and is set to `3` by default. Using more few-shot examples can improve the model's robustness in generating answers in the exact correct format.
+`n_shots` 参数严格范围为 0-3，默认为 `3` 。使用更多少样本示例可以提升模型以精确正确格式生成答案的稳健性。
 </Accordion>
 <Accordion title="Does BigBenchHard support chain-of-thought prompting?">
-Yes. The `enable_cot` argument is a boolean that determines whether CoT prompting is used, and it is set to `True` by default. Employing CoT prompting is extremely helpful for boosting benchmark performance on BBH.
+可以。`enable_cot` 参数是决定是否使用 CoT 提示的布尔值，默认为 `True` 。采用 CoT 提示对提升 BBH 的基准表现极其有效。
 </Accordion>
 <Accordion title="How do I run BigBenchHard on a custom LLM?">
-Wrap your model in `DeepEvalBaseLLM` , create a benchmark with `BigBenchHard(tasks=[...], n_shots=3, enable_cot=True)` , and call `benchmark.evaluate(model=mistral_7b)` before reading `benchmark.overall_score` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+把你的模型包装进 `DeepEvalBaseLLM` ，用 `BigBenchHard(tasks=[...], n_shots=3, enable_cot=True)` 创建基准，调用 `benchmark.evaluate(model=mistral_7b)` 后读取 `benchmark.overall_score` 。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

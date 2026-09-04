@@ -5,23 +5,23 @@ title: HumanEval
 **HumanEval** 基准评估 LLM 的代码生成能力。它包含 164 个 Python 编程问题。更多信息见 [HumanEval 论文](https://github.com/openai/human-eval)。
 
 <Info>
-`HumanEval` assesses the **functional correctness** of generated code instead of merely measuring textual similarity to a reference solution.
+`HumanEval` 评估生成代码的**功能正确性**，而不仅仅是衡量与参考解的文本相似度。
 </Info>
 
 ## 参数
 
-There are **TWO** optional arguments when using the `HumanEval` benchmark:
+使用 `HumanEval` 基准时有**两个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`HumanEvalTask` enums), specifying which of the **164 programming tasks** to evaluate in the language model. By default, this is set to all tasks. Detailed descriptions of the `HumanEvalTask` enum can be found [here](#humaneval-tasks).
-- [Optional] `n`: the number of code generation samples for each task for model evaluation using the pass@k metric. This is set to **200 by default**. A more detailed description of the `pass@k` metric and `n` parameter can be found [here](#passk-metric).
+- [可选] `tasks`：任务列表（`HumanEvalTask` 枚举），指定在语言模型上评估**164 个编程任务**中的哪些。默认为所有任务。`HumanEvalTask` 枚举的详细说明见[这里](#humaneval-tasks)。
+- [可选] `n`：每个任务为模型评估生成的代码样例数量，配合 pass@k 指标使用。**默认为 200**。`pass@k` 指标和 `n` 参数的更详细说明见[这里](#passk-metric)。
 
 <Warning>
-By default, each task will be evaluated 200 times, as specified by `n`, the number of code generation samples. This means your LLM is being invoked **200 times on the same prompt** by default.
+默认情况下，每个任务会按 `n`（代码生成样例数）评估 200 次。这意味着默认情况下你的 LLM 会在**同一提示上被调用 200 次**。
 </Warning>
 
 ## 用法
 
-The code below evaluates a custom `GPT-4` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) and assesses its performance on HAS_CLOSE_ELEMENTS and SORT_NUMBERS tasks using 100 code generation samples.
+下面的代码评估自定义 `GPT-4` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），使用 100 个代码生成样例评估其在 HAS_CLOSE_ELEMENTS 和 SORT_NUMBERS 任务上的表现。
 
 ```python
 from deepeval.benchmarks import HumanEval
@@ -38,7 +38,7 @@ benchmark.evaluate(model=gpt_4, k=10)
 print(benchmark.overall_score)
 ```
 
-**You must define a** `generate_samples` **method in your custom model to perform HumanEval evaluation**. In addition, when calling `evaluate`, you must supply `k`, the number of top samples chosen for the `pass@k` metric.
+**你必须在自定义模型中定义** `generate_samples` **方法才能执行 HumanEval 评估**。此外，调用 `evaluate` 时必须提供 `k`，即 `pass@k` 指标选取的顶部样例数。
 
 ```python
 # Define a custom GPT-4 model class
@@ -63,19 +63,19 @@ gpt_4 = GPT4Model()
 
 ## Pass@k Metric
 
-The pass@k metric evaluates the **functional correctness** of generated code samples by focusing on whether at least one of the top k samples passes predefined unit tests. It calculates this probability by determining the complement of the probability that all k chosen samples are incorrect, using the formula:
+pass@k 指标通过关注顶部 k 个样例中是否至少有一个通过预定义单元测试，来评估生成代码样例的**功能正确性**。它通过计算"所选 k 个样例全部错误"概率的补集来得出该概率，公式如下：
 
 $$
 \text{pass@k} = 1 - \frac{C(n-c, k)}{C(n, k)}
 $$
 
-where C represents combinations, n is the total number of samples, c is the number of correct samples, and k is the number of top samples chosen.
+其中 C 表示组合数，n 是样例总数，c 是正确样例数，k 是选取的顶部样例数。
 
-Using n helps ensure that the evaluation metric considers the full range of generated outputs, thereby reducing the risk of bias that can arise from only considering a small, possibly non-representative set of samples.
+使用 n 有助于确保评估指标覆盖生成输出的全部范围，从而降低只考虑少量、可能有偏样本而产生的偏差风险。
 
 ## HumanEval Tasks
 
-The HumanEvalTask enum classifies the diverse range of subject areas covered in the HumanEval benchmark.
+HumanEvalTask 枚举分类了 HumanEval 基准涵盖的多样化主题领域。
 
 ```python
 from deepeval.benchmarks.tasks import HumanEvalTask
@@ -83,7 +83,7 @@ from deepeval.benchmarks.tasks import HumanEvalTask
 human_eval_tasks = [HumanEvalTask.HAS_CLOSE_ELEMENTS]
 ```
 
-Below is the comprehensive list of all available tasks:
+以下是所有可用任务的完整列表：
 
 - `HAS_CLOSE_ELEMENTS`
 - `SEPARATE_PAREN_GROUPS`
@@ -247,21 +247,21 @@ Below is the comprehensive list of all available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the HumanEval benchmark measure?">
-`HumanEval` evaluates an LLM's code generation capabilities using 164 hand-crafted programming challenges comparable to simple software interview questions. It assesses the **functional correctness** of generated code rather than textual similarity to a reference solution.
+`HumanEval` 使用 164 个手工编写的编程挑战（相当于简单的软件面试题）评估 LLM 的代码生成能力。它评估生成代码的**功能正确性**，而不是与参考解的文本相似度。
 </Accordion>
 <Accordion title="Which tasks can I run with HumanEval?">
-You can pass a list of `HumanEvalTask` enums to the `tasks` argument, for example `HAS_CLOSE_ELEMENTS` or `SORT_NUMBERS` . By default, all 164 programming tasks are evaluated.
+你可以向 `tasks` 参数传入一组 `HumanEvalTask` 枚举，例如 `HAS_CLOSE_ELEMENTS` 或 `SORT_NUMBERS` 。默认评估全部 164 个编程任务。
 </Accordion>
 <Accordion title="How is HumanEval scored?">
-The `overall_score` ranges from 0 to 1 and is based on the **pass@k** metric: the proportion of code generations that pass all test cases (7.7 test cases on average per problem) for at least k samples. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+`overall_score` 范围为 0 到 1，基于 **pass@k** 指标：至少 k 个样例中通过全部测试用例（平均每题 7.7 个测试用例）的代码生成比例。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="What does the n argument control?">
-`n` is the number of code generation samples produced for each task, used by the `pass@k` metric. It is set to `200` by default, meaning your LLM is invoked **200 times on the same prompt** per task unless you lower it.
+`n` 是每个任务生成的代码样例数量，供 `pass@k` 指标使用。默认为 `200` ，即每个任务你的 LLM 会在**同一提示上被调用 200 次**，除非你调低它。
 </Accordion>
 <Accordion title="What is the difference between n and k?">
-`n` is the total number of samples generated per task, while `k` is the number of top samples chosen for the `pass@k` metric. You supply `k` when calling `evaluate()` , for example `benchmark.evaluate(model=gpt_4, k=10)` .
+`n` 是每个任务生成的样例总数，`k` 是 `pass@k` 指标选取的顶部样例数。调用 `evaluate()` 时提供 `k` ，例如 `benchmark.evaluate(model=gpt_4, k=10)` 。
 </Accordion>
 <Accordion title="How do I run HumanEval on a custom LLM?">
-You must define a `generate_samples` method on your `DeepEvalBaseLLM` subclass, then create a benchmark with `HumanEval(tasks=[...], n=100)` and call `benchmark.evaluate(model=gpt_4, k=10)` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+在你的 `DeepEvalBaseLLM` 子类上定义 `generate_samples` 方法，然后用 `HumanEval(tasks=[...], n=100)` 创建基准，并调用 `benchmark.evaluate(model=gpt_4, k=10)` 。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

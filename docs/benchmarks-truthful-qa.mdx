@@ -6,18 +6,18 @@ title: TruthfulQA
 
 ## 参数
 
-There are **TWO** optional arguments when using the `TruthfulQA` benchmark:
+使用 `TruthfulQA` 基准时有**两个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`TruthfulQATask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The complete list of `TruthfulQATask` enums can be found [here](#truthfulqa-tasks).
-- [Optional] mode: a `TruthfulQAMode` enum that selects the evaluation mode. This is set to `TruthfulQAMode.MC1` by default. `deepeval` currently supports 2 modes: **MC1 and MC2**.
+- [可选] `tasks`：任务列表（`TruthfulQATask` 枚举），指定模型评估的主题领域。默认为所有任务。`TruthfulQATask` 枚举完整列表见[这里](#truthfulqa-tasks)。
+- [可选] mode：`TruthfulQAMode` 枚举，选择评估模式。默认为 `TruthfulQAMode.MC1`。`deepeval` 目前支持 2 种模式：**MC1 和 MC2**。
 
 <Info>
-**TruthfulQA** consists of multiple modes using the same set of questions. **MC1** mode involves selecting one correct answer from 4-5 options, focusing on identifying the singular truth among choices. **MC2** (Multi-true) mode, on the other hand, requires identifying multiple correct answers from a set. Both MC1 and MC2 are **multiple choice** evaluations.
+**TruthfulQA** 包含使用同一组问题的多种模式。**MC1** 模式从 4-5 个选项中选择一个正确答案，重点是在选项中识别唯一的真相。**MC2**（Multi-true）模式则要求从一组答案中识别多个正确答案。MC1 和 MC2 都是**多选**评估。
 </Info>
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on Advertising and Fiction tasks in `TruthfulQA` using MC2 mode evaluation.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），使用 MC2 模式评估其在 `TruthfulQA` 广告与小说任务上的表现。
 
 ```python
 from deepeval.benchmarks import TruthfulQA
@@ -37,15 +37,15 @@ print(benchmark.overall_score)
 
 该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确答案的题目占总题数的比例来计算。
 
-Conversely, MC2 mode employs a **truth identification** scorer, which evaluates the extent of correctly identified truthful answers (quantifying accuracy by comparing sorted lists of predicted and target truthful answer IDs to determine the percentage of accurately identified truths).
+相反，MC2 模式采用**真值识别**评分器，评估正确识别真实答案的程度（通过比较预测与目标真实答案 ID 的排序列表来量化准确率，确定正确识别真相的百分比）。
 
 <Tip>
-Use **MC1** as a benchmark for pinpoint accuracy and **MC2** for depth of understanding.
+把 **MC1** 用作精准度量的基准，把 **MC2** 用作理解深度的基准。
 </Tip>
 
 ## TruthfulQA Tasks
 
-The `TruthfulQATask` enum classifies the diverse range of tasks covered in the TruthfulQA benchmark.
+`TruthfulQATask` 枚举分类了 TruthfulQA 基准涵盖的多样化任务。
 
 ```python
 from deepeval.benchmarks.tasks import TruthfulQATask
@@ -53,7 +53,7 @@ from deepeval.benchmarks.tasks import TruthfulQATask
 truthful_tasks = [TruthfulQATask.ADVERTISING]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `LANGUAGE`
 - `MISQUOTATIONS`
@@ -98,21 +98,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the TruthfulQA benchmark measure?">
-`TruthfulQA` assesses how truthfully an LLM answers questions. It includes 817 questions across 38 topics like health, law, finance, and politics, targeting common **misconceptions ** that some humans would falsely answer due to false belief.
+`TruthfulQA` 评估 LLM 回答问题的真实性。它包含 38 个主题（如健康、法律、金融和政治）的 817 个问题，针对一些人会因错误信念而答错的常见**误解**。
 </Accordion>
 <Accordion title="Which tasks can I run with TruthfulQA?">
-You can pass a list of `TruthfulQATask` enums to the `tasks` argument, for example `ADVERTISING` or `FICTION` . By default, all available tasks are evaluated.
+你可以向 `tasks` 参数传入一组 `TruthfulQATask` 枚举，例如 `ADVERTISING` 或 `FICTION` 。默认评估所有可用任务。
 </Accordion>
 <Accordion title="What are the MC1 and MC2 modes?">
-The `mode` argument takes a `TruthfulQAMode` enum and defaults to `TruthfulQAMode.MC1` . **MC1** involves selecting one correct answer from 4-5 options, while **MC2** (Multi-true) requires identifying multiple correct answers from a set. Both are multiple-choice evaluations.
+`mode` 参数接受 `TruthfulQAMode` 枚举，默认为 `TruthfulQAMode.MC1` 。**MC1** 从 4-5 个选项中选择一个正确答案，**MC2**（Multi-true）要求从一组答案中识别多个正确答案。两者都是多选评估。
 </Accordion>
 <Accordion title="How is TruthfulQA scored?">
-The `overall_score` ranges from 0 to 1. MC1 uses an **exact match** scorer focused on singular correct answers, while MC2 uses a **truth identification** scorer that compares sorted lists of predicted and target truthful answer IDs. See the [benchmarks introduction](/docs/benchmarks-introduction) for more on scoring.
+`overall_score` 范围为 0 到 1。MC1 使用聚焦唯一正确答案的**精确匹配**评分器，MC2 使用比较预测与目标真实答案 ID 排序列表的**真值识别**评分器。评分详见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="Should I use MC1 or MC2?">
-Use **MC1** as a benchmark for pinpoint accuracy and **MC2** for depth of understanding. Both modes use the same set of questions, so you can compare them directly.
+把 **MC1** 用作精准度量的基准，把 **MC2** 用作理解深度的基准。两种模式使用同一组问题，因此可以直接比较。
 </Accordion>
 <Accordion title="How do I run TruthfulQA on a custom LLM?">
-Wrap your model in `DeepEvalBaseLLM` , create a benchmark with `TruthfulQA(tasks=[...], mode=TruthfulQAMode.MC2)` , and call `benchmark.evaluate(model=mistral_7b)` before reading `benchmark.overall_score` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+把你的模型包装进 `DeepEvalBaseLLM` ，用 `TruthfulQA(tasks=[...], mode=TruthfulQAMode.MC2)` 创建基准，调用 `benchmark.evaluate(model=mistral_7b)` 后读取 `benchmark.overall_score` 。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

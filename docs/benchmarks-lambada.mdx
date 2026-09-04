@@ -2,7 +2,7 @@
 title: LAMBADA
 ---
 
-**LAMBADA** (_LAnguage Modeling Broadened to Account for Discourse Aspects_) evaluates an LLM's ability to comprehend context and understand discourse. This dataset includes 10,000 passages sourced from BooksCorpus, each requiring the LLM to predict the final word of a sentence. To explore the dataset in more detail, check out the [original LAMBADA paper](https://arxiv.org/abs/1606.06031).
+**LAMBADA**（_LAnguage Modeling Broadened to Account for Discourse Aspects_）评估 LLM 理解上下文和语篇的能力。该数据集包含 10,000 段取自 BooksCorpus 的文章，每段都要求 LLM 预测句子的最后一个词。想更深入探索该数据集，请查阅 [LAMBADA 原始论文](https://arxiv.org/abs/1606.06031)。
 
 <Tip>
 `LAMBADA` 数据集专门设计为人类在没有前文的情况下无法预测最后一句的末词，使其成为评估模型**广泛理解能力**的有效基准。
@@ -17,7 +17,7 @@ title: LAMBADA
 
 ## Usage
 
-The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on 10 problems in `LAMBADA` using 3-shot CoT prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），使用 3-shot CoT 提示评估其在 `LAMBADA` 10 道题上的表现。
 
 ```python
 from deepeval.benchmarks import LAMBADA
@@ -33,17 +33,17 @@ benchmark.evaluate(model=mistral_7b)
 print(benchmark.overall_score)
 ```
 
-The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on **exact matching**, is calculated by determining the proportion of questions for which the model predicts the **precise correct target word** in relation to the total number of questions.
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型预测出**精确正确目标词**的题目占总题数的比例来计算。
 
 <Tip>
-As a result, utilizing more few-shot prompts (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+因此，使用更多少样本提示（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
 </Tip>
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="What does the LAMBADA benchmark measure?">
-LAMBADA evaluates an LLM's ability to comprehend context and understand discourse. It includes 10,000 passages sourced from BooksCorpus, each requiring the model to predict the final word of a sentence. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+LAMBADA 评估 LLM 理解上下文和语篇的能力。它包含 10,000 段取自 BooksCorpus 的文章，每段都要求模型预测句子的最后一个词。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="How is LAMBADA scored?">
 打分基于**精确匹配**：`overall_score` 是模型预测出精确正确目标词的题目占总数的比例。范围为 0 到 1，1 表示完美表现。
@@ -55,7 +55,7 @@ LAMBADA evaluates an LLM's ability to comprehend context and understand discours
 默认 `n_problems` 设为 5153，评估所有题目。可以传入较小的 `n_problems` 值来评估更少的题目。
 </Accordion>
 <Accordion title="Why is LAMBADA considered a good comprehension benchmark?">
-The dataset is specifically designed so that humans cannot predict the final word of the last sentence without the preceding context, making it an effective benchmark for evaluating a model's **broad comprehension**.
+该数据集经过专门设计：没有前文的话，人类也无法预测最后一句的末词，因此它是评估模型**广义理解能力**的有效基准。
 </Accordion>
 <Accordion title="How do I run LAMBADA on a custom LLM?">
 定义基准，然后用你的模型调用 `evaluate()` 并读取 `overall_score`。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。

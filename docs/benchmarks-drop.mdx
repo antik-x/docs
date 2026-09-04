@@ -5,23 +5,23 @@ title: DROP
 **DROP**（Discrete Reasoning Over Paragraphs）是一个需要离散推理的阅读理解基准。更多信息见 [DROP 论文](https://arxiv.org/pdf/1903.00161v2.pdf)。
 
 <Info>
-`DROP` challenges models to process textual data, **perform numerical reasoning tasks** such as addition, subtraction, and counting, and also to **comprehend and analyze text** to extract or infer answers from paragraphs about **NFL and history**.
+`DROP` 挑战模型处理文本数据、**执行数值推理任务**（如加法、减法和计数），并**理解与分析文本**，从关于 **NFL 和历史**的段落中提取或推断答案。
 </Info>
 
 ## 参数
 
-There are **TWO** optional arguments when using the `DROP` benchmark:
+使用 `DROP` 基准时有**两个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`DROPTask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `DROPTask` enums can be found [here](#drop-tasks).
+- [可选] `tasks`：任务列表（`DROPTask` 枚举），指定模型评估的主题领域。默认为所有任务。`DROPTask` 枚举列表见[这里](#drop-tasks)。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 
 <Note>
-Notice unlike `BIGBenchHard`, there is no CoT prompting for the `DROP` benchmark.
+注意与 `BIGBenchHard` 不同，`DROP` 基准不使用 CoT 提示。
 </Note>
 
 ## 用法
 
-The code below assesses a custom mistral_7b model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on `HISTORY_1002` and `NFL_649` in DROP using 3-shot prompting.
+下面的代码评估自定义 mistral_7b 模型（[点击这里](/guides/guides-using-custom-llms)了解如何使用任意自定义 LLM）使用 3-shot 提示评估其在 DROP 的 `HISTORY_1002` 和 `NFL_649` 上的表现。
 
 ```python
 from deepeval.benchmarks import DROP
@@ -44,7 +44,7 @@ print(benchmark.overall_score)
 
 ## DROP Tasks
 
-The DROPTask enum classifies the diverse range of categories covered in the DROP benchmark.
+DROPTask 枚举分类了 DROP 基准涵盖的多样化类别。
 
 ```python
 from deepeval.benchmarks.tasks import DROPTask
@@ -52,7 +52,7 @@ from deepeval.benchmarks.tasks import DROPTask
 drop_tasks = [NFL_649]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `NFL_649`
 - `HISTORY_1418`
@@ -641,21 +641,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the DROP benchmark measure?">
-DROP (Discrete Reasoning Over Paragraphs) evaluates an LLM's advanced reasoning through complex question answering. It encompasses over 9,500 challenges that demand **numerical reasoning** (addition, subtraction, counting), multi-step reasoning, and the interpretation of text-based data drawn from paragraphs about **NFL and history**.
+DROP（Discrete Reasoning Over Paragraphs）通过复杂的问答评估 LLM 的高级推理能力。它包含超过 9,500 个挑战，要求**数值推理**（加法、减法、计数）、多步推理，以及对来自 **NFL 和历史**段落的文本数据的解读。
 </Accordion>
 <Accordion title="Which tasks can I run with DROP?">
-You can pass a list of `DROPTask` enums to the `tasks` argument, for example `HISTORY_1002` or `NFL_649` . By default, all available tasks are evaluated.
+你可以向 `tasks` 参数传入一组 `DROPTask` 枚举，例如 `HISTORY_1002` 或 `NFL_649` 。默认评估所有可用任务。
 </Accordion>
 <Accordion title="How is DROP scored?">
-The `overall_score` ranges from 0 to 1 and is based on **exact matching**: it is the proportion of questions for which the model produces the precise correct answer (e.g. '3' or 'John Doe'). See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+`overall_score` 范围为 0 到 1，基于**精确匹配**：它是模型给出精确正确答案（如 '3' 或 'John Doe'）的问题占比。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="What is the default n_shots for DROP?">
-The `n_shots` argument is set to `5` by default and **cannot exceed 5**. Using more few-shot prompts can improve the model's robustness in generating answers in the exact correct format.
+`n_shots` 参数默认为 `5` 且**不能超过 5**。使用更多少样本提示可以提升模型以精确正确格式生成答案的稳健性。
 </Accordion>
 <Accordion title="Does DROP support chain-of-thought prompting?">
-No. Unlike `BigBenchHard` , there is no CoT prompting for the `DROP` benchmark. Its only optional arguments are `tasks` and `n_shots` .
+没有。与 `BigBenchHard` 不同，`DROP` 基准不使用 CoT 提示。它仅有的可选参数是 `tasks` 和 `n_shots` 。
 </Accordion>
 <Accordion title="How do I run DROP on a custom LLM?">
-Wrap your model in `DeepEvalBaseLLM` , create a benchmark with `DROP(tasks=[...], n_shots=3)` , and call `benchmark.evaluate(model=mistral_7b)` before reading `benchmark.overall_score` . See the [custom LLM guide](/guides/guides-using-custom-llms) for details.
+把你的模型包装进 `DeepEvalBaseLLM` ，用 `DROP(tasks=[...], n_shots=3)` 创建基准，调用 `benchmark.evaluate(model=mistral_7b)` 后读取 `benchmark.overall_score` 。详见[自定义 LLM 指南](/guides/guides-using-custom-llms)。
 </Accordion>
 </AccordionGroup>

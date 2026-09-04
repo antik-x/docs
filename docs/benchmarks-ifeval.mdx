@@ -2,24 +2,24 @@
 title: IFEval
 ---
 
-**IFEval (Instruction-Following Evaluation for Large Language Models
-)** is a benchmark for evaluating instruction-following capabilities of language models.
-It tests various aspects of instruction following including format compliance, constraint
-adherence, output structure requirements, and specific instruction types.
+**IFEval（Instruction-Following Evaluation for Large Language Models
+）**是评估语言模型指令遵循能力的基准。
+它测试指令遵循的多个方面，包括格式合规、约束
+遵循、输出结构要求和特定指令类型。
 
 <Tip>
-`deepeval`'s `IFEval` implementation is based on the [original research paper](https://arxiv.org/abs/2311.07911) by Google.
+`deepeval` 的 `IFEval` 实现基于 Google 的[原始研究论文](https://arxiv.org/abs/2311.07911)。
 </Tip>
 
 ## 参数
 
-There is **ONE** optional argument when using the `IFEval` benchmark:
+使用 `IFEval` 基准时只有**一个**可选参数：
 
-- [Optional] `n_problems`: limits the number of test cases the benchmark will evaluate. Defaulted to `None`.
+- [可选] `n_problems`：限制基准将评估的测试用例数量。默认为 `None`。
 
 ## 用法
 
-The code below evaluates a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) and assesses its performance on High School Computer Science and Astronomy using 3-shot learning.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），使用 3-shot 学习评估其在高中计算机科学与天文学任务上的表现。
 
 ```python
 from deepeval.benchmarks import IFEval
@@ -36,24 +36,24 @@ print(benchmark.overall_score)
 
 <AccordionGroup>
 <Accordion title="What does the IFEval benchmark measure?">
-IFEval evaluates the instruction-following capabilities of language models. It tests various aspects including format compliance, constraint adherence, output structure requirements, and specific instruction types. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+IFEval 评估语言模型的指令遵循能力。它测试多个方面，包括格式合规、约束遵循、输出结构要求和特定指令类型。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="What arguments does the IFEval benchmark accept?">
-There is one optional argument, `n_problems` , which limits the number of test cases the benchmark will evaluate. It is defaulted to `None` .
+只有一个可选参数 `n_problems` ，用于限制基准将评估的测试用例数量。默认为 `None` 。
 </Accordion>
 <Accordion title="What does the n_problems argument do?">
-`n_problems` limits the number of test cases the benchmark will evaluate. By default it is `None` , so set it to an integer (for example `5` ) to evaluate a smaller subset.
+`n_problems` 限制基准将评估的测试用例数量。默认为 `None` ，可设为一个整数（例如 `5` ）来评估更小的子集。
 </Accordion>
 <Accordion title="What research is deepeval's IFEval implementation based on?">
-deepeval's `IFEval` implementation is based on the original research paper by Google. You can read more in the [benchmarks introduction](/docs/benchmarks-introduction) .
+deepeval 的 `IFEval` 实现基于 Google 的原始研究论文。更多信息见[基准介绍](/docs/benchmarks-introduction) 。
 </Accordion>
 <Accordion title="Does IFEval support tasks or n_shots arguments?">
-No. `IFEval` exposes a single optional argument, `n_problems` . It does not take a `tasks` list or an `n_shots` argument.
+不。`IFEval` 只暴露一个可选参数 `n_problems` 。不接受 `tasks` 列表或 `n_shots` 参数。
 </Accordion>
 <Accordion title="How do I read the result of an IFEval run?">
-After calling `evaluate()` , read the `overall_score` attribute to see how the model performed on the evaluated instruction-following test cases.
+调用 `evaluate()` 后，读取 `overall_score` 属性查看模型在所评估的指令遵循测试用例上的表现。
 </Accordion>
 <Accordion title="How do I run IFEval on a custom LLM?">
-Define the benchmark, then call `evaluate()` with your model and read `overall_score` . See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) to learn how to use any custom LLM.
+定义基准，然后用你的模型调用 `evaluate()` 并读取 `overall_score` 。使用任意自定义 LLM 见[评估你的 LLM](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

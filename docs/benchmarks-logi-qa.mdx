@@ -5,19 +5,19 @@ title: LogiQA
 **LogiQA** 基准由从逻辑能力测试中收集的 8,678 道多选题组成，评估 LLM 的逻辑推理能力。更多信息见 [LogiQA 论文](https://arxiv.org/pdf/2007.08124)。
 
 <Info>
-LogiQA is derived from publicly available logical comprehension questions from China's **National Civil Servants Examination**. These questions are designed to evaluate candidates' critical thinking and problem-solving skills.
+LogiQA 取材于中国**国家公务员考试**中公开可用的逻辑理解题。这些题目旨在评估考生的批判性思维和解决问题的能力。
 </Info>
 
 ## 参数
 
-There are **TWO** optional arguments when using the `LogiQA` benchmark:
+使用 `LogiQA` 基准时有**两个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`LogiQATask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `LogiQATask` enums can be found [here](#logiqa-tasks).
+- [可选] `tasks`：任务列表（`LogiQATask` 枚举），指定模型评估的主题领域。默认为所有任务。`LogiQATask` 枚举列表见[这里](#logiqa-tasks)。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on categorical reasoning and sufficient conditional reasoning using 3-shot prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/guides/guides-using-custom-llms)了解如何使用任意自定义 LLM）使用 3-shot 提示评估其在直言推理与充分条件推理上的表现。
 
 ```python
 from deepeval.benchmarks import LogiQA
@@ -42,7 +42,7 @@ print(benchmark.overall_score)
 
 ## LogiQA Tasks
 
-The `LogiQATask` enum classifies the diverse range of reasoning categories covered in the LogiQA benchmark.
+`LogiQATask` 枚举分类了 LogiQA 基准涵盖的多样化推理类别。
 
 ```python
 from deepeval.benchmarks.tasks import LogiQATask
@@ -50,7 +50,7 @@ from deepeval.benchmarks.tasks import LogiQATask
 math_qa_tasks = [LogiQATask.CATEGORICAL_REASONING]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `CATEGORICAL_REASONING`
 - `SUFFICIENT_CONDITIONAL_REASONING`
@@ -62,21 +62,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the LogiQA benchmark measure?">
-LogiQA assesses an LLM's logical reasoning across various types of deductive reasoning, including categorical and disjunctive reasoning. It features 8,678 multiple-choice questions, each paired with a reading passage. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+LogiQA 评估 LLM 在多种演绎推理（包括直言推理和析取推理）上的逻辑推理能力。它包含 8,678 道多选题，每题配有阅读段落。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="How is LogiQA scored?">
-Scoring is based on **exact matching**: the `overall_score` is the proportion of questions for which the model produces the precise correct multiple-choice answer (e.g. 'A' or 'C') out of the total. It ranges from 0 to 1, where 1 signifies perfect performance.
+评分基于**精确匹配**：`overall_score` 是模型给出精确正确多选答案（如 'A' 或 'C'）的问题占总题数的比例。范围为 0 到 1，1 表示完美表现。
 </Accordion>
 <Accordion title="What is the default n_shots for LogiQA?">
-It defaults to `5` and cannot exceed that. Use the `n_shots` argument to lower it for few-shot prompting.
+默认为 `5` 且不能超过。用 `n_shots` 参数调低以进行少样本提示。
 </Accordion>
 <Accordion title="Which reasoning tasks can I evaluate with LogiQA?">
-Pass a list of `LogiQATask` enums to the `tasks` argument. Available tasks are `CATEGORICAL_REASONING` , `SUFFICIENT_CONDITIONAL_REASONING` , `NECESSARY_CONDITIONAL_REASONING` , `DISJUNCTIVE_REASONING` , and `CONJUNCTIVE_REASONING` . By default, all tasks are evaluated.
+向 `tasks` 参数传入一组 `LogiQATask` 枚举。可用任务为 `CATEGORICAL_REASONING` 、`SUFFICIENT_CONDITIONAL_REASONING` 、`NECESSARY_CONDITIONAL_REASONING` 、`DISJUNCTIVE_REASONING` 和 `CONJUNCTIVE_REASONING` 。默认评估所有任务。
 </Accordion>
 <Accordion title="Can using more few-shot prompts improve the LogiQA score?">
-Yes. Utilizing more few-shot prompts via `n_shots` can greatly improve the model's robustness in generating answers in the exact correct format and boost the `overall_score` .
+可以。通过 `n_shots` 使用更多少样本提示可以大幅提升模型以精确正确格式生成答案的稳健性，并提高 `overall_score` 。
 </Accordion>
 <Accordion title="How do I run LogiQA on a custom LLM?">
-Define the benchmark, then call `evaluate()` with your model and read `overall_score` . See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) to learn how to use any custom LLM.
+定义基准，然后用你的模型调用 `evaluate()` 并读取 `overall_score` 。使用任意自定义 LLM 见[评估你的 LLM](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

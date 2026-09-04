@@ -2,7 +2,7 @@
 title: BoolQ
 ---
 
-**BoolQ** is a reading comprehension dataset containing 16K yes/no questions (3.3K in the validation set). BoolQ features naturally occurring questions, meaning they are generated in an unprompted setting, with each question accompanied by a passage.
+**BoolQ** 是一个阅读理解数据集，包含 16K 个是非题（验证集 3.3K）。BoolQ 的特点是自然出现的问题，即它们在无提示的设置下产生，每个问题都配有一段文章。
 
 <Info>
 要了解数据集及其构建方式的更多信息，可[阅读原始论文](https://arxiv.org/pdf/1905.10044)。
@@ -17,7 +17,7 @@ title: BoolQ
 
 ## Usage
 
-The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on 10 problems in `BoolQ` using 3-shot CoT prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），使用 3-shot CoT 提示评估其在 `BoolQ` 10 道题上的表现。
 
 ```python
 from deepeval.benchmarks import BoolQ
@@ -33,17 +33,17 @@ benchmark.evaluate(model=mistral_7b)
 print(benchmark.overall_score)
 ```
 
-The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on **exact matching**, is calculated by determining the proportion of questions for which the model produces the precise correct answer (i.e. 'Yes' or 'No') in relation to the total number of questions.
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确答案（即 'Yes' 或 'No'）的题目占总题数的比例来计算。
 
 <Tip>
-As a result, utilizing more few-shot prompts (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+因此，使用更多少样本提示（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
 </Tip>
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="What does the BoolQ benchmark measure?">
-BoolQ is a reading comprehension benchmark of 16K naturally occurring yes/no questions (3.3K in the validation set), each accompanied by a passage. The questions are generated in an unprompted setting. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+BoolQ 是包含 16K 个自然产生的是非题（验证集 3.3K）的阅读理解基准，每题配有文章。这些问题在无提示的设置下产生。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="How is BoolQ scored?">
 打分基于**精确匹配**：`overall_score` 是模型给出精确正确答案（即 'Yes' 或 'No'）的题目占总数的比例。范围为 0 到 1，1 表示完美表现。

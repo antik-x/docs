@@ -5,23 +5,23 @@ title: BBQ
 **BBQ**（Bias Benchmark for Question Answering）是一个手工构建的阅读理解数据集，用于评估 LLM 中的社会偏见。更多信息见 [BBQ 论文](https://arxiv.org/pdf/2110.08193)。
 
 <Info>
-`BBQ` evaluates model responses at two levels for bias:
+`BBQ` 从两个层面评估模型响应的偏见：
 
-1. How the responses reflect social biases given insufficient context.
-2. Whether the model's bias overrides the correct choice given sufficient context.
+1. 在上下文不充分时，响应如何反映社会偏见。
+2. 在上下文充分时，模型的偏见是否会压过正确选项。
 
 </Info>
 
 ## 参数
 
-There are **TWO** optional arguments when using the `BBQ` benchmark:
+使用 `BBQ` 基准时有**两个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`BBQTask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `BBQTask` enums can be found [here](#bbq-tasks).
+- [可选] `tasks`：任务列表（`BBQTask` 枚举），指定模型评估的主题领域。默认为所有任务。`BBQTask` 枚举列表见[这里](#bbq-tasks)。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on age and gender-related biases using 3-shot prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/guides/guides-using-custom-llms)了解如何使用任意自定义 LLM）使用 3-shot 提示评估其在年龄与性别相关偏见上的表现。
 
 ```python
 from deepeval.benchmarks import BBQ
@@ -46,7 +46,7 @@ print(benchmark.overall_score)
 
 ## BBQ Tasks
 
-The `BBQTask` enum classifies the diverse range of reasoning categories covered in the BBQ benchmark.
+`BBQTask` 枚举分类了 BBQ 基准涵盖的多样化推理类别。
 
 ```python
 from deepeval.benchmarks.tasks import BBQTask
@@ -54,7 +54,7 @@ from deepeval.benchmarks.tasks import BBQTask
 math_qa_tasks = [BBQTask.AGE]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `AGE`
 - `DISABILITY_STATUS`
@@ -72,21 +72,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the BBQ benchmark measure?">
-BBQ, the Bias Benchmark of QA, evaluates an LLM's ability to generate unbiased responses across various attested social biases. It consists of 58K unique trinary-choice questions spanning categories such as age, race, gender, and religion. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+BBQ（Bias Benchmark of QA）评估 LLM 在各种已被证实的社会偏见上生成无偏见响应的能力。它包含 5.8 万道独特的三选一问题，覆盖年龄、种族、性别和宗教等类别。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="How does BBQ evaluate bias?">
-BBQ assesses responses at two levels: how they reflect social biases given **insufficient context**, and whether the model's bias overrides the correct choice given **sufficient context**.
+BBQ 从两个层面评估响应：在**上下文不充分**时响应如何反映社会偏见，以及在**上下文充分**时模型的偏见是否会压过正确选项。
 </Accordion>
 <Accordion title="How is BBQ scored?">
-Scoring is based on **exact matching**: the `overall_score` is the proportion of questions for which the model produces the precise correct multiple-choice answer (e.g. 'A' or 'C') out of the total. It ranges from 0 to 1, where 1 signifies perfect performance.
+评分基于**精确匹配**：`overall_score` 是模型给出精确正确多选答案（如 'A' 或 'C'）的问题占总题数的比例。范围为 0 到 1，1 表示完美表现。
 </Accordion>
 <Accordion title="What is the default n_shots for BBQ?">
-It defaults to `5` and cannot exceed that. Use the `n_shots` argument to lower it for few-shot prompting.
+默认为 `5` 且不能超过。用 `n_shots` 参数调低以进行少样本提示。
 </Accordion>
 <Accordion title="Which bias categories can I evaluate with BBQ?">
-Pass a list of `BBQTask` enums to the `tasks` argument to target categories such as `AGE` , `GENDER_IDENTITY` , `RELIGION` , and `RACE_ETHNICITY` . By default, all tasks are evaluated.
+向 `tasks` 参数传入一组 `BBQTask` 枚举以针对特定类别，例如 `AGE` 、`GENDER_IDENTITY` 、`RELIGION` 和 `RACE_ETHNICITY` 。默认评估所有任务。
 </Accordion>
 <Accordion title="How do I run BBQ on a custom LLM?">
-Define the benchmark, then call `evaluate()` with your model and read `overall_score` . See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) to learn how to use any custom LLM.
+定义基准，然后用你的模型调用 `evaluate()` 并读取 `overall_score` 。使用任意自定义 LLM 见[评估你的 LLM](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

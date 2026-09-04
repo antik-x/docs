@@ -5,24 +5,24 @@ title: SQuAD
 **SQuAD**（Stanford Question Answering Dataset）是一个阅读理解基准，由维基百科文章上基于众包的问题组成。更多信息见 [SQuAD 论文](https://arxiv.org/pdf/1606.05250)。
 
 <Info>
-SQuAD was constructed by sampling **536 articles from the top 10K Wikipedia articles**. A total of 23,215 paragraphs were extracted, and question-answer pairs were manually curated for these paragraphs.
+SQuAD 从 **Wikipedia 排名前 10K 的文章中采样了 536 篇文章**构建而成。共提取了 23,215 个段落，并为这些段落人工整理了问答对。
 </Info>
 
 ## 参数
 
-There are **THREE** optional arguments when using the `SQuAD` benchmark:
+使用 `SQuAD` 基准时有**三个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`SQuADTask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `SQuADTask` enums can be found [here](#squad-tasks).
+- [可选] `tasks`：任务列表（`SQuADTask` 枚举），指定模型评估的主题领域。默认为所有任务。`SQuADTask` 枚举列表见[这里](#squad-tasks)。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
-- [Optional] `evaluation_model`: a string specifying which of OpenAI's GPT models to use for scoring, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+- [可选] `evaluation_model`：字符串，指定用于打分的 OpenAI GPT 模型，**或者** `DeepEvalBaseLLM` 类型的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 
 <Note>
-Unlike most benchmarks, ``deepeval``'s SQuAD implementation requires an `evaluation_model`, using an **LLM-as-a-judge** to generate a binary score determining if the prediction and expected output align given the context.
+与大多数基准不同，``deepeval`` 的 SQuAD 实现需要 `evaluation_model`，使用 **LLM-as-a-judge** 生成二元分数，判断在给定上下文的情况下预测与期望输出是否一致。
 </Note>
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on passages about pharmacy and Normans in `SQuAD` using 3-shot prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/guides/guides-using-custom-llms)了解如何使用任意自定义 LLM）使用 3-shot 提示在 `SQuAD` 中关于药剂学与诺曼人的段落上的表现。
 
 ```python
 from deepeval.benchmarks import SQuAD
@@ -41,11 +41,11 @@ print(benchmark.overall_score)
 
 该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确答案的题目占总题数的比例来计算。
 
-For example, if the question asks, "How many atoms are present?" and the model predicts "two atoms," the LLM-as-a-judge determines whether this aligns with the expected answer of "2" by assessing semantic equivalence rather than exact text matching.
+例如，如果问题是"存在多少个原子？"而模型预测"两个原子"，LLM-as-a-judge 会通过评估语义等价性而非精确文本匹配，判断这与期望答案 "2" 是否一致。
 
 ## SQuAD Tasks
 
-The `SQuADTask` enum classifies the diverse range of categories covered in the SQuAD benchmark.
+`SQuADTask` 枚举分类了 SQuAD 基准涵盖的多样化类别。
 
 ```python
 from deepeval.benchmarks.tasks import SQuADTask
@@ -53,7 +53,7 @@ from deepeval.benchmarks.tasks import SQuADTask
 math_qa_tasks = [SQuADTask.PHARMACY]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `PHARMACY`
 - `NORMANS`
@@ -108,21 +108,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the SQuAD benchmark measure?">
-SQuAD tests a language model's reading comprehension by asking question-answer pairs where each answer is a segment of text taken directly from an accompanying Wikipedia passage. It contains 100K question-answer pairs, including 10K in the validation set. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+SQuAD 通过问答对测试语言模型的阅读理解能力，每个答案都是直接取自随附 Wikipedia 段落的一段文本。它包含 10 万个问答对，其中验证集 1 万个。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="How is SQuAD scored in deepeval?">
-Unlike most benchmarks, deepeval's SQuAD implementation uses an **LLM-as-a-judge** to generate a binary score that determines whether the prediction aligns with the expected output given the passage context. This assesses semantic equivalence rather than relying on **exact match**, so an answer of "two atoms" can still align with an expected "2".
+与大多数基准不同，deepeval 的 SQuAD 实现使用 **LLM-as-a-judge** 生成二元分数，判断在段落上下文中预测与期望输出是否一致。它评估的是语义等价性而非**精确匹配**，所以答案"两个原子"仍然可以与期望的 "2" 一致。
 </Accordion>
 <Accordion title="Why does SQuAD require an evaluation_model?">
-Because scoring is performed by an LLM-as-a-judge, you must supply an `evaluation_model` . It accepts a string for one of OpenAI's GPT models, or any custom LLM of type `DeepEvalBaseLLM` , and the judge decides whether a prediction and the expected output align.
+由于打分由 LLM-as-a-judge 完成，你必须提供 `evaluation_model` 。它接受 OpenAI GPT 模型的字符串或 `DeepEvalBaseLLM` 类型的任意自定义 LLM，由评审模型判断预测与期望输出是否一致。
 </Accordion>
 <Accordion title="What is the default n_shots for SQuAD?">
-It defaults to `5` and cannot exceed that. Use the `n_shots` argument to lower it for few-shot prompting.
+默认为 `5` 且不能超过。用 `n_shots` 参数调低以进行少样本提示。
 </Accordion>
 <Accordion title="Which tasks can I evaluate with SQuAD?">
-You can pass a list of `SQuADTask` enums to the `tasks` argument to target specific subject areas such as `PHARMACY` or `NORMANS` . By default, all tasks are evaluated.
+你可以向 `tasks` 参数传入一组 `SQuADTask` 枚举来针对特定主题领域，例如 `PHARMACY` 或 `NORMANS` 。默认评估所有任务。
 </Accordion>
 <Accordion title="How do I run SQuAD on a custom LLM?">
-Define the benchmark, then call `evaluate()` with your model (for example a custom `DeepEvalBaseLLM` ) and read `overall_score` , which ranges from 0 to 1. See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) for details.
+定义基准，然后用你的模型（例如自定义 `DeepEvalBaseLLM` ）调用 `evaluate()` 并读取范围为 0 到 1 的 `overall_score` 。详见[评估你的 LLM](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

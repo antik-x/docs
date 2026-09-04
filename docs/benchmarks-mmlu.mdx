@@ -112,21 +112,21 @@ mm_tasks = [MMLUTask.HIGH_SCHOOL_EUROPEAN_HISTORY]
 
 <AccordionGroup>
 <Accordion title="What does the MMLU benchmark measure?">
-`MMLU` (Massive Multitask Language Understanding) evaluates an LLM through multiple-choice questions spanning **57 subjects** such as math, history, law, and ethics. It is good at detecting areas where a model may lack understanding in a particular topic.
+`MMLU`（Massive Multitask Language Understanding）通过跨越**57 个学科**（如数学、历史、法律和伦理）的多选题评估 LLM。它擅长检测模型可能在特定主题上缺乏理解的领域。
 </Accordion>
 <Accordion title="Which tasks can I run with MMLU?">
-You can pass any of the 57 `MMLUTask` enums via the `tasks` argument, for example `HIGH_SCHOOL_COMPUTER_SCIENCE` or `ASTRONOMY` . By default, `deepeval` evaluates your LLM on all 57 subject areas.
+你可以通过 `tasks` 参数传入任意 57 个 `MMLUTask` 枚举，例如 `HIGH_SCHOOL_COMPUTER_SCIENCE` 或 `ASTRONOMY` 。默认情况下，`deepeval` 会在全部 57 个学科上评估你的 LLM。
 </Accordion>
 <Accordion title="How is MMLU scored?">
-The `overall_score` ranges from 0 to 1 and is based on **exact matching**: it is the proportion of multiple-choice questions for which the model produces the precise correct letter answer (e.g. 'A'). See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+`overall_score` 范围为 0 到 1，基于**精确匹配**：它是模型给出精确正确字母答案（如 'A'）的多选题占比。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="What is the default n_shots for MMLU?">
-The `n_shots` argument defaults to `5` and **cannot exceed** that number. Using more few-shot prompts can improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+`n_shots` 参数默认为 `5` 且**不能超过**该数值。使用更多少样本提示可以提升模型以精确正确格式生成答案的稳健性并提高总分。
 </Accordion>
 <Accordion title="Does MMLU support chain-of-thought prompting?">
-No. The `MMLU` benchmark exposes only two optional arguments, `tasks` and `n_shots` , and does not include an `enable_cot` option for chain-of-thought prompting.
+没有。`MMLU` 基准只暴露 `tasks` 和 `n_shots` 两个可选参数，不包含用于思维链提示的 `enable_cot` 选项。
 </Accordion>
 <Accordion title="How do I run MMLU on a custom LLM?">
-Wrap your model in `DeepEvalBaseLLM` , create a benchmark with `MMLU(tasks=[...], n_shots=3)` , and call `benchmark.evaluate(model=mistral_7b)` . You can then read `benchmark.overall_score` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+把你的模型包装进 `DeepEvalBaseLLM` ，用 `MMLU(tasks=[...], n_shots=3)` 创建基准，调用 `benchmark.evaluate(model=mistral_7b)` 。然后即可读取 `benchmark.overall_score` 。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

@@ -251,21 +251,21 @@ hella_tasks = [HellaSwagTask.APPLYING_SUNSCREEN]
 
 <AccordionGroup>
 <Accordion title="What does the HellaSwag benchmark measure?">
-`HellaSwag` evaluates an LLM's **commonsense reasoning** through sentence completion tasks. It provides 10,000 challenges spanning various subject areas, making it useful for pinpointing where models struggle with nuanced or complex contexts.
+`HellaSwag` 通过句子补全任务评估 LLM 的**常识推理**能力。它提供跨越多个主题领域的 10,000 个挑战，有助于定位模型在细微或复杂上下文中的薄弱之处。
 </Accordion>
 <Accordion title="Which tasks can I run with HellaSwag?">
-You can pass a list of `HellaSwagTask` enums to the `tasks` argument, for example `TRIMMING_BRANCHES_OR_HEDGES` or `BATON_TWIRLING` . By default, all available tasks are evaluated.
+你可以向 `tasks` 参数传入一组 `HellaSwagTask` 枚举，例如 `TRIMMING_BRANCHES_OR_HEDGES` 或 `BATON_TWIRLING` 。默认评估所有可用任务。
 </Accordion>
 <Accordion title="How is HellaSwag scored?">
-The `overall_score` ranges from 0 to 1 and is based on **exact matching**: it is the proportion of multiple-choice sentence-completion questions for which the model produces the precise correct letter answer (e.g. 'A'). See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+`overall_score` 范围为 0 到 1，基于**精确匹配**：它是模型给出精确正确字母答案（如 'A'）的多选句子补全题占比。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="What is the default n_shots for HellaSwag?">
-The `n_shots` argument is set to `10` by default and **cannot exceed 15**. Using more few-shot prompts can improve the model's robustness in generating answers in the exact correct format.
+`n_shots` 参数默认为 `10` 且**不能超过 15**。使用更多少样本提示可以提升模型以精确正确格式生成答案的稳健性。
 </Accordion>
 <Accordion title="Does HellaSwag support chain-of-thought prompting?">
-No. Unlike `BigBenchHard` , there is no CoT prompting for the `HellaSwag` benchmark. Its only optional arguments are `tasks` and `n_shots` .
+没有。与 `BigBenchHard` 不同，`HellaSwag` 基准不使用 CoT 提示。它仅有的可选参数是 `tasks` 和 `n_shots` 。
 </Accordion>
 <Accordion title="How do I run HellaSwag on a custom LLM?">
-Wrap your model in `DeepEvalBaseLLM` , create a benchmark with `HellaSwag(tasks=[...], n_shots=5)` , and call `benchmark.evaluate(model=mistral_7b)` before reading `benchmark.overall_score` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+把你的模型包装进 `DeepEvalBaseLLM` ，用 `HellaSwag(tasks=[...], n_shots=5)` 创建基准，调用 `benchmark.evaluate(model=mistral_7b)` 后读取 `benchmark.overall_score` 。使用任意自定义 LLM 见[基准测试指南](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

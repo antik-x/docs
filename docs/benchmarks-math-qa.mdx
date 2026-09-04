@@ -5,19 +5,19 @@ title: MathQA
 **MathQA** 基准包含 37,000 道多选数学题，评估 LLM 的数学推理能力。更多信息见 [MathQA 数据集](https://arxiv.org/pdf/1905.13319.pdf)。
 
 <Info>
-`MathQA` was constructed from the AQuA dataset, which contains over 100K **GRE- and GMAT-level** math word problems.
+`MathQA` 由 AQuA 数据集构建，其中包含超过 10 万道 **GRE 和 GMAT 水平**的数学应用题。
 </Info>
 
 ## 参数
 
-There are **TWO** optional arguments when using the `MathQA` benchmark:
+使用 `MathQA` 基准时有**两个**可选参数：
 
-- [Optional] `tasks`: a list of tasks (`MathQATask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `MathQATask` enums can be found [here](#mathqa-tasks).
+- [可选] `tasks`：任务列表（`MathQATask` 枚举），指定模型评估的主题领域。默认为所有任务。`MathQATask` 枚举列表见[这里](#mathqa-tasks)。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on geometry and probability in `MathQA` using 3-shot prompting.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/guides/guides-using-custom-llms)了解如何使用任意自定义 LLM）使用 3-shot 提示评估其在 `MathQA` 几何与概率上的表现。
 
 ```python
 from deepeval.benchmarks import MathQA
@@ -42,7 +42,7 @@ print(benchmark.overall_score)
 
 ## MathQA Tasks
 
-The `MathQATask` enum classifies the diverse range of categories covered in the MathQA benchmark.
+`MathQATask` 枚举分类了 MathQA 基准涵盖的多样化类别。
 
 ```python
 from deepeval.benchmarks.tasks import MathQATask
@@ -50,7 +50,7 @@ from deepeval.benchmarks.tasks import MathQATask
 math_qa_tasks = [MathQATask.PROBABILITY]
 ```
 
-Below is the comprehensive list of available tasks:
+以下是所有可用任务的完整列表：
 
 - `PROBABILITY`
 - `GEOMETRY`
@@ -63,21 +63,21 @@ Below is the comprehensive list of available tasks:
 
 <AccordionGroup>
 <Accordion title="What does the MathQA benchmark measure?">
-MathQA assesses an LLM's multi-step mathematical reasoning across 37K English multiple-choice math word problems spanning diverse domains such as probability and geometry. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+MathQA 通过 3.7 万道英文多选数学应用题评估 LLM 的多步数学推理能力，覆盖概率和几何等多个领域。各基准的评分方式见[基准介绍](/docs/benchmarks-introduction)。
 </Accordion>
 <Accordion title="How is MathQA scored?">
-Scoring is based on **exact matching**: the `overall_score` is the proportion of questions for which the model produces the precise correct multiple-choice answer (e.g. 'A' or 'C') out of the total. It ranges from 0 to 1, where 1 signifies perfect performance.
+评分基于**精确匹配**：`overall_score` 是模型给出精确正确多选答案（如 'A' 或 'C'）的问题占总题数的比例。范围为 0 到 1，1 表示完美表现。
 </Accordion>
 <Accordion title="What is the default n_shots for MathQA?">
-It defaults to `5` and cannot exceed that. Use the `n_shots` argument to lower it for few-shot prompting.
+默认为 `5` 且不能超过。用 `n_shots` 参数调低以进行少样本提示。
 </Accordion>
 <Accordion title="Which tasks can I evaluate with MathQA?">
-Pass a list of `MathQATask` enums to the `tasks` argument to target specific subject areas. Available tasks are `PROBABILITY` , `GEOMETRY` , `PHYSICS` , `GAIN` , `GENERAL` , and `OTHER` . By default, all tasks are evaluated.
+向 `tasks` 参数传入一组 `MathQATask` 枚举以针对特定主题领域。可用任务为 `PROBABILITY` 、`GEOMETRY` 、`PHYSICS` 、`GAIN` 、`GENERAL` 和 `OTHER` 。默认评估所有任务。
 </Accordion>
 <Accordion title="Can using more few-shot prompts improve the MathQA score?">
-Yes. Utilizing more few-shot prompts via `n_shots` can greatly improve the model's robustness in generating answers in the exact correct format and boost the `overall_score` .
+可以。通过 `n_shots` 使用更多少样本提示可以大幅提升模型以精确正确格式生成答案的稳健性，并提高 `overall_score` 。
 </Accordion>
 <Accordion title="How do I run MathQA on a custom LLM?">
-Define the benchmark, then call `evaluate()` with your model and read `overall_score` . See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) to learn how to use any custom LLM.
+定义基准，然后用你的模型调用 `evaluate()` 并读取 `overall_score` 。使用任意自定义 LLM 见[评估你的 LLM](/docs/benchmarks-introduction#benchmarking-your-llm)。
 </Accordion>
 </AccordionGroup>

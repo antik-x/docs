@@ -2,7 +2,7 @@
 title: ARC
 ---
 
-**ARC or AI2 Reasoning Challenge** is a dataset used to benchmark language models' reasoning abilities. The benchmark consists of 8,000 multiple-choice questions from science exams for grades 3 to 9. The dataset includes two modes: _easy_ and _challenge_, with the latter featuring more difficult questions that require advanced reasoning.
+**ARC（AI2 Reasoning Challenge）**是用于对语言模型推理能力进行基准测试的数据集。该基准包含 8,000 道来自 3 至 9 年级科学考试的多选题。数据集包含两种模式：_easy_ 和 _challenge_，后者包含需要高级推理的更难题目。
 
 <Tip>
 要了解数据集及其构建方式的更多信息，可[阅读原始论文](https://arxiv.org/pdf/1803.05457v1)。
@@ -13,15 +13,15 @@ title: ARC
 使用 `ARC` 基准时有**三个**可选参数：
 - [可选] `n_problems`：用于模型评估的题目数量。默认为每种基准模式下所有可用题目。
 - [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
-- [Optional] mode: a `ARCMode` enum that selects the evaluation mode. This is set to `ARCMode.EASY` by default. `deepeval` currently supports 2 modes: **EASY and CHALLENGE**.
+- [可选] mode：`ARCMode` 枚举，选择评估模式。默认为 `ARCMode.EASY`。`deepeval` 目前支持 2 种模式：**EASY 和 CHALLENGE**。
 
 <Info>
-Both `EASY` and `CHALLENGE` modes consist of **multiple-choice** questions. However, `CHALLENGE` questions are more difficult and require more advanced reasoning.
+`EASY` 和 `CHALLENGE` 模式都由**多选**题组成。但 `CHALLENGE` 的题目更难，需要更高级的推理。
 </Info>
 
 ## 用法
 
-The code below assesses a custom `mistral_7b` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) on 100 problems in `ARC` in EASY mode.
+下面的代码评估自定义 `mistral_7b` 模型（[点击这里](/docs/benchmarks-introduction#benchmarking-your-llm)了解如何使用**任意**自定义 LLM），在 EASY 模式下评估其在 `ARC` 100 道题上的表现。
 
 ```python
 from deepeval.benchmarks import ARC
@@ -39,7 +39,7 @@ benchmark.evaluate(model=mistral_7b)
 print(benchmark.overall_score)
 ```
 
-The `overall_score` ranges from 0 to 1, signifying the fraction of accurate predictions across tasks. Both modes' performances are measured using an **exact match** scorer, focusing on the quantity of correct answers.
+`overall_score` 范围为 0 到 1，表示跨任务的预测准确率。两种模式的表现都用**精确匹配**评分器度量，关注正确答案的数量。
 
 ## 常见问题
 

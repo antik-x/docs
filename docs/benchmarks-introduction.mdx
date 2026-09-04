@@ -8,7 +8,7 @@ LLM 基准测试提供了一种标准化的方式来量化 LLM 在不同任务�
 
 - BIG-Bench Hard
 - HellaSwag
-- MMLU (Massive Multitask Language Understanding)
+- MMLU（Massive Multitask Language Understanding）
 - DROP
 - TruthfulQA
 - HumanEval
@@ -158,7 +158,7 @@ print("Task-specific Scores: ", benchmark.task_scores)
 
 `task_scores` 属性输出一个 pandas DataFrame，包含各任务得分信息。以下是 DataFrame 示例：
 
-| Task                         | Score |
+| 任务                         | 分数 |
 | ---------------------------- | ----- |
 | high_school_computer_science | 0.75  |
 | astronomy                    | 0.93  |
@@ -175,7 +175,7 @@ print("Detailed Predictions: ", benchmark.predictions)
 
 benchmark.predictions 属性同样输出一个 pandas DataFrame，包含模型预测的详细信息。以下是 DataFrame 示例：
 
-| Task                         | Input                                                                              | Prediction | Correct |
+| 任务                         | 输入                                                                              | 预测 | 正确 |
 | ---------------------------- | ---------------------------------------------------------------------------------- | ---------- | ------- |
 | high_school_computer_science | In Python 3, which of the following function convert a string to an int in python? | A          | 0       |
 | high_school_computer_science | Let x = 1. What is `x << 3` in Python 3?                                           | B          | 1       |
@@ -186,12 +186,12 @@ benchmark.predictions 属性同样输出一个 pandas DataFrame，包含模型�
 所有基准都可以以某种方式配置，`deepeval` 提供了简易的配置接口。
 
 <Note>
-You'll notice although tasks and prompting techniques are configurable, scorers are not. This is because the type of scorer is an universal standard within any LLM benchmark.
+你会注意到，虽然任务和提示技术是可配置的，评分器却不是。这是因为评分器类型是所有 LLM 基准中的通用标准。
 </Note>
 
 ### Tasks
 
-A task for an LLM benchmark is a challenge or problem is designed to assess an LLM's capabilities on a specific area of focus. For example, you can specify which **subset** of the the `MMLU` benchmark to evaluate your LLM on by providing a list of `MMLUTASK`:
+LLM 基准中的任务（task）是为评估 LLM 在特定领域的能力而设计的挑战或问题。例如，你可以通过提供一组 `MMLUTASK` 来指定在 `MMLU` 基准的哪个**子集**上评估你的 LLM：
 
 ```python
 from deepeval.benchmarks import MMLU
@@ -201,17 +201,17 @@ tasks = [MMLUTask.HIGH_SCHOOL_COMPUTER_SCIENCE, MMLUTask.ASTRONOMY]
 benchmark = MMLU(tasks=tasks)
 ```
 
-In this example, we're only evaluating our Mistral 7B model on the MMLU `HIGH_SCHOOL_COMPUTER_SCIENCE` and `ASTRONOMY` tasks.
+在这个例子中，我们只在 MMLU 的 `HIGH_SCHOOL_COMPUTER_SCIENCE` 和 `ASTRONOMY` 任务上评估 Mistral 7B 模型。
 
 <Info>
-Each benchmark is associated with a unique **Task** enum which can be found on each benchmark's individual documentation pages. These tasks are 100% drawn from the original research papers for each respective benchmark, and maps one-to-one to the benchmark datasets available on Hugging Face.
+每个基准都关联一个唯一的**任务**枚举，可在各基准的文档页面找到。这些任务 100% 取自各基准的原始研究论文，并与 Hugging Face 上的基准数据集一一对应。
 
-By default, `deepeval` will evaluate your LLM on all available tasks for a particular benchmark.
+默认情况下，`deepeval` 会在特定基准的所有可用任务上评估你的 LLM。
 </Info>
 
 ### Few-Shot Learning
 
-Few-shot learning, also known as in-context learning, is a prompting technique that involves supplying your LLM a few examples as part of the prompt template to help its generation. These examples can help guide accuracy or behavior. The number of examples to provide, can be specified in the `n_shots` parameter:
+少样本学习（few-shot learning，也称上下文学习）是一种提示技术，它在提示模板中向 LLM 提供少量示例来辅助生成。这些示例可以引导准确性或行为。要提供的示例数量可在 `n_shots` 参数中指定：
 
 ```python
 from deepeval.benchmarks import HellaSwag
@@ -220,12 +220,12 @@ benchmark = HellaSwag(n_shots=3)
 ```
 
 <Note>
-Each benchmark has a range of allowed `n_shots` values. `deepeval` handles all the logic with respect to the `n_shots` value according to the original research papers for each respective benchmark.
+每个基准都有允许的 `n_shots` 值范围。`deepeval` 按照各基准的原始研究论文处理所有与 `n_shots` 相关的逻辑。
 </Note>
 
 ### CoTs Prompting
 
-Chain of thought prompting is an approach where the model is prompted to articulate its reasoning process to arrive at an answer. This usually results in an increase in prediction accuracy.
+思维链（CoT）提示是一种让模型表达其推理过程以得出答案的方法。这通常会提高预测准确率。
 
 ```python
 from deepeval.benchmarks import BigBenchHard
@@ -234,28 +234,28 @@ benchmark = BigBenchHard(enable_cot=True)
 ```
 
 <Note>
-Not all benchmarks offers CoTs as a prompting technique, but the [original paper for BIG-Bench Hard](https://arxiv.org/abs/2210.09261) found major improvements when using CoTs prompting during benchmarking.
+并非所有基准都提供 CoT 作为提示技术，但 [BIG-Bench Hard 的原始论文](https://arxiv.org/abs/2210.09261)发现在基准测试中使用 CoT 提示有显著提升。
 </Note>
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="What LLM benchmarks does deepeval offer?">
-`deepeval` provides several research-backed benchmarks including [BIG-Bench Hard](/docs/benchmarks-big-bench-hard) , [HellaSwag](/docs/benchmarks-hellaswag) , [MMLU](/docs/benchmarks-mmlu) , [DROP](/docs/benchmarks-drop) , [TruthfulQA](/docs/benchmarks-truthful-qa) , [HumanEval](/docs/benchmarks-human-eval) , and [GSM8K](/docs/benchmarks-gsm8k) . Each one follows the implementation of its original research paper.
+`deepeval` 提供多个经研究验证的基准，包括 [BIG-Bench Hard](/docs/benchmarks-big-bench-hard) 、[HellaSwag](/docs/benchmarks-hellaswag) 、[MMLU](/docs/benchmarks-mmlu) 、[DROP](/docs/benchmarks-drop) 、[TruthfulQA](/docs/benchmarks-truthful-qa) 、[HumanEval](/docs/benchmarks-human-eval) 和 [GSM8K](/docs/benchmarks-gsm8k) 。每个都遵循其原始研究论文的实现。
 </Accordion>
 <Accordion title="How do I benchmark a custom LLM with deepeval?">
-Wrap your model in the `DeepEvalBaseLLM` class, instantiate a benchmark (e.g. `MMLU()` ), and call its `evaluate()` method with your model. This works for any LLM, whether it is an API call to OpenAI or a Hugging Face `transformers` model.
+把你的模型包装进 `DeepEvalBaseLLM` 类，实例化一个基准（例如 `MMLU()` ），并用你的模型调用其 `evaluate()` 方法。这对任何 LLM 都适用，无论是调用 OpenAI 的 API 还是 Hugging Face 的 `transformers` 模型。
 </Accordion>
 <Accordion title="What does a benchmark consist of?">
-A benchmark is made up of one or more **tasks** (each its own dataset with target labels), a **scorer** to judge predictions against those labels, and various **prompting techniques** such as few-shot learning and/or CoT prompting. Most benchmarks use the **exact match** scorer.
+基准由一个或多个**任务**（各自带有目标标签的数据集）、用于判定预测与标签的**评分器**，以及各种**提示技术**（如少样本学习和/或 CoT 提示）组成。大多数基准使用**精确匹配**评分器。
 </Accordion>
 <Accordion title="How do I access benchmark results?">
-After calling `evaluate()` , you can read the `overall_score` for performance across all tasks, `task_scores` for a per-task pandas DataFrame, and `predictions` for a detailed breakdown of every prediction your model made.
+调用 `evaluate()` 后，你可以读取 `overall_score`（跨所有任务的表现）、`task_scores`（逐任务的 pandas DataFrame）和 `predictions`（模型每次预测的详细分解）。
 </Accordion>
 <Accordion title="What does the batch_size argument do?">
-When you set `batch_size` , outputs are generated in batches if you have implemented `batch_generate()` on your custom LLM, which can speed up benchmarking significantly. The `batch_size` parameter is available for all benchmarks **except** `HumanEval` and `GSM8K` .
+设置 `batch_size` 后，如果你在自定义 LLM 上实现了 `batch_generate()`，输出会分批生成，能显著加速基准测试。`batch_size` 参数可用于所有基准，**除了** `HumanEval` 和 `GSM8K`。
 </Accordion>
 <Accordion title="Can I configure tasks, few-shot prompting, and CoT?">
-Yes. Use the `tasks` argument to choose a subset of a benchmark's tasks (by default all tasks run), `n_shots` to set the number of few-shot examples, and `enable_cot` for benchmarks that support chain-of-thought prompting. Scorers, however, are **not** configurable since the scorer is a universal standard within each benchmark.
+可以。用 `tasks` 参数选择基准任务的一个子集（默认运行所有任务），用 `n_shots` 设置少样本示例数量，支持思维链提示的基准可用 `enable_cot`。但评分器**不可**配置，因为评分器是每个基准内的通用标准。
 </Accordion>
 </AccordionGroup>
