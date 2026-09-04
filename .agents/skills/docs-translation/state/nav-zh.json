@@ -100,6 +100,7 @@
     "(images)/multimodal-metrics-image-helpfulness": "图像有用性",
     "(images)/multimodal-metrics-image-reference": "图像引用",
     "(images)/multimodal-metrics-text-to-image": "文生图",
-    "(images)/multimodal-metrics-image-editing": "图像编辑"
+    "(images)/multimodal-metrics-image-editing": "图像编辑",
+    "(metrics-others)/metrics-ragas": "RAGAS"
   }
 }

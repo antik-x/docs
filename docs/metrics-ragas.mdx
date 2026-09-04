@@ -1,0 +1,111 @@
+---
+title: RAGAS
+---
+
+RAGAS 指标是四个独立指标的平均值：
+
+- `RAGASAnswerRelevancyMetric`
+- `RAGASFaithfulnessMetric`
+- `RAGASContextualPrecisionMetric`
+- `RAGASContextualRecallMetric`
+
+它提供一个从整体上评估 RAG 流水线生成器与检索器的分数。
+
+<Info>
+
+**有什么区别？**
+
+`RAGASMetric` 底层使用 `ragas` 库，并在 `deepeval` 上提供，目的是让 `deepeval` 的用户也能在其生态中使用 `ragas`。它们的实现方式与 `deepeval` 的默认 RAG 指标几乎一致，但仍有一些区别，包括但不限于：
+
+- `deepeval` 的 RAG 指标会生成与分数公式对应的理由。虽然 `ragas` 与 `deepeval` 的默认指标都带有公式，但 `deepeval` 在过程中融入了 LLM 裁判的推理。
+- `deepeval` 的 RAG 指标可调试——你可以检查 LLM 裁判过程中的判断，弄清分数为何如此。
+- `deepeval` 的 RAG 指标可做 JSON 约束。在 `ragas` 中你常会因生成了非法 JSON 而遇到 `NaN` 分数——而 `deepeval` 让你用任意自定义 LLM 做评估，并[用几行代码完成 JSON 约束](/guides/guides-using-custom-llms)。
+- `deepeval` 的 RAG 指标与 `deepeval` 生态**完全**集成。这意味着你可以使用指标缓存、`pytest` 集成的原生支持、一等公民的错误处理，以及 Confident AI 上的更多能力。
+
+出于这些原因，我们强烈建议改用 `deepeval` 的 RAG 指标。它们久经验证，且据[一些研究中的示例](https://arxiv.org/pdf/2409.06595)表现甚至更好。
+
+</Info>
+
+## Required Arguments
+
+要使用 `RagasMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+- `expected_output`
+- `retrieval_context`
+
+## Usage
+
+首先安装 `ragas`：
+
+```bash
+pip install ragas
+```
+
+然后在 `deepeval` 中使用：
+
+```python
+from deepeval import evaluate
+from deepeval.metrics.ragas import RagasMetric
+from deepeval.test_case import LLMTestCase
+
+# Replace this with the actual output from your LLM application
+actual_output = "We offer a 30-day full refund at no extra cost."
+
+# Replace this with the expected output from your RAG generator
+expected_output = "You are eligible for a 30 day full refund at no extra cost."
+
+# Replace this with the actual retrieved context from your RAG pipeline
+retrieval_context = ["All customers are eligible for a 30 day full refund at no extra cost."]
+
+metric = RagasMetric(threshold=0.5, model="gpt-3.5-turbo")
+test_case = LLMTestCase(
+    input="What if these shoes don't fit?",
+    actual_output=actual_output,
+    expected_output=expected_output,
+    retrieval_context=retrieval_context
+)
+
+metric.measure(test_case)
+print(metric.score)
+
+# or evaluate test cases in bulk
+evaluate([test_case], [metric])
+```
+
+创建 `RagasMetric` 时有**三个**可选参数：
+
+- [可选] `threshold`：浮点数，表示最低通过阈值，默认 0.5。
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**任意一个 langchain 的类型为 `BaseChatModel` 的[聊天模型](https://python.langchain.com/docs/integrations/chat/)。默认为 'gpt-3.5-turbo'。
+- [可选] `embeddings`：任意一个 langchain 的类型为 `Embeddings` 的[嵌入模型](https://python.langchain.com/docs/integrations/text_embedding)。提供给 `RagasMetric` 的自定义 `embeddings` 只会用于 `RAGASAnswerRelevancyMetric`，因为只有它需要嵌入来计算余弦相似度。
+
+<Info>
+你也可以选择单独导入并执行每个指标：
+
+```python
+from deepeval.metrics.ragas import RAGASAnswerRelevancyMetric
+from deepeval.metrics.ragas import RAGASFaithfulnessMetric
+from deepeval.metrics.ragas import RAGASContextualRecallMetric
+from deepeval.metrics.ragas import RAGASContextualPrecisionMetric
+```
+
+这些指标接受与 `RagasMetric` 相同的参数。
+</Info>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="应该用 `deepeval` 的原生 RAG 指标还是 RAGAS 指标？">
+优先选择 `deepeval` 的原生 RAG 指标：它们给出理由、可调试、可做 JSON 约束（避免 `ragas` 的 `NaN` 分数），并与缓存、`pytest`、Confident AI 集成。只有当你已经全面标准化在 `ragas` 上时才用 `RagasMetric`。
+</Accordion>
+<Accordion title="为什么 RAGAS 指标给我 NaN 分数？">
+模型输出非法 JSON 时 `ragas` 会返回 `NaN`，而 `RagasMetric` 是对它的直接包装。`deepeval` 的原生 RAG 指标允许你[对任意自定义 LLM 做 JSON 约束](/guides/guides-using-custom-llms)来避免此问题。
+</Accordion>
+<Accordion title="可以只运行某个子指标而不跑完整的平均分吗？">
+可以。单独导入并运行 `RAGASAnswerRelevancyMetric`、`RAGASFaithfulnessMetric`、`RAGASContextualRecallMetric` 或 `RAGASContextualPrecisionMetric`——参数与组合的 `RagasMetric` 相同。
+</Accordion>
+<Accordion title="运行前需要安装并提供什么？">
+单独运行 `pip install ragas`，并为每个测试用例提供全部四个字段：`input`、`actual_output`、`expected_output` 与 `retrieval_context`。见[测试用例文档](/docs/evaluation-test-cases#llm-test-case)。
+</Accordion>
+</AccordionGroup>
