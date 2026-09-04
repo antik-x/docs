@@ -31,7 +31,7 @@ sequenceDiagram
 <Tabs>
 <Tab title="ElevenLabs">
 
-Your agent lives in the ElevenLabs dashboard, so the connector only needs its `agent_id`. It speaks ElevenLabs' WebSocket API directly, so the `elevenlabs` package isn't required. Private agents also need an API key.
+你的代理（agent）托管在 ElevenLabs 控制台，因此连接器只需要它的 `agent_id`。它直接使用 ElevenLabs 的 WebSocket API，所以不需要 `elevenlabs` 包。私有代理还需要一个 API key。
 
 ```python
 from deepeval.voice import ElevenLabsConnector
@@ -39,12 +39,12 @@ from deepeval.voice import ElevenLabsConnector
 connector = ElevenLabsConnector(agent_id="your-agent-id")
 ```
 
-Client tools, per-conversation overrides, and every parameter are on the [ElevenLabs integration page](/integrations/voice-agent-connectors/elevenlabs).
+客户端工具、按对话覆盖以及所有参数见 [ElevenLabs 集成页](/integrations/voice-agent-connectors/elevenlabs)。
 
 </Tab>
 <Tab title="Vapi">
 
-Your assistant lives in Vapi, so the connector needs its `assistant_id` and an API key to create the call with. Phone parameters are rejected on Vapi's WebSocket transport, so the simulator is the only caller and no Vapi SDK is required.
+你的助手托管在 Vapi，因此连接器需要它的 `assistant_id` 和一个用于创建呼叫的 API key。电话参数在 Vapi 的 WebSocket 传输上会被拒绝，因此模拟器是唯一的呼叫方，也不需要 Vapi SDK。
 
 ```python
 from deepeval.voice import VapiConnector
@@ -52,12 +52,12 @@ from deepeval.voice import VapiConnector
 connector = VapiConnector(assistant_id="your-assistant-id")
 ```
 
-Per-call overrides and every parameter are on the [Vapi integration page](/integrations/voice-agent-connectors/vapi).
+按呼叫覆盖与所有参数见 [Vapi 集成页](/integrations/voice-agent-connectors/vapi)。
 
 </Tab>
 <Tab title="LiveKit">
 
-A LiveKit agent has no id to dial — it's a worker dispatched into a room. So you give the connector credentials, and it mints a token, creates a room, and joins as another participant. This one needs LiveKit's SDKs:
+LiveKit 代理没有可拨打的 id——它是被派发进房间（room）的 worker。因此你给连接器凭证，由它铸造 token、创建房间，并作为另一个参与者加入。这个连接器需要 LiveKit 的 SDK：
 
 ```bash
 pip install livekit livekit-api
@@ -74,12 +74,12 @@ connector = LiveKitConnector(
 )
 ```
 
-Bringing your own room, transcripts, and every parameter are on the [LiveKit integration page](/integrations/voice-agent-connectors/livekit).
+自带房间、转写以及所有参数见 [LiveKit 集成页](/integrations/voice-agent-connectors/livekit)。
 
 </Tab>
 <Tab title="Pipecat">
 
-Your pipeline is self-hosted, so the connector needs the URL its WebSocket transport is serving on and nothing else. It speaks the protobuf frames Pipecat serializes by default, so `pipecat-ai` isn't required to run the simulation.
+你的流水线是自托管的，因此连接器只需要其 WebSocket 传输服务的 URL，其他一概不需要。它使用 Pipecat 默认序列化的 protobuf 帧，运行模拟不需要 `pipecat-ai`。
 
 ```python
 from deepeval.voice import PipecatConnector
@@ -87,12 +87,12 @@ from deepeval.voice import PipecatConnector
 connector = PipecatConnector(url="ws://localhost:8765/ws")
 ```
 
-Serving your pipeline, RTVI turn signals, and every parameter are on the [Pipecat integration page](/integrations/voice-agent-connectors/pipecat).
+托管流水线、RTTI 轮次信号以及所有参数见 [Pipecat 集成页](/integrations/voice-agent-connectors/pipecat)。
 
 </Tab>
 <Tab title="Custom WebSocket">
 
-For a custom agent that accepts and emits raw audio over a WebSocket, describe its message shape — which JSON keys carry audio in and out, whether frames are binary, and what marks the end of a turn.
+对于通过 WebSocket 收发原始音频的自定义代理，需要描述它的消息结构——哪些 JSON 键承载进出音频、帧是否为二进制，以及什么标记一轮结束。
 
 ```python
 from deepeval.voice import WebSocketConnector
@@ -105,7 +105,7 @@ connector = WebSocketConnector(
 )
 ```
 
-Every parameter is under [Generic WebSocket](#generic-websocket) below.
+所有参数见下文 [Generic WebSocket](#generic-websocket)。
 
 </Tab>
 <Tab title="Callback">
@@ -118,7 +118,7 @@ from deepeval.voice import CallbackVoiceConnector
 connector = CallbackVoiceConnector(my_agent)
 ```
 
-What your callable may return is under [Callback](#callback) below.
+你的可调用对象可以返回什么，见下文 [Callback](#callback)。
 
 </Tab>
 </Tabs>
@@ -127,14 +127,14 @@ What your callable may return is under [Callback](#callback) below.
 
 以下是 `deepeval` 目前提供的连接器：
 
-| Connector                | Transport  | Use it for                                                           |
+| 连接器                   | 传输方式   | 适用场景                                                           |
 | ------------------------ | ---------- | -------------------------------------------------------------------- |
-| `VapiConnector`          | WebSocket  | Vapi assistants, addressed by `assistant_id`.                        |
-| `ElevenLabsConnector`    | WebSocket  | ElevenLabs agents, addressed by `agent_id`.                          |
-| `LiveKitConnector`       | WebRTC     | Agents dispatched into LiveKit rooms.                                |
-| `PipecatConnector`       | WebSocket  | Self-hosted Pipecat pipelines, addressed by URL.                     |
-| `WebSocketConnector`     | WebSocket  | Custom agents that speak raw audio over a WebSocket.                 |
-| `CallbackVoiceConnector` | In-process | A Python callable, no network — handy for testing your own pipeline. |
+| `VapiConnector`          | WebSocket  | Vapi 助手，通过 `assistant_id` 寻址。                        |
+| `ElevenLabsConnector`    | WebSocket  | ElevenLabs 代理，通过 `agent_id` 寻址。                          |
+| `LiveKitConnector`       | WebRTC     | 被派发进 LiveKit 房间的代理。                                |
+| `PipecatConnector`       | WebSocket  | 自托管 Pipecat 流水线，通过 URL 寻址。                     |
+| `WebSocketConnector`     | WebSocket  | 通过 WebSocket 传输原始音频的自定义代理。                 |
+| `CallbackVoiceConnector` | 进程内     | 一个 Python 可调用对象，无网络——便于测试你自己的流水线。 |
 
 <Note>
 找不到你的提供商？如果你的智能体暴露了原始音频 WebSocket，`WebSocketConnector` 只需要 URL 和消息格式。如果它可以在同一个 Python 进程中调用，使用 `CallbackVoiceConnector`。只有当其他连接器无法表达你的传输方式时，才需要继承 `BaseVoiceConnector`。
@@ -164,20 +164,20 @@ voice_config = VoiceConfig(
 - `url`：字符串，你的智能体的 WebSocket URL（例如 `"wss://your-agent.example.com/audio"`）。
 - [可选] `headers`：WebSocket 握手的 HTTP 头字典。默认为 `None`。
 - [可选] `sample_rate`：整数，出站音频的采样率（Hz）。默认为 `24000`。
-- [Optional] `send_key`: a string JSON key for outbound audio payloads. Defaulted to `"audio"`.
-- [Optional] `binary_outbound`: a boolean which when set to `True`, sends outbound frames as binary instead of JSON. Defaulted to `False`.
-- [Optional] `receive_audio_key`: a string JSON key for inbound audio payloads. Defaulted to `"audio"`.
-- [Optional] `binary_inbound`: a boolean which when set to `True`, treats inbound frames as binary audio. Defaulted to `False`.
-- [Optional] `receive_transcript_key`: a string JSON key for inbound transcripts when the platform provides them. Defaulted to `None`.
-- [Optional] `turn_complete_type`: a string message type that marks end-of-turn. Defaulted to `None`.
-- [Optional] `type_key`: a string JSON key used to read the message type. Defaulted to `"type"`.
-- [Optional] `init_messages`: a list of strings or dicts sent after connect. Defaulted to `[]`.
-- [Optional] `ready_on`: when the session is considered ready — `"connect"` by default. Defaulted to `"connect"`.
-- [Optional] `turn_detection`: how long to wait before deciding your agent has finished speaking — `"eager"`, `"balanced"`, or `"patient"`. See [Turn Detection](#turn-detection). Defaulted to `"balanced"`.
+- [可选] `send_key`：字符串，出站音频载荷的 JSON 键。默认为 `"audio"`。
+- [可选] `binary_outbound`：布尔值，设为 `True` 时以二进制而非 JSON 发送出站帧。默认为 `False`。
+- [可选] `receive_audio_key`：字符串，入站音频载荷的 JSON 键。默认为 `"audio"`。
+- [可选] `binary_inbound`：布尔值，设为 `True` 时把入站帧视为二进制音频。默认为 `False`。
+- [可选] `receive_transcript_key`：字符串，当平台提供入站转写时使用的 JSON 键。默认为 `None`。
+- [可选] `turn_complete_type`：字符串，标记轮次结束的消息类型。默认为 `None`。
+- [可选] `type_key`：字符串，用于读取消息类型的 JSON 键。默认为 `"type"`。
+- [可选] `init_messages`：连接建立后发送的字符串或字典列表。默认为 `[]`。
+- [可选] `ready_on`:会话何时被视为就绪——默认 `"connect"`。默认为 `"connect"`。
+- [可选] `turn_detection`：决定你的代理已说完所需等待的时长——`"eager"`、`"balanced"` 或 `"patient"`。见 [Turn Detection](#turn-detection)。默认为 `"balanced"`。
 
 ## Callback
 
-Wraps an in-process Python callable, so you can exercise the full TTS → agent → STT pipeline without any network transport — useful for testing your simulation setup before pointing it at a deployed agent.
+包装一个进程内 Python 可调用对象，让你可以在没有任何网络传输的情况下跑通完整的 TTS → 代理 → STT 流水线——在把模拟指向已部署代理之前先测试模拟设置很有用。
 
 ```python
 from deepeval.voice import CallbackVoiceConnector, VoiceConfig
@@ -189,23 +189,23 @@ voice_config = VoiceConfig(
 )
 ```
 
-There are **ONE** mandatory and **THREE** optional parameters when creating a `CallbackVoiceConnector`:
+创建 `CallbackVoiceConnector` 时有**一个**必填参数和**三个**可选参数：
 
-- `agent`: a sync or async callable that accepts user `Audio` and returns a `ConnectorTurn` or plain `Audio`.
-- [Optional] `sample_rate`: an integer sample rate in Hz. Defaulted to `24000`.
-- [Optional] `encoding`: a string container/codec label for audio metadata. Defaulted to `"wav"`.
-- [Optional] `turn_detection`: how long to wait before deciding your agent has finished speaking — `"eager"`, `"balanced"`, or `"patient"`. See [Turn Detection](#turn-detection). Defaulted to `"balanced"`.
+- `agent`：同步或异步可调用对象，接受用户 `Audio` 并返回 `ConnectorTurn` 或普通 `Audio`。
+- [可选] `sample_rate`：整数，采样率（Hz）。默认为 `24000`。
+- [可选] `encoding`：字符串，音频元数据的容器/编解码标签。默认为 `"wav"`。
+- [可选] `turn_detection`：决定你的代理已说完所需等待的时长——`"eager"`、`"balanced"` 或 `"patient"`。见 [Turn Detection](#turn-detection)。默认为 `"balanced"`。
 
 ### Returning a `ConnectorTurn`
 
 <Warning>
-Do not confuse `ConnectorTurn` with [`Turn`](/docs/evaluation-multiturn-test-cases#turns). `ConnectorTurn` is an intermediate transport type the simulator uses under the hood to move audio (and optional transcript / latency) from your connector into the conversation. It is **not** what metrics evaluate — the simulator maps it onto a normal `Turn` on the `ConversationalTestCase`, and evals only see that.
+不要把 `ConnectorTurn` 与 [`Turn`](/docs/evaluation-multiturn-test-cases#turns) 混淆。`ConnectorTurn` 是模拟器在底层把音频（以及可选的转写/延迟）从连接器搬进对话所用的中间传输类型。它**不是**指标评估的对象——模拟器会把它映射为 `ConversationalTestCase` 上的普通 `Turn`，评估只看到那个映射结果。
 </Warning>
 
-Your callback is the agent. Return either:
+你的回调就是代理。返回以下之一：
 
-- an [`Audio`](/docs/evaluation-voice#audio-data-model) reply — the connector wraps it and fills `latency_ms` from wall time, or
-- a `ConnectorTurn` when you also want to supply a transcript and/or your own latency.
+- 一个 [`Audio`](/docs/evaluation-voice#audio-data-model) 回复——连接器会包装它并根据墙上时间填入 `latency_ms`，或者
+- 一个 `ConnectorTurn`——当你还想提供转写和/或自己的延迟时。
 
 ```python
 class ConnectorTurn:
@@ -215,12 +215,12 @@ class ConnectorTurn:
     interrupted: bool = False
 ```
 
-There are **ONE** mandatory and **THREE** optional fields on a `ConnectorTurn`:
+`ConnectorTurn` 上有**一个**必填字段和**三个**可选字段：
 
-- `audio`: an `Audio` object with the agent's spoken reply.
-- [Optional] `transcript`: a string with the agent's own transcript. When set, `deepeval` uses it as assistant `Turn.content` and skips STT for that turn. Defaulted to `None`.
-- [Optional] `latency_ms`: a number measuring time from receiving the user audio to the start of the reply. When omitted, the connector measures wall time around your callback. Defaulted to `None`.
-- [Optional] `interrupted`: a boolean set to `True` when this reply was cut short by a barge-in. Defaulted to `False` — leave it alone unless you're simulating interruption behavior yourself.
+- `audio`：包含代理口头回复的 `Audio` 对象。
+- [可选] `transcript`：字符串，代理自己的转写。设置后，`deepeval` 将其用作助手 `Turn.content` 并跳过该轮的 STT。默认为 `None`。
+- [可选] `latency_ms`：数值，度量从收到用户音频到回复开始的时间。省略时，连接器围绕你的回调测量墙上时间。默认为 `None`。
+- [可选] `interrupted`：布尔值，当此回复被抢话（barge-in）打断时设为 `True`。默认为 `False`——除非你自己在模拟打断行为，否则不要动它。
 
 ```python
 from deepeval.voice import CallbackVoiceConnector
@@ -244,7 +244,7 @@ async def my_agent(user_audio) -> ConnectorTurn:
 
 ## Full-Duplex Custom Connectors
 
-`WebSocketConnector` and `CallbackVoiceConnector` take turns by default. If your transport can carry both voices at once, override `supports_duplex` and the simulator will keep listening while the caller speaks, even without an `interruption_behavior`:
+`WebSocketConnector` 和 `CallbackVoiceConnector` 默认轮流发言。如果你的传输可以同时承载双方语音，覆盖 `supports_duplex`，模拟器就会在通话者说话时持续聆听，即使没有 `interruption_behavior`：
 
 ```python
 from deepeval.voice import WebSocketConnector
@@ -255,28 +255,28 @@ class MyDuplexConnector(WebSocketConnector):
         return True
 ```
 
-Returning `True` requires `stream_uplink`, `iter_agent_events`, and `stop_uplink` to work on your connector, since the duplex path uses those instead of `exchange_turn`.
+返回 `True` 要求你的连接器实现 `stream_uplink`、`iter_agent_events` 和 `stop_uplink`，因为双工路径使用它们而非 `exchange_turn`。
 
-Nothing in an audio stream announces that your agent has finished speaking, so the end of its turn is inferred from silence. Every connector takes a `turn_detection` preset controlling how long that silence has to last, along with the hard ceiling that stops an agent which never goes quiet from hanging the simulation:
+音频流中没有任何内容宣告你的代理已说完，因此轮次结束是从静音推断的。每个连接器都有一个 `turn_detection` 预设，控制该静音必须持续多久，以及防止永不安静的代理挂起模拟的硬性上限：
 
-| `turn_detection` | Waits through pauses of | Gives up after | Use it when                                                                |
+| `turn_detection` | 可容忍的停顿 | 放弃等待 | 适用场景                                                                |
 | ---------------- | ----------------------- | -------------- | -------------------------------------------------------------------------- |
-| `"eager"`        | 500ms                   | 20s            | Your agent answers in one breath and you want the floor back quickly.      |
-| `"balanced"`     | 800ms                   | 30s            | Default. Suits most agents.                                                |
-| `"patient"`      | 2.5s                    | 120s           | Your agent pauses mid-reply — to think, call a tool, or look something up. |
+| `"eager"`        | 500ms                   | 20s            | 你的代理一口气作答，且你想尽快拿回话轮。      |
+| `"balanced"`     | 800ms                   | 30s            | 默认值。适合大多数代理。                                                |
+| `"patient"`      | 2.5s                    | 120s           | 你的代理会在回复中途停顿——思考、调用工具或查询资料。 |
 
 ```python
 connector = CallbackVoiceConnector(my_agent, turn_detection="patient")
 ```
 
-Pick by listening to your agent's longest natural pause. Too eager and its turn ends at that pause, cutting the reply short and discarding the rest of it; too patient and the simulator sits through dead air before responding, which inflates the gaps in the recording and slows the run.
+通过听你代理最长的自然停顿来选择。太急（eager），轮次会在那个停顿处结束，回复被截断、剩余部分被丢弃；太耐心（patient），模拟器会先听完一段死寂再回应，拉长录音间隙并拖慢运行。
 
-On the duplex path the preset is a ceiling, not the wait: when the running transcript reads as a finished sentence and covers all speech heard so far, the turn ends after 500ms of silence, while a reply that trails off mid-sentence still waits the full window.
+在双工路径上，预设是上限而非等待时长：当运行中的转写读起来像完整的句子、并覆盖了迄今听到的全部语音时，静音 500ms 即结束轮次；而一句说到一半的回复仍会等待完整窗口。
 
-When your transport closes each turn explicitly, silence is only the fallback: `ElevenLabsConnector`, `VapiConnector`, `CallbackVoiceConnector`, and a `WebSocketConnector` given a `turn_complete_type` are all believed over a pause, so the reply is heard out in full however long your agent stops for. Only the ceiling still applies.
+当你的传输显式关闭每轮时，静音只是兜底：`ElevenLabsConnector`、`VapiConnector`、`CallbackVoiceConnector` 以及设置了 `turn_complete_type` 的 `WebSocketConnector` 的轮次完成信号都优先于停顿判断，因此无论你的代理停多久，回复都会被完整听完。只有上限仍然生效。
 
-The preset matters more everywhere else, because silence is the only evidence there is. `LiveKitConnector` gets a bare audio track with nothing to say when a turn is over, and so does a `WebSocketConnector` whose agent sends no end-of-turn message to point at. `PipecatConnector` falls on either side depending on your pipeline: it's believed over a pause once your pipeline has been seen to announce an end of turn, and reads silence until then.
+在其他情况下预设就更重要了，因为静音是唯一的判断依据。`LiveKitConnector` 只拿到一条裸音频轨道，轮次结束时没有任何东西可参考；代理不发送轮次结束消息的 `WebSocketConnector` 也是如此。`PipecatConnector` 则取决于你的流水线：一旦发现流水线宣告过轮次结束就优先相信它，在此之前读取静音。
 
 <Note>
-The underlying millisecond values are chosen as a coordinated preset rather than exposed individually, for the same reason [interruption timing](/docs/conversation-simulator-voice-interruptions#when-does-it-interrupt) is: they are interdependent, and picking them apart is guesswork without knowing how the turn-taking loop uses them.
+底层的毫秒值是作为协同预设来选择的，而非单独暴露，原因与[打断时机](/docs/conversation-simulator-voice-interruptions#when-does-it-interrupt)相同：它们相互依赖，在不了解话轮转换循环如何使用它们的情况下单独调整只能是瞎猜。
 </Note>

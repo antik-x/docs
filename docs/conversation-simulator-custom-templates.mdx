@@ -12,7 +12,7 @@ from deepeval.simulator import default_simulation_node
 default_simulation_node(template=MyTemplate)
 ```
 
-| Argument | Description |
+| 参数 | 说明 |
 |---|---|
 | `template` | `SimulationTemplate` 的子类，覆盖 `simulate_first_user_turn()` 和/或 `simulate_user_turn()`。会在构造时立即验证——无效模板会在构造时抛出 `TypeError`。省略时使用内置的 `SimulationTemplate`。 |
 | `terminal`, `max_visits`, `name` | 与 `SimulationNode` 相同——完整参考见 [Simulation Graph](/docs/conversation-simulator-simulation-graph#default_simulation_node)。 |

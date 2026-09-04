@@ -4,7 +4,7 @@ title: 人设
 
 人设（`Persona`）定义了**模拟用户是谁、如何表现、以及听起来如何**。
 
-A persona pairs with a `ConversationalGolden`: the persona is _who_ is calling, while the golden's `scenario` and `expected_outcome` are _what_ they are trying to do.
+persona 与 `ConversationalGolden` 配对：persona 是_谁_在打电话，golden 的 `scenario` 和 `expected_outcome` 是他们_想做什么_。
 
 ```python
 from deepeval.dataset import ConversationalGolden, Persona
@@ -17,7 +17,7 @@ golden = ConversationalGolden(
 ```
 
 <Note>
-Keep traits on the persona and the task on the golden. "You are impatient and talk over people" belongs in `characteristics`; "buy a VIP ticket" belongs in `scenario`. Mixing the two makes a persona single-use — the whole point is to run the same caller across many scenarios, and the same scenario across many callers.
+性格特质放在 persona 上，任务放在 golden 上。"你不耐烦、爱抢话"属于 `characteristics`；"买一张 VIP 票"属于 `scenario`。混在一起会让 persona 只能单次使用——这样设计的意义就是让同一通话者跑遍多个场景、同一场景跑遍多个通话者。
 </Note>
 
 ## Create A Persona
@@ -32,29 +32,29 @@ persona = Persona(
 )
 ```
 
-There is **ONE** mandatory and **EIGHT** optional parameters when creating a `Persona`:
+创建 `Persona` 时有**一个**必填参数和**八个**可选参数：
 
-- `characteristics`: a string prompt describing the user's demographics, personality, emotional arc, and speaking style.
-- [Optional] `name`: a string name for the caller. Defaulted to `None`.
-- [Optional] `voice`: a string voice ID passed to your `tts_model`. Defaulted to `None` (the TTS model's own default voice).
-- [Optional] `interruption_behavior`: an [`InterruptionBehavior`](#interruptions) that lets the caller barge in, or `None` for a caller who never cuts in. Defaulted to `None`.
-- [Optional] `speaks_first`: a boolean for whether the caller opens the conversation instead of waiting for the agent's greeting. Defaulted to `True`.
-- [Optional] `muted`: a boolean which when set to `True` makes the caller stay completely silent for the whole call. Defaulted to `False`.
-- [Optional] `background_noise`: a [`BackgroundNoiseSettings`](#background-noise) that loops ambient audio underneath the caller's speech. Defaulted to `None`.
-- [Optional] `multilingual_stt`: a boolean which when set to `True` asks your `stt_model` to detect the agent's language per utterance instead of locking to one. Defaulted to `False`.
-- [Optional] `hold_timeout`: a float number of seconds of agent silence or hold music before the caller hangs up. Defaulted to `None`.
+- `characteristics`：字符串提示，描述用户的人口属性、性格、情绪弧线和说话风格。
+- [可选] `name`：字符串，通话者名称。默认为 `None`。
+- [可选] `voice`：字符串语音 ID，传给你的 `tts_model`。默认为 `None`（TTS 模型自己的默认语音）。
+- [可选] `interruption_behavior`：一个允许通话者插话的 [`InterruptionBehavior`](#interruptions)，`None` 表示从不插话。默认为 `None`。
+- [可选] `speaks_first`：布尔值，通话者是否先开口而不是等代理问候。默认为 `True`。
+- [可选] `muted`：布尔值，设为 `True` 时通话者整通电话完全静音。默认为 `False`。
+- [可选] `background_noise`：一个 [`BackgroundNoiseSettings`](#background-noise)，在通话者语音下方循环环境音频。默认为 `None`。
+- [可选] `multilingual_stt`：布尔值，设为 `True` 时要求 `stt_model` 逐句检测代理的语言而不是锁定一种。默认为 `False`。
+- [可选] `hold_timeout`：浮点数，代理静音或播放等待音乐多少秒后通话者挂断。默认为 `None`。
 
-Only `name` and `characteristics` apply to text simulations. Everything else is voice-only and is ignored when you simulate with a `model_callback`.
+只有 `name` 和 `characteristics` 适用于文本模拟。其余都是语音专属，使用 `model_callback` 模拟时会被忽略。
 
 <Warning>
-`persona` supersedes the deprecated `user_description` on `ConversationalGolden`. Passing `user_description` still works and is promoted to `Persona(characteristics=...)` for you.
+`persona` 取代了 `ConversationalGolden` 上已弃用的 `user_description`。传入 `user_description` 仍然有效，会被自动提升为 `Persona(characteristics=...)`。
 </Warning>
 
 ## Configuring Characteristics
 
-`characteristics` is a **prompt, not a label**. The simulator model writes the caller's dialogue from it and the TTS model speaks that text verbatim — so emotion, hesitation, and pacing come from the words you tell the persona to use, not from vocal knobs.
+`characteristics` 是**提示词，不是标签**。模拟器模型据此撰写通话者的对话，TTS 模型逐字朗读这些文本——所以情绪、犹豫和节奏来自你让 persona 使用的措辞，而不是什么声音旋钮。
 
-Describe behavior in terms of word choice and conversational patterns:
+用措辞和会话模式来描述行为：
 
 ```python
 # Less effective — a label the model has to interpret
@@ -68,18 +68,18 @@ Your language gets sharper the longer the agent takes to resolve your issue.""",
 )
 ```
 
-A few things that matter more in voice than in text:
+有几件事在语音中比在文本中更重要：
 
-- **Give the caller an emotional arc.** Real callers escalate and de-escalate: "You start calm but grow frustrated if the agent puts you on hold. If your issue is resolved, your tone softens."
-- **Punctuation is a speech cue.** `!` reads as emphasis, `,` as a natural pause, `-` as a brief break, and short sentences as stress. Avoid `...`, which some TTS engines read aloud as "dot dot dot".
-- **Spell filler words plainly.** `um`, `uh`, `hmm`, `oh`, `well` — not `ummm` or `uhhhh`, which TTS engines often spell out letter by letter.
-- **Tag blocks work well.** `characteristics` is free-form multi-line text, so `<speaking_style>…</speaking_style>` or `<end_call>…</end_call>` sections are a good way to separate delivery from call-control instructions.
+- **给通话者一条情绪弧线。** 真实的通话者会升级也会缓和："你开始很平静，但如果代理让你等待就会变得沮丧。如果问题解决了，你的语气会软下来。"
+- **标点是语音提示。** `!` 读作强调，`,` 读作自然停顿，`-` 读作短暂间断，短句读作着重。避免 `...`，一些 TTS 引擎会把它念成"点点点"。
+- ** plainly 拼写填充词。** `um`、`uh`、`hmm`、`oh`、`well` —— 不要 `ummm` 或 `uhhhh`，TTS 引擎经常逐字母拼写它们。
+- **标签块很好用。** `characteristics` 是自由格式的多行文本，用 `<speaking_style>…</speaking_style>` 或 `<end_call>…</end_call>` 这样的段落来区分表达风格与呼叫控制指令是很好的做法。
 
 ## 配置音频
 
 ### 声音
 
-`voice` is passed straight through to your `tts_model`, so valid values depend on the model you configured on [`VoiceConfig`](/docs/conversation-simulator-voice-mode#tts-and-stt-models) — `"alloy"`, `"onyx"`, `"shimmer"`, etc. for the default `OpenAITTSModel`.
+`voice` 直接传给你的 `tts_model`，因此有效值取决于你在 [`VoiceConfig`](/docs/conversation-simulator-voice-mode#tts-and-stt-models) 上配置的模型——默认的 `OpenAITTSModel` 有 `"alloy"`、`"onyx"`、`"shimmer"` 等。
 
 ```python
 persona = Persona(
@@ -88,11 +88,11 @@ persona = Persona(
 )
 ```
 
-Rate, pitch, and delivery style are **not** persona fields, because no two TTS providers spell them the same way. Set those on the TTS model itself (`OpenAITTSModel(generation_kwargs={...})`) and keep the persona portable.
+语速、音调和表达风格**不是** persona 字段，因为没有两家 TTS 提供商用同样的方式拼写它们。把这些设置在 TTS 模型本身（`OpenAITTSModel(generation_kwargs={...})`）上，保持 persona 的可移植性。
 
 ### 背景噪音
 
-Real calls are not made from a recording booth. `background_noise` loops an ambient audio file underneath the caller's speech, so your agent's speech recognition has to work through it:
+真实的电话不是在录音棚里打的。`background_noise` 会在通话者语音下方循环一段环境音频，你的代理的语音识别必须能在其中工作：
 
 ```python
 from deepeval.dataset import Persona, BackgroundNoiseSettings
@@ -103,20 +103,20 @@ persona = Persona(
 )
 ```
 
-There is **ONE** mandatory and **ONE** optional parameter when creating a `BackgroundNoiseSettings`:
+创建 `BackgroundNoiseSettings` 时有**一个**必填参数和**一个**可选参数：
 
-- `audio`: a path to a `.wav` or `.mp3` file, which is looped for the length of the call.
-- [Optional] `volume`: a float between `0.0` and `1.0` for how loudly the noise is mixed in. Defaulted to `0.3`.
+- `audio`：`.wav` 或 `.mp3` 文件路径，会在整通电话内循环。
+- [可选] `volume`：介于 `0.0` 与 `1.0` 之间的浮点数，控制噪声混入的响度。默认为 `0.3`。
 
 <Tip>
-Pick a file that loops cleanly — an abrupt cut or trailing silence repeats for the whole conversation. `.mp3` files need `pydub` and `ffmpeg` installed; `.wav` files need nothing.
+选择能干净循环的文件——突兀的截断或结尾静音会在整段对话中反复出现。`.mp3` 文件需要安装 `pydub` 和 `ffmpeg`；`.wav` 文件什么都不需要。
 </Tip>
 
 ## 配置行为
 
 ### 谁先说话
 
-Most voice agents open with a greeting. Set `speaks_first=False` and the simulated caller stays quiet until the agent has spoken, so the greeting becomes the first `Turn` of the conversation:
+大多数语音代理以问候开场。设置 `speaks_first=False`，模拟的通话者会保持安静直到代理先说话，于是问候成为对话的第一条 `Turn`：
 
 ```python
 persona = Persona(
@@ -125,11 +125,11 @@ persona = Persona(
 )
 ```
 
-On a full-duplex connector the caller waits [`hold_timeout`](#hanging-up-on-hold-music) seconds for the greeting (15 when unset), then speaks first anyway.
+在全双工连接器上，通话者会等待问候 [`hold_timeout`](#hanging-up-on-hold-music) 秒（未设置时 15 秒），之后无论如何都会先开口。
 
 ### 静默来电者
 
-`muted=True` makes the caller never speak at all — every user turn is empty and only silence goes up the wire. Use it to test how your agent handles dead air: does it re-prompt, escalate, or hang up?
+`muted=True` 让通话者完全不开口——每条用户轮次都是空的，线路上只有静音。用它测试你的代理如何处理死寂：是再次提示、升级，还是挂断？
 
 ```python
 persona = Persona(characteristics="You are unable to speak.", muted=True)
@@ -137,7 +137,7 @@ persona = Persona(characteristics="You are unable to speak.", muted=True)
 
 ### 等待音乐时挂断
 
-`hold_timeout` is the number of seconds of agent silence (or hold music) the caller tolerates before ending the call. Without it, the simulation runs until `max_user_simulations` is exhausted:
+`hold_timeout` 是通话者在结束呼叫前能容忍的代理静音（或等待音乐）秒数。没有它，模拟会一直运行到 `max_user_simulations` 耗尽：
 
 ```python
 persona = Persona(
@@ -146,15 +146,15 @@ persona = Persona(
 )
 ```
 
-This is most useful for transfer flows — set it to 10–15 seconds to confirm a hand-off actually happened without waiting out the agent's own timeout.
+这对转接流程最有用——设为 10–15 秒即可确认交接确实发生了，而不必等代理自己的超时。
 
 ### 多语言识别
 
-By default the caller "hears" your agent in whatever language your `stt_model` is configured for. Set `multilingual_stt=True` and the STT model detects the language per utterance instead, which is what you want for agents that switch mid-call ("For English press one, para español presione dos").
+默认情况下，通话者以 `stt_model` 配置的语言"听到"你的代理。设置 `multilingual_stt=True` 后，STT 模型改为逐句检测语言，这正适合会在通话中切换语言的代理（"For English press one, para español presione dos"）。
 
 ### 打断
 
-`interruption_behavior` gives the caller permission to **barge in**: instead of politely waiting for each reply, they can cut in mid-sentence while the agent is still speaking.
+`interruption_behavior` 给通话者**插话**的许可：他们不必礼貌地等待每条回复，可以在代理还在说话时打断其句子。
 
 ```python
 from deepeval.dataset import Persona, InterruptionBehavior
@@ -165,25 +165,25 @@ persona = Persona(
 )
 ```
 
-`frequency` controls how readily the caller barges in, and `overlap` controls what they do when both sides end up talking at once. Leaving `interruption_behavior` as `None` means the caller never cuts in — on a [full-duplex connector](/docs/conversation-simulator-voice-connectors#full-duplex-custom-connectors) it still hears everything the agent says while it talks.
+`frequency` 控制通话者插话的意愿，`overlap` 控制双方同时说话时他们的行为。让 `interruption_behavior` 保持 `None` 意味着通话者从不插话——在[全双工连接器](/docs/conversation-simulator-voice-connectors#full-duplex-custom-connectors)上，它说话时仍能听到代理说的一切。
 
 <Tip>
-Barge-in is a whole simulation mode of its own — how the judge decides to interrupt, what happens during double-talk, and what gets recorded on each `Turn` are covered in [Interruptions](/docs/conversation-simulator-voice-interruptions).
+抢话本身是一整套模拟模式——评审如何决定打断、双方同时说话时会发生什么、每条 `Turn` 上记录什么——见 [Interruptions](/docs/conversation-simulator-voice-interruptions)。
 </Tip>
 
 ## 常见问题
 
 <AccordionGroup>
 <Accordion title="Do personas work in text simulations too?">
-Yes, but only `name` and `characteristics` mean anything there — those are what the simulator model role-plays from. Voice, background noise, interruptions, and the behavioral flags require a `VoiceConfig` and are ignored otherwise.
+可以，但只有 `name` 和 `characteristics` 有意义——模拟器模型扮演的正是这些。语音、背景噪声、打断和行为开关需要 `VoiceConfig`，否则会被忽略。
 </Accordion>
 <Accordion title="Can one persona be reused across many goldens?">
-That's the intent. A persona is attached per `ConversationalGolden` , so build one `Persona` and pass the same object to every golden you want that caller to run — a matrix of personas against scenarios is how you find the cases where your agent only works for the easy caller.
+这正是设计意图。persona 按 `ConversationalGolden` 附加，所以构造一个 `Persona` 并把同一对象传给你希望该通话者参与的每个 golden——persona 与场景的矩阵组合，正是发现你的代理只对"好说话的顾客"有效的那些案例的方法。
 </Accordion>
 <Accordion title="Why isn't there a speaking rate or accent field?">
-Because `voice` is the only synthesis knob every `DeepEvalBaseTTS` implementation shares. Rate, pitch, and style are spelled differently by every provider, so they belong on your TTS model rather than on the persona. Accent, in practice, is a property of the voice you pick.
+因为 `voice` 是所有 `DeepEvalBaseTTS` 实现共享的唯一合成旋钮。语速、音调和风格每家提供商的拼写都不同，所以它们属于你的 TTS 模型而非 persona。在实践中，口音是你所选语音的属性。
 </Accordion>
 <Accordion title="Does the persona reach Confident AI?">
-The persona's `characteristics` are sent as the test case's user description today. The structured voice settings stay local until the platform has a field for them.
+目前 persona 的 `characteristics` 会作为测试用例的用户描述发送。在平台提供相应字段之前，结构化的语音设置保持在本地。
 </Accordion>
 </AccordionGroup>
