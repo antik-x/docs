@@ -8,7 +8,7 @@ title: 模型回调
 Simulating a **voice agent** instead of a text chatbot? In [voice mode](/docs/conversation-simulator-voice-mode), `voice_config` replaces `model_callback` — the simulator talks to your agent over a live audio connection rather than a Python callback, and providing both raises an error.
 </Note>
 
-定义 `model_callback` 时 `input` 参数是必需的，但你也可以定义 `deepeval` 会按名称传入的可选参数。
+定义 `model_callback` 时 `input` 参数是必需的，但 `deepeval` 也可以按名称传入你定义的可选参数。
 
 ```python title="main.py"
 from deepeval.test_case import Turn
@@ -24,7 +24,7 @@ async def model_callback(input: str) -> Turn:
 - [可选] `turns`：模拟中到当前点为止累积的 `Turn` 列表，包括最新模拟的用户消息。
 - [可选] `thread_id`：每次对话的唯一标识符。
 
-While `turns` captures the conversation history available at the moment your callback runs, some applications must persist additional state across turns — for example, when invoking external APIs or tracking user-specific data. In these cases, you'll want to take advantage of the `thread_id`.
+虽然 `turns` 捕获了回调运行时可用的对话历史，某些应用还需要跨轮次持久化额外状态——例如调用外部 API 或追踪用户特定数据。在这些情况下，你需要利用 `thread_id`。
 
 ## 常见用例
 
@@ -71,15 +71,15 @@ async def model_callback(input: str, turns: List[Turn], thread_id: str) -> Turn:
 
 <AccordionGroup>
 <Accordion title="What does my model_callback have to return?">
-一条助手 `Turn`。`ConversationSimulator` 将模拟的用户 `input` 提供给它，并将你返回的助手轮次记录为对话中的下一条消息。
+一条助手 `Turn`——即 `Turn(role="assistant", content=response)`。`ConversationSimulator` 将模拟的用户 `input` 提供给它，并将你返回的助手轮次记录为对话中的下一条消息。
 </Accordion>
 <Accordion title="My chatbot keeps state on the backend — how do I keep simulations on the same path as production?">
 在回调中添加 `thread_id` 参数并将其转发给你的应用，使每次模拟对话映射到其自己的后端会话。
 </Accordion>
 <Accordion title="Do I have to declare turns and thread_id if I don't use them?">
-不需要。只有 `input` 是必需的；`turns` 和 `thread_id` 是可选的。
+不需要。`deepeval` 只有 `input` 是必需的；`turns` 和 `thread_id` 是可选的。
 </Accordion>
 <Accordion title="How do I wire the callback to my real chatbot?">
-Call your own app inside the callback — e.g. `await your_llm_app(input)` — and wrap its reply as `Turn(role="assistant", content=response)` . Pass `turns` or `thread_id` through to your app if it needs conversation history or session state.
+在你自己的应用内调用回调——例如 `await your_llm_app(input)`——并将回复包装为 `Turn(role="assistant", content=response)`。通过 `turns` 或 `thread_id` 传递对话历史或会话状态（如果你的应用需要）。
 </Accordion>
 </AccordionGroup>
