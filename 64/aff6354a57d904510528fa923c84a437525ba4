@@ -1,0 +1,104 @@
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 125
+docs/metrics-arena-g-eval.mdx
+  h_04c00a69eeb820 137,139
+docs/metrics-argument-correctness.mdx
+  h_04c00a69eeb820 125-127,129-130
+docs/metrics-contextual-precision.mdx
+  h_04c00a69eeb820 210
+docs/metrics-contextual-recall.mdx
+  h_04c00a69eeb820 210-211,214,216
+docs/metrics-contextual-relevancy.mdx
+  h_04c00a69eeb820 203-204,207,209
+docs/metrics-conversation-completeness.mdx
+  h_04c00a69eeb820 89-91,93-94
+docs/metrics-conversational-dag.mdx
+  h_04c00a69eeb820 135
+docs/metrics-conversational-g-eval.mdx
+  h_04c00a69eeb820 102-103,105,107
+docs/metrics-dag.mdx
+  h_04c00a69eeb820 135
+docs/metrics-exact-match.mdx
+  h_04c00a69eeb820 86-87
+docs/metrics-goal-accuracy.mdx
+  h_04c00a69eeb820 91-93,95-96
+docs/metrics-hallucination.mdx
+  h_04c00a69eeb820 107-109,111-112
+docs/metrics-json-correctness.mdx
+  h_04c00a69eeb820 168-170,172-173
+docs/metrics-knowledge-retention.mdx
+  h_04c00a69eeb820 75-78
+docs/metrics-llm-evals.mdx
+  h_04c00a69eeb820 98-99,101,103
+docs/metrics-mcp-task-completion.mdx
+  h_04c00a69eeb820 90-92,94-95
+docs/metrics-mcp-use.mdx
+  h_04c00a69eeb820 95-97,99-100
+docs/metrics-misuse.mdx
+  h_04c00a69eeb820 95-97,99,101
+docs/metrics-multi-turn-mcp-use.mdx
+  h_04c00a69eeb820 90-92,94-95
+docs/metrics-non-advice.mdx
+  h_04c00a69eeb820 93-95,97,99
+docs/metrics-pattern-match.mdx
+  h_04c00a69eeb820 91-92
+docs/metrics-pii-leakage.mdx
+  h_04c00a69eeb820 94-96,98,100
+docs/metrics-plan-adherence.mdx
+  h_04c00a69eeb820 126-128,130-131
+docs/metrics-plan-quality.mdx
+  h_04c00a69eeb820 126-128,130-131
+docs/metrics-prompt-alignment.mdx
+  h_04c00a69eeb820 108-110,112-113
+docs/metrics-role-adherence.mdx
+  h_04c00a69eeb820 92-94,96-97
+docs/metrics-role-violation.mdx
+  h_04c00a69eeb820 95-97,99,101
+docs/metrics-step-efficiency.mdx
+  h_04c00a69eeb820 126-128,130-131
+docs/metrics-summarization.mdx
+  h_04c00a69eeb820 158,160,162,164
+docs/metrics-task-completion.mdx
+  h_04c00a69eeb820 122-124,126-127
+docs/metrics-tool-correctness.mdx
+  h_04c00a69eeb820 156-158,161
+docs/metrics-tool-permission.mdx
+  h_04c00a69eeb820 53,55-56
+docs/metrics-tool-use.mdx
+  h_04c00a69eeb820 95-97,99-100
+docs/metrics-topic-adherence.mdx
+  h_04c00a69eeb820 92-94,96-97
+docs/metrics-toxicity.mdx
+  h_04c00a69eeb820 97-99,101-102
+docs/metrics-turn-contextual-precision.mdx
+  h_04c00a69eeb820 106-108,110,112
+docs/metrics-turn-contextual-recall.mdx
+  h_04c00a69eeb820 106-108,110,112
+docs/metrics-turn-contextual-relevancy.mdx
+  h_04c00a69eeb820 105-107,109,111
+docs/metrics-turn-faithfulness.mdx
+  h_04c00a69eeb820 91-93,95,99
+docs/metrics-turn-relevancy.mdx
+  h_04c00a69eeb820 85-87,89,91
+docs/multimodal-metrics-image-coherence.mdx
+  h_04c00a69eeb820 100-101,103,105
+docs/multimodal-metrics-image-editing.mdx
+  h_04c00a69eeb820 90-92,94-95
+docs/multimodal-metrics-image-helpfulness.mdx
+  h_04c00a69eeb820 106-107,109,111
+docs/multimodal-metrics-image-reference.mdx
+  h_04c00a69eeb820 106-107,109,111
+docs/multimodal-metrics-text-to-image.mdx
+  h_04c00a69eeb820 94-96,98-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "64aff6354a57d904510528fa923c84a437525ba4",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
