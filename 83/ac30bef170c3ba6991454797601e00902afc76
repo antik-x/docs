@@ -1,0 +1,16 @@
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 145-149
+docs/conversation-simulator-model-callback.mdx
+  h_04c00a69eeb820 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "83ac30bef170c3ba6991454797601e00902afc76",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
