@@ -4,15 +4,15 @@ title: Hallucination
 
 **标签**：LLM-as-a-judge · 单轮 · 有参考 · 多模态
 
-The hallucination metric uses LLM-as-a-judge to determine whether your LLM generates factually correct information by comparing the `actual_output` to the provided `context`.
+幻觉（hallucination）指标使用 LLM-as-a-judge，通过把 `actual_output` 与给定的 `context` 对比，判断你的 LLM 是否生成了事实正确的信息。
 
 <Info>
-If you're looking to evaluate hallucination for a RAG system, please refer to the [faithfulness metric](/docs/metrics-faithfulness) instead.
+如果你要评估 RAG 系统的幻觉，请改用[忠实度指标](/docs/metrics-faithfulness)。
 </Info>
 
 ## Required Arguments
 
-To use the `HallucinationMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+要使用 `HallucinationMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
 
 - `input`
 - `actual_output`
@@ -22,7 +22,7 @@ Read the [How Is It Calculated](#how-is-it-calculated) section below to learn ho
 
 ## Usage
 
-The `HallucinationMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation:
+`HallucinationMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
 
 <Tabs>
 
@@ -90,13 +90,13 @@ await evaluate([testCase], [metric]);
 
 <Tab title="Python">
 
-There are **SEVEN** optional parameters when creating a `HallucinationMetric`:
+创建 `HallucinationMetric` 时有**七个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SIX** optional parameters when creating a `HallucinationMetric`:
+创建 `HallucinationMetric` 时有**六个**可选参数：
 
 </Tab>
 
@@ -106,14 +106,14 @@ There are **SIX** optional parameters when creating a `HallucinationMetric`:
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 在组件内
 
-You can also run the `HallucinationMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+你还可以在嵌套组件内运行 `HallucinationMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
 
 <Tabs>
 
@@ -181,7 +181,7 @@ for await (const golden of dataset.evalsIterator()) {
 
 ### 独立运行
 
-You can also run the `HallucinationMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `HallucinationMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -215,31 +215,31 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `HallucinationMetric` score is calculated according to the following equation:
+`HallucinationMetric` 的分数按以下公式计算：
 
 $$
 \text{Hallucination} = \frac{\text{Number of Aligned Contexts}}{\text{Total Number of Contexts}}
 $$
 
-The `HallucinationMetric` uses an LLM to determine, for each context in `contexts`, whether there are any contradictions to the `actual_output`.
+`HallucinationMetric` 使用 LLM 判断 `contexts` 中的每条上下文是否与 `actual_output` 存在矛盾。
 
 <Info>
-Although extremely similar to the `FaithfulnessMetric`, the `HallucinationMetric` is calculated differently since it uses `contexts` as the source of truth instead. Since `contexts` is the ideal segment of your knowledge base relevant to a specific input, the degree of hallucination can be measured by the degree of which the `contexts` is disagreed upon.
+虽然与 `FaithfulnessMetric` 极其相似，`HallucinationMetric` 的计算方式不同——它以 `contexts` 作为真值来源。由于 `contexts` 是知识库中与特定输入相关的理想片段，幻觉程度即可通过 `contexts` 被抵触的程度来衡量。
 </Info>
 
 ## FAQs
 
 <AccordionGroup>
-<Accordion title="Hallucination or Faithfulness — which one should I actually use?">
-Use `HallucinationMetric` when you have a curated, ground-truth `context` . Use [Faithfulness](/docs/metrics-faithfulness) for RAG, where the source of truth is the `retrieval_context` your retriever fetched.
+<Accordion title="幻觉还是忠实度——我到底该用哪个？">
+当你有精心整理的基准真值 `context` 时用 `HallucinationMetric`。RAG 场景用[忠实度](/docs/metrics-faithfulness)，因为其真值来源是检索器取回的 `retrieval_context`。
 </Accordion>
-<Accordion title="Is a higher or lower Hallucination score better?">
-**Higher is better.** The score is the fraction of `context` documents the `actual_output` stays consistent with, so 1 is perfect. `threshold` is therefore a *minimum* — output passes at or above it. `strict_mode` forces the threshold to 1.
+<Accordion title="幻觉分数越高还是越低更好？">
+**越高越好。**分数是 `actual_output` 保持一致的 `context` 文档比例，1 为满分。因此 `threshold` 是一个*下限*——达到或超过即通过。`strict_mode` 会把阈值强制为 1。
 </Accordion>
-<Accordion title="It compares against context, not retrieval context — what's the difference?">
-`context` is ground-truth reference material you supply; `retrieval_context` is what your retriever fetched. This metric checks contradictions against `context` only, so it measures the generator, not the retriever.
+<Accordion title="它对照的是 context 而不是检索上下文——有何区别？">
+`context` 是你提供的基准真值参考材料；`retrieval_context` 是你的检索器取回的内容。本指标只检查与 `context` 的矛盾，因此它衡量的是生成器，而不是检索器。
 </Accordion>
-<Accordion title="When should I NOT reach for this metric?">
-Don't use it on a live RAG system. It assumes `context` is trusted ground truth, so feeding it noisy retrieved chunks misleads — use [Faithfulness](/docs/metrics-faithfulness) for runtime `retrieval_context` instead.
+<Accordion title="什么时候不该用这个指标？">
+不要在实时 RAG 系统上使用。它假设 `context` 是可信的基准真值，喂入嘈杂的检索块会产生误导——运行时请用 [Faithfulness](/docs/metrics-faithfulness) 处理 `retrieval_context`。
 </Accordion>
 </AccordionGroup>

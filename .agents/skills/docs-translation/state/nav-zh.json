@@ -101,6 +101,9 @@
     "(images)/multimodal-metrics-image-reference": "图像引用",
     "(images)/multimodal-metrics-text-to-image": "文生图",
     "(images)/multimodal-metrics-image-editing": "图像编辑",
-    "(metrics-others)/metrics-ragas": "RAGAS"
+    "(metrics-others)/metrics-ragas": "RAGAS",
+    "(metrics-others)/metrics-hallucination": "幻觉",
+    "(metrics-others)/metrics-summarization": "摘要",
+    "(metrics-others)/metrics-prompt-alignment": "提示词对齐"
   }
 }

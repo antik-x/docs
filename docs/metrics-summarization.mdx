@@ -4,15 +4,15 @@ title: Summarization
 
 **标签**：LLM-as-a-judge · 无参考 · 多模态
 
-The summarization metric uses LLM-as-a-judge to determine whether your LLM (application) is generating factually correct summaries while including the necessary details from the original text. In a summarization task within `deepeval`, the original text refers to the `input` while the summary is the `actual_output`.
+摘要（summarization）指标使用 LLM-as-a-judge，判断你的 LLM（应用）是否在生成事实正确的摘要的同时，保留了原文的必要细节。在 `deepeval` 的摘要任务中，原文指 `input`，摘要指 `actual_output`。
 
 <Note>
-The `SummarizationMetric` is the only default metric in `deepeval` that is not cacheable.
+`SummarizationMetric` 是 `deepeval` 中唯一不可缓存的默认指标。
 </Note>
 
 ## Required Arguments
 
-To use the `SummarizationMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+要使用 `SummarizationMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
 
 - `input`
 - `actual_output`
@@ -21,7 +21,7 @@ Read the [How Is It Calculated](#how-is-it-calculated) section below to learn ho
 
 ## Usage
 
-Let's take this `input` and `actual_output` as an example:
+以下面的 `input` 与 `actual_output` 为例：
 
 <Tabs>
 
@@ -73,7 +73,7 @@ with a higher score indicating greater comprehensiveness.
 
 </Tabs>
 
-You can use the `SummarizationMetric` as follows for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation:
+你可以如下使用 `SummarizationMetric` 进行[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
 
 <Tabs>
 
@@ -139,37 +139,37 @@ await evaluate([testCase], [metric]);
 
 <Tab title="Python">
 
-There are **TEN** optional parameters when instantiating an `SummarizationMetric` class:
+实例化 `SummarizationMetric` 类时有**十个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **NINE** optional parameters when instantiating an `SummarizationMetric` class:
+实例化 `SummarizationMetric` 类时有**九个**可选参数：
 
 </Tab>
 
 </Tabs>
 
 - [Optional] `threshold`: the passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `assessment_questions`: a list of **close-ended questions that can be answered with either a 'yes' or a 'no'**. These are questions you want your summary to be able to ideally answer, and is especially helpful if you already know what a good summary for your use case looks like. If `assessment_questions` is not provided, we will generate a set of `assessment_questions` for you at evaluation time. The `assessment_questions` are used to calculate the coverage score.
-- [Optional] `n`: the number of assessment questions to generate when `assessment_questions` is not provided. Defaulted to 5.
+- [可选] `assessment_questions`：一组**只能用「是」或「否」回答的封闭式问题**。这些问题是你希望摘要理想情况下能够回答的，当你已经知道好摘要的样子时特别有用。若未提供 `assessment_questions`，我们会在评估时替你生成一组 `assessment_questions`。`assessment_questions` 用于计算覆盖率分数。
+- [可选] `n`：未提供 `assessment_questions` 时要生成的评估问题数量。默认为 5。
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to True, enforces a strict evaluation criterion. In strict mode, the metric score becomes binary: a score of 1 indicates a perfect result, and any outcome less than perfect is scored as 0. Defaulted as `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
 - [Optional] `truths_extraction_limit`: a number which when set, determines the maximum number of factual truths to extract from the `input`. The truths extracted will used to determine the alignment score, and will be ordered by importance, decided by your evaluation `model`. Defaulted to `None`（TypeScript 中为 `null`）.
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 <Note>
-Sometimes, you may want to only consider the most important factual truths in the `input`. If this is the case, you can choose to set the `truths_extraction_limit` parameter to limit the maximum number of truths to consider during evaluation.
+有时你可能只想考虑 `input` 中最重要的事实真相。如果是这种情况，可以选择设置 `truths_extraction_limit` 参数，限制评估期间考虑的真相最大数量。
 </Note>
 
 ### 在组件内
 
-You can also run the `SummarizationMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+你还可以在嵌套组件内运行 `SummarizationMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
 
 <Tabs>
 
@@ -237,7 +237,7 @@ for await (const golden of dataset.evalsIterator()) {
 
 ### 独立运行
 
-You can also run the `SummarizationMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `SummarizationMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -271,20 +271,20 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `SummarizationMetric` score is calculated according to the following equation:
+`SummarizationMetric` 的分数按以下公式计算：
 
 $$
 \text{Summarization} = \min(\text{Alignment Score}, \text{Coverage Score})
 $$
 
-To break it down, the:
+具体拆解如下：
 
-- The **alignment score** determines whether the summary contains hallucinated or contradictory information to the original text.
-- The **coverage score** determines whether the summary contains the necessary information from the original text.
+- **对齐分数**判断摘要是否包含与原文矛盾或凭空捏造的信息。
+- **覆盖率分数**判断摘要是否包含原文的必要信息。
 
-While the alignment score is similar to that of the [`HallucinationMetric`](/docs/metrics-hallucination), the coverage score is first calculated by generating `n` closed-ended questions that can only be answered with either a 'yes or a 'no', before calculating the ratio of which the original text and summary yields the same answer. [Here is a great article](https://www.confident-ai.com/blog/a-step-by-step-guide-to-evaluating-an-llm-text-summarization-task) on how `deepeval`'s summarization metric was build.
+对齐分数与 [`HallucinationMetric`](/docs/metrics-hallucination) 的类似；覆盖率分数的计算方式是：先生成 `n` 个只能以「是」或「否」回答的封闭式问题，再计算原文与摘要给出相同答案的比例。[这篇文章](https://www.confident-ai.com/blog/a-step-by-step-guide-to-evaluating-an-llm-text-summarization-task)介绍了 `deepeval` 摘要指标的构建过程。
 
-You can access both scores through a `SummarizationMetric`'s score breakdown as follows:
+你可以通过 `SummarizationMetric` 的分数明细访问两个分数，如下：
 
 <Tabs>
 
@@ -327,22 +327,22 @@ console.log(metric.scoreBreakdown);
 </Tabs>
 
 <Note>
-Since the summarization score is the minimum of the alignment and coverage scores, a 0 value for either one of these scores will result in a final summarization score of 0.
+由于摘要分数是对齐与覆盖率分数中的较小者，任一分数为 0 都会使最终的摘要分数为 0。
 </Note>
 
 ## FAQs
 
 <AccordionGroup>
-<Accordion title="My summary is factually accurate, so why is it scored so low?">
-The score is the lower of the alignment and coverage scores, so an accurate summary that drops key details is capped by a low coverage score. Check `metric.score_breakdown` to see which half is dragging it down.
+<Accordion title="我的摘要事实准确，为什么得分这么低？">
+分数取对齐与覆盖率分数中的较小者，因此丢掉关键细节的准确摘要会被低覆盖率分数封顶。查看 `metric.score_breakdown` 可以看到是哪一半拖了后腿。
 </Accordion>
-<Accordion title="How does the metric detect hallucinated vs. omitted information?">
-Two separate checks. The alignment score flags summary claims that contradict or invent detail (hallucination); the coverage score uses yes/no questions to catch key points left out (omission).
+<Accordion title="指标如何区分幻觉信息与遗漏信息？">
+两套独立检查。对齐分数标记与原文矛盾或凭空捏造细节的摘要声明（幻觉）；覆盖率分数用是非题捕捉被遗漏的要点（遗漏）。
 </Accordion>
-<Accordion title="When should I supply assessment questions instead of letting deepeval generate them?">
-Supply `assessment_questions` when you know what a good summary must answer — they pin the coverage score to the points you care about. Omitting them auto-generates `n` questions (default 5), fine for exploration but less deterministic.
+<Accordion title="什么时候该自己提供评估问题而不是让 deepeval 生成？">
+当你知道好摘要必须回答什么时提供 `assessment_questions`——它们把覆盖率分数固定在你关心的要点上。不提供则会自动生成 `n` 个问题（默认 5），探索阶段可以，但确定性差一些。
 </Accordion>
-<Accordion title="How do I keep the metric focused on only the most important facts?">
+<Accordion title="如何让指标只关注最重要的事实？">
 Set `truths_extraction_limit` to cap how many factual truths are pulled from the `input` . Truths are ordered by importance, so a limit avoids penalizing long documents over minor details. Defaults to `None`（TypeScript 中为 `null`） .
 </Accordion>
 </AccordionGroup>

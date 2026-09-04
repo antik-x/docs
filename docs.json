@@ -431,15 +431,15 @@
         "pages": [
           {
             "page": "docs/(metrics-others)/metrics-summarization",
-            "title": "Summarization"
+            "title": "摘要"
           },
           {
             "page": "docs/(metrics-others)/metrics-prompt-alignment",
-            "title": "Prompt Alignment"
+            "title": "提示词对齐"
           },
           {
             "page": "docs/(metrics-others)/metrics-hallucination",
-            "title": "Hallucination"
+            "title": "幻觉"
           },
           {
             "page": "docs/(metrics-others)/metrics-ragas",
