@@ -1,0 +1,20 @@
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 149
+docs/prompt-optimization-gepa.mdx
+  h_04c00a69eeb820 66,70-71
+docs/prompt-optimization-miprov2.mdx
+  h_04c00a69eeb820 5,10,68-70,148,179
+docs/prompt-optimization-simba.mdx
+  h_04c00a69eeb820 58-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "f723e4464a70fcbcfc125b0f5b398be4f150e774",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
