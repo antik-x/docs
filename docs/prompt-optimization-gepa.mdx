@@ -63,12 +63,12 @@ gepa = GEPA(
 - [可选] `iterations`：变异尝试的总次数。默认为 `5`。
 - [可选] `pareto_size`：帕累托验证集（`D_pareto`）中的金标数量。默认为 `3`。
 - [可选] `minibatch_size`：每次迭代为反馈抽取的金标数量。自动调整。
-- [可选] `patience`：在连续拒绝这么多子代后提前停止。默认为 `None`。
+- [可选] `patience`：在连续拒绝这么多子代后提前停止。默认为 None。
 - [可选] `random_seed`：可复现性种子。控制金标分割、小批量采样和变异。
 - [可选] `tie_breaker`：平局裁决策略（`PREFER_ROOT`、`PREFER_CHILD` 或 `RANDOM`）（`PREFER_ROOT`、`PREFER_CHILD` 或 `RANDOM`）。
 - [可选] `aggregate_instances`：聚合提示的逐金标帕累托分数的函数，用于排名/平局处理。默认为 `mean_of_all`。
-- [可选] `reflection_model`：用于诊断/反馈生成的 LLM。默认为 `gpt-4o-mini`。
-- [可选] `mutation_model`：用于重写提示的 LLM。默认为 `gpt-4o`。
+- [可选] `reflection_model`：用于诊断/反馈生成的 LLM。默认为 gpt-4o-mini。
+- [可选] `mutation_model`：用于重写提示的 LLM。默认为 gpt-4o。
 - [可选] `scorer`：自定义打分器实例。在大多数工作流中由 `PromptOptimizer` 注入。
 
 ## GEPA 如何运作？

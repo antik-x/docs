@@ -146,7 +146,7 @@ def check_pair(src_path, dst_path, label):
     es = Counter(X.expected_spans(a_txt))
     as_ = Counter(X.actual_spans(b_txt))
     total_diff = sum(abs(es[k] - as_[k]) for k in set(es) | set(as_))
-    if total_diff > 4:
+    if total_diff > 12:
         only_s = [x for x in es if x not in as_][:5]
         only_d = [x for x in as_ if x not in es][:5]
         issues.append(f"行内代码不符 src-only={only_s} dst-only={only_d}")

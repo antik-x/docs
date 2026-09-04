@@ -2,12 +2,12 @@
 title: MIPROv2
 ---
 
-**MIPROv2（Multiprompt Instruction PRoposal Optimizer Version 2）**是一种提示优化算法，联合优化指令和少样本演示。它使用 Optuna TPE（树结构 Parzen 估计器）进行贝叶斯优化来搜索提示空间。
+**MIPROv2（Multiprompt Instruction PRoposal Optimizer Version 2）**是一种提示优化算法，改编自 [DSPy 论文](https://arxiv.org/pdf/2406.11695)。，联合优化指令和少样本演示。它使用 Optuna TPE（树结构 Parzen 估计器）进行贝叶斯优化来搜索提示空间。
 
 核心洞察是**指令**（LLM 应该做什么）和**演示**（展示期望行为的示例）共同影响提示的表现。MIPROv2 联合搜索两者以找到最佳组合。
 
 <Info>
-MIPROv2 需要 `optuna` 包来进行贝叶斯优化。安装它：
+`deepeval` 的 MIPROv2 需要 `optuna` 包来进行贝叶斯优化。安装它：
 
 ```bash
 pip install optuna
@@ -65,9 +65,9 @@ miprov2 = MIPROV2(
 - [可选] `num_trials`：要运行的贝叶斯优化试验次数。每次试验评估一个指令+演示集组合。默认为 `30`。
 - [可选] `minibatch_size`：每次试验为评估采样的金标数量。更大的批次给出更可靠的分数但更慢。默认为 `25`。
 - [可选] `minibatch_full_eval_steps`：每 N 次试验对所有金标运行一次完整评估。默认为 `5`。
-- [可选] `max_bootstrapped_demonstrations`：自举演示的最大数量。这些是通过运行当前提示并保留通过所有指标的输出生成的。
-- [可选] `max_labeled_demonstrations`：来自 `expected_output`/`expected_outcome` 的标注演示的最大数量。
-- [可选] `num_demonstration_sets`：要创建的不同演示集配置的数量。默认为 `3`。
+- [可选] `max_bootstrapped_demonstrations`：自举演示的最大数量。这些是通过运行当前提示并保留通过所有指标的输出生成的。默认为 `4`。
+- [可选] `max_labeled_demonstrations`：来自 `expected_output`/`expected_outcome` 的标注演示的最大数量。默认为 `4`。
+- [可选] `num_demonstration_sets`：要创建的不同演示集配置的数量。默认为 3。
 - [可选] `random_state`：可复现性控制。你可以传入 `int` 种子或 `random.Random` 实例。
 
 ## MIPROv2 如何运作？
@@ -145,7 +145,7 @@ flowchart TD
 提案阶段在开始时运行一次，包含两个步骤：
 
 1. **指令提案** —— 生成多样化的指令候选（基线 + 变体）
-2. **演示引导** —— 从你的金标构建多组演示集
+2. **演示引导** —— 从你的[金标](/docs/evaluation-datasets#what-are-goldens)构建多组演示集
 
 #### Step 1a: Instruction Proposal
 
@@ -176,7 +176,7 @@ Demo bootstrapping is particularly powerful when your task benefits from example
 
 ### Phase 2: Bayesian Optimization
 
-提案完成后，MIPROv2 使用 **Optuna TPE** 搜索最佳的（指令，演示集）组合。
+提案完成后，MIPROv2 使用 **Optuna TPE** 搜索 `(instruction_idx, demonstration_set_idx)` 组合。最佳的（指令，演示集）组合。
 
 #### What is Bayesian Optimization?
 

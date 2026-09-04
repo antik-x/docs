@@ -55,8 +55,8 @@ simba = SIMBA(
 
 创建 `SIMBA` 实例时有**六个**可选参数：
 
-- [可选] `iterations`：要运行的优化步骤总数。每个步骤采样一个小批量并改进提示。
-- [可选] `minibatch_size`：每次迭代采样的金标数量。更大的批次给出更可靠的信号但更慢。
+- [可选] `iterations`：要运行的优化步骤总数。每个步骤采样一个小批量并改进提示。默认为 `8`。
+- [可选] `minibatch_size`：每次迭代采样的金标数量。更大的批次给出更可靠的信号但更慢。默认为 `15`。
 - [Optional] `num_candidates`: number of hard examples (top-variance buckets) to introspect and generate a candidate from per iteration. Defaulted to `4`.
 - [Optional] `num_samples`: number of independent trajectories to run per golden when measuring variance. More samples = more reliable variance estimates but higher cost. Defaulted to `3`.
 - [Optional] `minibatch_full_eval_steps`: run a full-dataset validation every N iterations, and always on the final iteration. Defaulted to `4`.
