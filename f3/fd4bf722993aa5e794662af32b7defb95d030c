@@ -1,0 +1,32 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 107-109
+docs.json
+  h_04c00a69eeb820 455,459
+docs/community-metrics-overview.mdx
+  h_04c00a69eeb820 1-22
+docs/community-metrics-overview.mdx.pending.tsv
+  h_04c00a69eeb820 1-15
+docs/metrics-agent-loop-detection.mdx
+  h_04c00a69eeb820 1-278
+docs/metrics-agent-loop-detection.mdx.pending.tsv
+  h_04c00a69eeb820 1-107
+docs/metrics-citation-faithfulness.mdx
+  h_04c00a69eeb820 1-79
+docs/metrics-citation-faithfulness.mdx.pending.tsv
+  h_04c00a69eeb820 1-32
+docs/metrics-tool-permission.mdx
+  h_04c00a69eeb820 1-93
+docs/metrics-tool-permission.mdx.pending.tsv
+  h_04c00a69eeb820 1-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "f3fd4bf722993aa5e794662af32b7defb95d030c",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
