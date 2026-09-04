@@ -95,6 +95,11 @@
     "(safety)/metrics-non-advice": "非建议",
     "(non-llm)/metrics-exact-match": "精确匹配",
     "(non-llm)/metrics-json-correctness": "JSON 正确性",
-    "(non-llm)/metrics-pattern-match": "模式匹配"
+    "(non-llm)/metrics-pattern-match": "模式匹配",
+    "(images)/multimodal-metrics-image-coherence": "图像连贯性",
+    "(images)/multimodal-metrics-image-helpfulness": "图像有用性",
+    "(images)/multimodal-metrics-image-reference": "图像引用",
+    "(images)/multimodal-metrics-text-to-image": "文生图",
+    "(images)/multimodal-metrics-image-editing": "图像编辑"
   }
 }

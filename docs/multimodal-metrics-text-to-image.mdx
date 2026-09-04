@@ -1,0 +1,168 @@
+---
+title: Text to Image
+---
+
+**标签**：LLM-as-a-judge · 自定义 · 单轮 · 多模态
+
+文生图（text to image）指标通过评估合成图像在语义一致性与感知质量上的表现，来衡量**图像生成任务**的效果。`deepeval` 的文生图指标是会自我解释的 MLLM-Eval，会输出指标分数的理由。
+
+<Tip>
+使用 GPT-4v 作为评估模型时，文生图指标可以达到**与人类评估相当**的分数。该指标尤其擅长伪影检测。
+</Tip>
+
+## Required Arguments
+
+要使用 `TextToImageMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+
+<Note>
+输入应包含**0 张图像**，输出应恰好包含 **1 张图像**。
+</Note>
+
+`input` 与 `actual_output` 是创建 `LLMTestCase`（因此也是所有指标）的必备参数，即使它们可能不参与指标计算。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase, MLLMImage
+from deepeval.metrics import TextToImageMetric
+from deepeval import evaluate
+
+metric = TextToImageMetric(
+    threshold=0.7,
+    include_reason=True,
+)
+m_test_case = LLMTestCase(
+    input=f"Generate an image of a blue pair of shoes.",
+    # Replace with your MLLM app output
+    actual_output=f"{MLLMImage(url='https://shoe-images.com/edited-shoes', local=False)}",
+)
+
+
+evaluate(test_cases=[m_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase, MLLMImage } from "deepeval/test-case";
+import { TextToImageMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const metric = new TextToImageMetric({
+  threshold: 0.7,
+});
+const mTestCase = new LLMTestCase({
+  input: "Generate an image of a blue pair of shoes.",
+  // Replace with your MLLM app output
+  actualOutput: `${new MLLMImage({ url: "https://shoe-images.com/edited-shoes", local: false })}`,
+});
+
+
+await evaluate([mTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `TextToImageMetric` 时有**六个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `TextToImageMetric` 时有**五个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `TextToImageMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(m_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(mTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`TextToImageMetric` 的分数按以下公式计算：
+
+$$
+O = \sqrt{\text{min}(\alpha_1, \ldots, \alpha_i) \cdot \text{min}(\beta_1, \ldots, \beta_i)}
+$$
+
+`TextToImageMetric` 的分数组合了语义一致性（SC）与感知质量（PQ）两个子分数，为合成图像提供全面评估。最终总分取最小 SC 与最小 PQ 分数乘积的平方根。
+
+### SC Scores
+
+这些分数评估与提示词的对齐程度以及与概念的相似性等方面。这些子分数中的最小值即为 SC 分数。SC 评估会同时使用输入条件与合成图像。
+
+### PQ Scores
+
+这些分数评估图像的自然度与是否无伪影。这些子分数中的最小值即为 PQ 分数。PQ 评估只使用合成图像，以避免输入条件造成混淆。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="评估模型该用文生图还是图像编辑？">
+仅从提示词生成（无源图像）时用 `TextToImageMetric`。转换已有图像时用 [`ImageEditingMetric`](/docs/multimodal-metrics-image-editing)。
+</Accordion>
+<Accordion title="本指标要求输入和输出各包含多少张图像？">
+`input` 中为 **0 张图像**，`actual_output` 中恰好 **1** 个 `MLLMImage`。输入里有源图像说明你要的是图像编辑。
+</Accordion>
+<Accordion title="我的文生图分数低——是提示词对齐问题还是图像质量问题？">
+分别检查 SC 与 PQ 子分数：SC 低说明图像与提示词不匹配，PQ 低说明存在伪影或不自然的结果。阅读 `metric.reason` 查看是什么拉低了分数。
+</Accordion>
+<Accordion title="为什么一个较弱的子分数会把总分拉得这么狠？">
+分数是 `O = sqrt(min(SC) · min(PQ))`，取*最小* SC 与最小 PQ 子分数相乘。因此单个失败方面（例如一个渲染得很差的物体）会刻意封顶整体结果。
+</Accordion>
+</AccordionGroup>

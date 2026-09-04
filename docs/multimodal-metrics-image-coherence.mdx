@@ -1,0 +1,168 @@
+---
+title: Image Coherence
+---
+
+**标签**：LLM-as-a-judge · 单轮 · 多模态
+
+图像连贯性（image coherence）指标评估**图像与伴随文本的连贯对齐**，衡量视觉内容对文本叙述的补充与增强效果。`deepeval` 的图像连贯性指标是会自我解释的 MLLM-Eval，会输出指标分数的理由。
+
+<Info>
+图像连贯性评估包含文本以及随附检索或生成图像的 MLLM 响应。
+</Info>
+
+## Required Arguments
+
+要使用 `ImageCoherence`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+
+`input` 与 `actual_output` 是创建 `LLMTestCase`（因此也是所有指标）的必备参数，即使它们可能不参与指标计算。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase, MLLMImage
+from deepeval.metrics import ImageCoherenceMetric
+from deepeval import evaluate
+
+metric = ImageCoherenceMetric(
+    threshold=0.7,
+    include_reason=True,
+)
+m_test_case = LLMTestCase(
+    input=f"Provide step-by-step instructions on how to fold a paper airplane.",
+    actual_output=f"""
+        1. Take the sheet of paper and fold it lengthwise:
+        {MLLMImage(url="./paper_plane_1", local=True)}
+        2. Unfold the paper. Fold the top left and right corners towards the center.
+        {MLLMImage(url="./paper_plane_2", local=True)}
+        ...
+    """
+)
+
+
+evaluate(test_cases=[m_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase, MLLMImage } from "deepeval/test-case";
+import { ImageCoherenceMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const metric = new ImageCoherenceMetric({
+  threshold: 0.7,
+});
+const mTestCase = new LLMTestCase({
+  input: "Provide step-by-step instructions on how to fold a paper airplane.",
+  actualOutput: `
+        1. Take the sheet of paper and fold it lengthwise:
+        ${new MLLMImage({ url: "./paper_plane_1", local: true })}
+        2. Unfold the paper. Fold the top left and right corners towards the center.
+        ${new MLLMImage({ url: "./paper_plane_2", local: true })}
+        ...
+    `,
+});
+
+
+await evaluate([mTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `ImageCoherence` 时有**六个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `ImageCoherence` 时有**五个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `max_context_size`: a number representing the maximum number of characters in each context, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `None`（TypeScript 中为 `null`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `ImageCoherenceMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(m_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(mTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+## How Is It Calculated?
+
+`ImageCoherence` 的分数按以下方式计算：
+
+1. **单张图像连贯性**：每张图像的连贯性分数基于图像正上方与正下方的文本，受 `max_context_size`（字符数）限制。若未提供 `max_context_size`，则使用所有可用文本。公式为：
+
+$$
+C_i = f(\text{Context}_{\text{above}}, \text{Context}_{\text{below}}, \text{Image}_i)
+$$
+
+2. **最终分数**：整体的 `ImageCoherence` 分数是所有图像各自连贯性分数的平均：
+
+$$
+O = \frac{\sum_{i=1}^n C_i}{n}
+$$
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="图像连贯性与图像有用性（Image Helpfulness）有何区别？">
+`ImageCoherence` 衡量的是*对齐*——图像是否与周围文本契合、流畅；而 [`ImageHelpfulness`](/docs/multimodal-metrics-image-helpfulness) 衡量的是*有用性*。图像可能连贯却没什么价值，因此两者要一起追踪。
+</Accordion>
+<Accordion title="连贯性检查里对齐的到底是什么？">
+图像与其伴随文本：视觉内容是否以一致的主题、风格与语境补充叙述？连贯的图像看起来就该出现在它被放置的位置。
+</Accordion>
+<Accordion title="多张图像时分数如何计算？">
+每个 `MLLMImage` 依据其紧邻上下文打分，最终分数是**平均值**（ `O = (ΣC_i) / n` ）。用 `max_context_size` 限制每张图像周围的文本量。
+</Accordion>
+<Accordion title="什么通常导致图像连贯性分数低？">
+与上下文冲突的图像——各步骤间画风不一致、视觉内容与相邻文本描述不符，或图像放错了位置。查看 `metric.reason` 可了解是哪张图像破坏了连贯性。
+</Accordion>
+</AccordionGroup>

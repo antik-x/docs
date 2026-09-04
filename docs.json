@@ -406,23 +406,23 @@
         "pages": [
           {
             "page": "docs/(images)/multimodal-metrics-image-coherence",
-            "title": "Image Coherence"
+            "title": "图像连贯性"
           },
           {
             "page": "docs/(images)/multimodal-metrics-image-helpfulness",
-            "title": "Image Helpfulness"
+            "title": "图像有用性"
           },
           {
             "page": "docs/(images)/multimodal-metrics-image-reference",
-            "title": "Image Reference"
+            "title": "图像引用"
           },
           {
             "page": "docs/(images)/multimodal-metrics-text-to-image",
-            "title": "Text to Image"
+            "title": "文生图"
           },
           {
             "page": "docs/(images)/multimodal-metrics-image-editing",
-            "title": "Image Editing"
+            "title": "图像编辑"
           }
         ]
       },

@@ -1,0 +1,160 @@
+---
+title: Image Editing
+---
+
+**标签**：LLM-as-a-judge · 自定义 · 单轮 · 多模态
+
+图像编辑（image editing）指标通过评估合成图像在语义一致性与感知质量上的表现（类似 `TextToImageMetric`），来衡量**图像编辑任务**的效果。`deepeval` 的图像编辑指标是会自我解释的 MLLM-Eval，会输出指标分数的理由。
+
+## Required Arguments
+
+要使用 `ImageEditingMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+
+<Note>
+输入与输出都应各自恰好包含 **1 张图像**。
+</Note>
+
+`input` 与 `actual_output` 是创建 `LLMTestCase`（因此也是所有指标）的必备参数，即使它们可能不参与指标计算。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
+
+## Usage
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase, MLLMImage
+from deepeval.metrics import ImageEditingMetric
+from deepeval import evaluate
+
+metric = ImageEditingMetric(
+    threshold=0.7,
+    include_reason=True,
+)
+m_test_case = LLMTestCase(
+    input=f"Change the color of the shoes to blue. {MLLMImage(url='./shoes.png', local=True)}",
+    # Replace this with your actual MLLM application output
+    actual_output=f"{MLLMImage(url='https://shoe-images.com/edited-shoes', local=False)}"
+)
+
+
+evaluate(test_cases=[m_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase, MLLMImage } from "deepeval/test-case";
+import { ImageEditingMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const metric = new ImageEditingMetric({
+  threshold: 0.7,
+});
+const mTestCase = new LLMTestCase({
+  input: `Change the color of the shoes to blue. ${new MLLMImage({ url: "./shoes.png", local: true })}`,
+  // Replace this with your actual MLLM application output
+  actualOutput: `${new MLLMImage({ url: "https://shoe-images.com/edited-shoes", local: false })}`,
+});
+
+
+await evaluate([mTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `ImageEditingMetric` 时有**六个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `ImageEditingMetric` 时有**五个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+你还可以把 `ImageEditingMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(m_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(mTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+## How Is It Calculated?
+
+`ImageEditingMetric` 的分数按以下公式计算：
+
+$$
+O = \sqrt{\text{min}(\alpha_1, \ldots, \alpha_i) \cdot \text{min}(\beta_1, \ldots, \beta_i)}
+$$
+
+`ImageEditingMetric` 的分数组合了语义一致性（SC）与感知质量（PQ）两个子分数，为合成图像提供全面评估。最终总分取最小 SC 与最小 PQ 分数乘积的平方根。
+
+### SC Scores
+
+这些分数评估与提示词的对齐程度以及与概念的相似性等方面。这些子分数中的最小值即为 SC 分数。SC 评估会同时使用输入条件与合成图像。
+
+### PQ Scores
+
+这些分数评估图像的自然度与是否无伪影。这些子分数中的最小值即为 PQ 分数。PQ 评估只使用合成图像，以避免输入条件造成混淆。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="图像编辑与文生图有何区别？">
+`ImageEditingMetric` 依据编辑指令为*已有*图像的变换打分，而 [`TextToImageMetric`](/docs/multimodal-metrics-text-to-image) 为无源提示词生成的图像打分。只要模型从给定图像出发，就选图像编辑。
+</Accordion>
+<Accordion title="输入和输出各需要多少张图像？">
+**输入 1 张图像**（原图，加指令文本），**输出 1 张**（编辑后的结果），两者都以 `MLLMImage` 对象传入 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case)。
+</Accordion>
+<Accordion title="指标会检查编辑是否遵循了指令吗？">
+会——这正是 SC 部分，对照编辑指令与编辑后的图像打分，因此「把鞋子换成蓝色」产出红鞋子会拉低 SC。PQ 会单独惩罚编辑带来的伪影。
+</Accordion>
+<Accordion title="我的编辑看起来很干净但分数很低——指标在惩罚什么？">
+由于 `O = sqrt(min(SC) · min(PQ))`，一张干净的图像（PQ 高）如果没有忠实执行编辑、或改动了不该改的部分（SC 低），分数依然会低。阅读 `metric.reason` 查看是什么拉低了分数。
+</Accordion>
+</AccordionGroup>
