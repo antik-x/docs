@@ -1,0 +1,24 @@
+.agents/skills/docs-translation/scripts/convert_fumadocs.py
+  h_04c00a69eeb820 314,319-320,322
+.agents/skills/docs-translation/scripts/fumadocs_norm.py
+  h_04c00a69eeb820 217-218,221-225
+.agents/skills/docs-translation/scripts/verify_mdx.py
+  h_04c00a69eeb820 37
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 109-111
+docs.json
+  h_04c00a69eeb820 463,467
+docs/metrics-agent-loop-detection.mdx
+  h_04c00a69eeb820 7,10,15,54,56-64,67,70,72,74,95,97,118,123,129,131,133-135,139,143-145,149,151-152,154,158-160,164,167,172-173,179-182,201,218,222,251,255,257,259-261,265,269-270,272,276-280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "b7731dae577ad8510d2166beb26bd59669cf80c0",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
