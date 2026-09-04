@@ -1,0 +1,28 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 66-72
+docs.json
+  h_04c00a69eeb820 210,214,218,222,226,230
+docs/metrics-argument-correctness.mdx
+  h_04c00a69eeb820 1-295
+docs/metrics-plan-adherence.mdx
+  h_04c00a69eeb820 1-171
+docs/metrics-plan-quality.mdx
+  h_04c00a69eeb820 1-170
+docs/metrics-step-efficiency.mdx
+  h_04c00a69eeb820 1-170
+docs/metrics-task-completion.mdx
+  h_04c00a69eeb820 1-160
+docs/metrics-tool-correctness.mdx
+  h_04c00a69eeb820 1-307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "477f8c8d5cc1de97c41ecde87582de9a6a612bc6",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
