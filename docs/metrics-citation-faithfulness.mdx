@@ -1,0 +1,79 @@
+---
+title: Citation Faithfulness
+---
+
+**标签**：社区维护 · LLM-as-a-judge · 单轮 · 无参考 · RAG · 多模态
+
+引用忠实度（citation faithfulness）指标使用 LLM-as-a-judge，检查你的 RAG 流水线 `actual_output` 中的每个 `[N]` 引用标记，是否指向 `retrieval_context` 中真正支撑该标记所附声明的段落。`deepeval` 的引用忠实度指标是会自我解释的 LLM-Eval，会输出指标分数的理由。
+
+<Info>
+`CitationFaithfulnessMetric` 是一个**社区指标**，由 `deepeval` 社区贡献与维护。社区指标不从 `deepeval.metrics` 导出——请从 `deepeval.metrics.community` 显式导入。
+</Info>
+
+<Note>
+该指标比 [`FaithfulnessMetric`](/docs/metrics-faithfulness) 更严格。忠实度只问声明是否在检索上下文_某处_得到支持；引用忠实度还会检查被引用的段落是否就是支撑该声明的那一段，因此它能发现错误归因：某声明引用了段落 `[1]`，但 [1] 并不支持它——即使上下文中的另一段 `[2]` 可以。
+</Note>
+
+## Required Arguments
+
+要使用 `CitationFaithfulnessMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+- `retrieval_context`
+
+`retrieval_context` 的段落在展示给裁判前会被编号（`[1]`、`[2]`……），`actual_output` 中的 `[N]` 标记即指这些段落编号。
+
+## Usage
+
+`CitationFaithfulnessMetric()` 可用于文本测试用例的[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
+
+```python
+from deepeval import evaluate
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics.community import CitationFaithfulnessMetric
+
+# Replace this with the actual output from your LLM application.
+# The completion-year claim is cited to passage [1], which only covers height.
+actual_output = "The Eiffel Tower was completed in 1889 [1]."
+
+# Replace this with the actual retrieved context from your RAG pipeline
+retrieval_context = [
+    "The Eiffel Tower stands 330 metres tall in Paris.",
+    "The Eiffel Tower was completed in 1889 for the World Fair.",
+]
+
+metric = CitationFaithfulnessMetric()
+test_case = LLMTestCase(
+    input="How tall is the Eiffel Tower and when was it completed?",
+    actual_output=actual_output,
+    retrieval_context=retrieval_context,
+)
+
+# To run metric as a standalone
+# metric.measure(test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[test_case], metrics=[metric])
+```
+
+在上例中，`FaithfulnessMetric` 会让该答案通过，因为完成年份的声明有段落 `[2]` 支持；而 `CitationFaithfulnessMetric` 会判它失败，因为 `[1]` 引用指向的是身高段落，而不是支撑该声明的段落。
+
+创建 `CitationFaithfulnessMetric` 时有八个可选参数：
+
+- [可选] `threshold`：浮点数，表示最低通过分数。也可设为 `None`，以[仅分数模式](/docs/metrics-introduction#metric-thresholds)运行指标。默认为 `1.0`。忠实的答案得 `1.0`，不忠实的得 `0.0`，因此默认值要求忠实的判定才能通过。
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，或类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [可选] `include_reason`：布尔值，设为 `True` 时为评估分数附带理由。默认为 `True`。
+- [可选] `strict_mode`：布尔值，设为 `True` 时把指标分数强制为二元：完美为 `0`，否则为 `1`。它还会覆盖当前阈值并将其设为 `1`。默认为 `False`。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+- [可选] `verbose_mode`：布尔值，设为 `True` 时把计算该指标的中间步骤打印到控制台。默认为 `False`。
+- [可选] `flaky`：布尔值，设为 `True` 时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`。
+
+## How Is It Calculated?
+
+`CitationFaithfulnessMetric` 的分数按以下公式计算：
+
+单个 LLM 裁判阅读问题、编号段落与答案，然后返回二元判定：
+
+- `faithful`（分数 `1.0`）：每条事实声明都有段落支撑，且每个 `[N]` 引用标记都指向支撑其所附声明的段落。
+- `unfaithful`（分数 `0.0`）：至少有一条声明无支撑、与段落矛盾，或其 `[N]` 引用指向的段落 `N` 并不支持该声明——即使别的段落可以。

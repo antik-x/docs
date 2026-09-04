@@ -452,11 +452,11 @@
         "pages": [
           {
             "page": "docs/(community)/community-metrics-overview",
-            "title": "Overview"
+            "title": "社区指标概览"
           },
           {
             "page": "docs/(community)/metrics-citation-faithfulness",
-            "title": "Citation Faithfulness"
+            "title": "引用忠实度"
           },
           {
             "page": "docs/(community)/metrics-agent-loop-detection",

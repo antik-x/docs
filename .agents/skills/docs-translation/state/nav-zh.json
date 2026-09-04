@@ -104,6 +104,8 @@
     "(metrics-others)/metrics-ragas": "RAGAS",
     "(metrics-others)/metrics-hallucination": "幻觉",
     "(metrics-others)/metrics-summarization": "摘要",
-    "(metrics-others)/metrics-prompt-alignment": "提示词对齐"
+    "(metrics-others)/metrics-prompt-alignment": "提示词对齐",
+    "(community)/community-metrics-overview": "社区指标概览",
+    "(community)/metrics-citation-faithfulness": "引用忠实度"
   }
 }
