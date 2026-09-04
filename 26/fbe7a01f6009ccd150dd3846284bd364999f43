@@ -1,0 +1,24 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 55-60
+docs.json
+  h_04c00a69eeb820 239,243,247,251,255
+docs/metrics-answer-relevancy.mdx
+  h_04c00a69eeb820 178,246,325
+docs/metrics-contextual-precision.mdx
+  h_04c00a69eeb820 7,11,17,28,193,199,206-209,211-212,214,216,280,282,311,316,324-326,330,332-333,335,339,341-342,345,348,436,455,458,461,464
+docs/metrics-contextual-recall.mdx
+  h_04c00a69eeb820 7,10,20,31,196,202,209,212,215,218,220,284,286,315,320,326,329,332,336,338-339,342,345,421,440,443,446,449
+docs/metrics-contextual-relevancy.mdx
+  h_04c00a69eeb820 7,10,20,27,34,189,195,202,205,208,211,213,277,279,308,313,319,323,325-326,329,332,410,429,432,435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "26fbe7a01f6009ccd150dd3846284bd364999f43",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
