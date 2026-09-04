@@ -1,0 +1,28 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 89-92
+docs.json
+  h_04c00a69eeb820 363,367,383
+docs/metrics-bias.mdx
+  h_04c00a69eeb820 1-264
+docs/metrics-misuse.mdx
+  h_04c00a69eeb820 1-262
+docs/metrics-non-advice.mdx
+  h_04c00a69eeb820 1-260
+docs/metrics-pii-leakage.mdx
+  h_04c00a69eeb820 1-265
+docs/metrics-role-violation.mdx
+  h_04c00a69eeb820 1-266
+docs/metrics-toxicity.mdx
+  h_04c00a69eeb820 1-263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "d0f4ec44b3e2efb9ea3cc07230b69c9bb26f6ea4",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
