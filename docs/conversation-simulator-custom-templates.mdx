@@ -2,7 +2,7 @@
 title: Custom Templates
 ---
 
-Customize the prompts used to simulate user turns by passing a `template=` to [`default_simulation_node`](/docs/conversation-simulator-simulation-graph#default_simulation_node) and feeding the returned node into `simulation_graph`.
+通过传入 `template=` 来自定义用于模拟用户轮次的提示词。你可以覆盖默认的用户模拟和助手模拟模板。
 
 ## API
 
@@ -17,19 +17,19 @@ default_simulation_node(template=MyTemplate)
 | `template` | A subclass of `SimulationTemplate` overriding `simulate_first_user_turn()` and/or `simulate_user_turn()`. Validated eagerly — invalid templates raise `TypeError` at construction time. When omitted, the built-in `SimulationTemplate` is used. |
 | `terminal`, `max_visits`, `name` | Same as `SimulationNode` — see [Simulation Graph](/docs/conversation-simulator-simulation-graph#default_simulation_node) for full reference. |
 
-A custom template must:
+自定义模板必须：
 
-- Inherit from `SimulationTemplate`.
-- Override `simulate_first_user_turn(golden, language)` to change how the **first** user message is generated.
-- Override `simulate_user_turn(golden, turns, language)` to change how **follow-up** user messages are generated.
+- 继承自 `SimulationTemplate`。
+- 覆盖 `simulate_first_user_turn(golden, language)` 来改变**第一条**用户消息的生成方式。
+- 覆盖 `simulate_user_turn(golden, turns, language)` 来改变**后续**用户消息的生成方式。
 
-Both methods must return a prompt string that elicits a JSON response with one key: `simulated_input`.
+两个方法都必须返回一个提示字符串，该字符串引导出包含 `simulated_input` 键的 JSON 响应。
 
 <Note>
-`ConversationSimulator` used to accept a top-level `simulation_template=` kwarg. That kwarg has been removed in favor of `default_simulation_node(template=...)`, which keeps the template attached to the node that actually consumes it.
+过去接受顶层 `simulation_template=` 关键字参数。该参数已被移除，改用 `default_simulation_node(template=...)`，它将模板保持在实际使用它的节点上。
 </Note>
 
-## Example
+## 示例
 
 ```python
 from deepeval.simulator import (
@@ -69,21 +69,21 @@ simulator = ConversationSimulator(
 
 ## Common Use Cases
 
-### User Style
+### 用户风格
 
-Use a custom template when simulated users should speak in a specific voice, such as formal buyers, frustrated customers, clinicians, students, or non-technical users.
+当模拟用户需要以特定语气说话时使用自定义模板，例如正式的买家、沮丧的客户、临床医生、学生或非技术用户。
 
-### Domain Framing
+### 领域框架
 
-Use a custom template when the generated user turns should reflect domain-specific behavior, vocabulary, or constraints that the default simulator prompt does not emphasize.
+当生成的用户轮次应反映默认模拟器提示未强调的领域特定行为、词汇或约束时，使用自定义模板。
 
-### Conversation Pressure
+### 对话压力
 
-Use a custom template when you want simulated users to be more adversarial, more confused, more concise, or more persistent than the default role-play behavior.
+当你希望模拟用户比默认角色扮演行为更具对抗性、更困惑、更简洁或更执着时，使用自定义模板。
 
-### Mixing with a Simulation Graph
+### 与模拟图混合使用
 
-You can also embed `default_simulation_node(template=...)` as one node inside a larger [simulation graph](/docs/conversation-simulator-simulation-graph) — useful when you want a custom template for free-form exploration on some branches and deterministic, scripted nodes on others.
+你还可以将 `default_simulation_node(template=...)` 作为节点嵌入更大的[模拟图](/docs/conversation-simulator-simulation-graph)中。
 
 ```python
 from deepeval.simulator import SimulationNode, default_simulation_node
@@ -98,11 +98,11 @@ scripted_opener.add_node(
 )
 ```
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="When do I need a custom template versus the default simulator?">
-Reach for one when the simulated user should speak in a specific voice, domain framing, or pressure level — formal buyers, frustrated customers, clinicians, more adversarial or more concise users. If the default role-play already sounds right, you don't need a template.
+当模拟用户需要以特定语气、领域框架或压力水平说话时使用它。如果默认的角色扮演听起来已经合适，就不需要模板。
 </Accordion>
 <Accordion title="How do I actually plug a custom template in?">
 Pass it to `default_simulation_node(template=MyTemplate)` and feed the returned node into `simulation_graph` . The old top-level `simulation_template=` kwarg has been removed in favor of this, which keeps the template attached to the node that consumes it.

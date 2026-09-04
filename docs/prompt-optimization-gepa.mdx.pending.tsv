@@ -1,0 +1,134 @@
+1	---
+2	title: GEPA
+3	---
+5	**GEPA (Genetic-Pareto)** is a prompt optimization algorithm within `deepeval` adapted from the DSPy paper [GEPA: Genetic Pareto Optimization of LLM Prompts](https://arxiv.org/pdf/2507.19457). It combines evolutionary optimization with multi-objective Pareto selection to systematically improve prompts while maintaining diversity across different problem types.
+7	The core insight is that different prompts may excel at different types of problems—a prompt optimized for code generation might struggle with creative writing, and vice versa. GEPA addresses this by maintaining a diverse pool of candidate prompts rather than converging on a single "best" one.
+9	<Info>
+10	The word **Pareto** comes from economics and multi-objective optimization. Imagine you're comparing prompts across multiple goldens—a prompt is **Pareto optimal** (or "non-dominated") when there's no way to improve its score on one golden without making it worse on another.
+12	Pareto selection in GEPA prevents optimization from converging at a local maximum.
+13	</Info>
+15	## Optimize Prompts With GEPA
+17	To optimize a prompt using GEPA, simply provide a `GEPA` algorithm instance to the `optimize()` method:
+39	Done ✅. You just used `GEPA` to run a prompt optimization.
+41	<Note>
+42	Since `GEPA` is already the default for `algorithm`, unless you wish to configure how `GEPA` is ran there's no need to explicitly pass it in as an argument.
+43	</Note>
+45	## Customize GEPA
+47	You can customize GEPA's behavior by passing arguments directly to the `GEPA` constructor:
+61	There are **NINE** optional parameters when creating a `GEPA` instance:
+63	- [Optional] `iterations`: total number of mutation attempts. Defaulted to `5`.
+64	- [Optional] `pareto_size`: number of goldens in the Pareto validation set (`D_pareto`). Defaulted to `3`.
+65	- [Optional] `minibatch_size`: number of goldens drawn for feedback per iteration. Automatically clamped to available data. Defaulted to `8`.
+66	- [Optional] `patience`: stop early after this many consecutive rejected children. Defaulted to `3`.
+67	- [Optional] `random_seed`: seed for reproducibility. Controls golden splitting, minibatch sampling, Pareto parent selection, and tie-breaking. Set a fixed value (e.g., `42`) to get reproducible runs. Defaulted to `time.time_ns()`.
+68	- [Optional] `tie_breaker`: policy for breaking ties (`PREFER_ROOT`, `PREFER_CHILD`, or `RANDOM`). Defaulted to `PREFER_CHILD`.
+69	- [Optional] `aggregate_instances`: function that aggregates a prompt's per-golden Pareto scores into a scalar for ranking/tie handling. Defaulted to `mean_of_all`.
+70	- [Optional] `reflection_model`: LLM used for diagnosis/feedback generation. Defaulted to `"gpt-4o-mini"`.
+71	- [Optional] `mutation_model`: LLM used for rewriting the prompt. Defaulted to `"gpt-4o"`.
+72	- [Optional] `scorer`: custom scorer instance. In most workflows this is injected by `PromptOptimizer`.
+74	## How Does GEPA Work?
+91	Rather than forcing a single "best" prompt, GEPA maintains a **diverse population of candidate prompts** and uses [Pareto selection](#step-2-pareto-selection) to balance exploration of different strategies with exploitation of proven improvements. This prevents the optimization from getting stuck at a local maximum.
+147	The algorithm runs for a configurable number of `iterations`. Each iteration tries to evolve one new prompt variant, then decides whether to keep it. Here's the exact high-level flow:
+149	1. **Golden Splitting** — Split goldens into a fixed validation set (`D_pareto`) and feedback set (`D_feedback`)
+150	2. **Parent Selection** — Sample a parent from the Pareto frontier using frequency-weighted selection
+151	3. **Feedback & Rewrite** — Score a minibatch, collect diagnosis, and generate a child prompt
+152	4. **Filter + Acceptance** — Reject unchanged/weak candidates, then run Pareto acceptance
+153	5. **Final Pick** — Choose the top prompt by aggregate score (with tie-breaker policy)
+155	### Step 1: Golden Splitting
+157	Before optimization begins, GEPA splits your goldens into two disjoint subsets:
+159	- **`D_pareto`** (validation set): A fixed subset of `pareto_size` goldens used to score **every** prompt candidate. By evaluating all prompts on the same goldens, GEPA ensures fair comparison—score differences reflect actual prompt quality, not sampling luck.
+160	- **`D_feedback`** (feedback set): The remaining goldens used for sampling minibatches during mutation. These provide diverse training signals without contaminating the validation set.
+162	This train/validation split is fundamental to avoiding overfitting—prompts are mutated based on feedback goldens but selected based on held-out validation performance.
+164	### Step 2: Pareto Selection
+166	At each iteration, GEPA must choose a **parent prompt** to mutate. Instead of simply picking the prompt with the highest average score (which might be a local optimum), GEPA uses **Pareto-based selection** to maintain diversity. Pareto selection involves two steps:
+168	1. **Finding non-dominated prompts** — Identify all prompts on the Pareto frontier
+169	2. **Sampling from the frontier** — Select a parent using frequency-weighted sampling
+171	<Tip>
+172	The **Pareto frontier** is the set of all non-dominated prompts. A prompt is on the frontier if no other prompt beats it on _every_ golden—it might excel at some golden types while being weaker on others. By sampling from this frontier rather than always picking the single "best" prompt, GEPA explores diverse optimization strategies.
+173	</Tip>
+175	#### Finding Non-Dominated Prompts
+177	A prompt **dominates** another if it scores better or equal on all goldens, and strictly better on at least one. A prompt is on the Pareto frontier if it is non-dominated (i.e. if no other prompt dominates it).
+179	In the tables below, scores represent the aggregated metric scores (from the `metrics` you provide) for each prompt–golden pair:
+181	**Example 1: Dominance** — P₁ dominates P₀ because it scores higher on every golden:
+183	| Prompt | Golden 1 | Golden 2 | Golden 3 | Mean | On Frontier?         |
+184	| ------ | -------- | -------- | -------- | ---- | -------------------- |
+185	| P₀     | 0.60     | 0.55     | 0.50     | 0.55 | ❌ (dominated by P₁) |
+186	| P₁     | 0.75     | 0.70     | 0.65     | 0.70 | ✅                   |
+188	**Example 2: No Dominance** — Neither prompt dominates the other because each wins on different goldens:
+190	| Prompt | Golden 1 | Golden 2 | Golden 3 | Mean | On Frontier? |
+191	| ------ | -------- | -------- | -------- | ---- | ------------ |
+192	| P₀     | 0.9      | 0.6      | 0.7      | 0.73 | ✅           |
+193	| P₁     | 0.7      | 0.8      | 0.7      | 0.73 | ✅           |
+195	Other edge cases include:
+197	- Ties on all goldens: Both prompts stay on the frontier (neither dominates)
+198	- One prompt wins some, ties on rest: The winning prompt dominates (e.g., P₀ scores [0.8, 0.7, 0.7] vs P₁'s [0.7, 0.7, 0.7] → P₀ dominates P₁)
+199	- Empty frontier: Impossible—there's always at least one non-dominated prompt
+201	#### Sampling from the Frontier
+203	From the Pareto frontier, GEPA samples a parent with probability proportional to how often each prompt "wins" (achieves the highest score) across `D_pareto` goldens. This balances:
+205	- **Exploration**: All non-dominated prompts have a chance to be selected, preventing premature convergence
+206	- **Exploitation**: Prompts that win more often are more likely to be chosen as parents
+208	#### Example: Pareto Table After 4 Iterations
+210	Here's what the Pareto score table might look like after 4 iterations with `pareto_size=3`:
+212	| Prompt    | Golden 1 | Golden 2 | Golden 3 | Mean | Wins | On Frontier?         |
+213	| --------- | -------- | -------- | -------- | ---- | ---- | -------------------- |
+214	| P₀ (root) | 0.60     | 0.55     | 0.50     | 0.55 | 0    | ❌ (dominated by P₁) |
+215	| P₁        | 0.75     | 0.70     | 0.60     | 0.68 | 0    | ❌ (dominated by P₄) |
+216	| P₂        | 0.65     | **0.85** | 0.55     | 0.68 | 1    | ✅                   |
+217	| P₃        | 0.60     | 0.60     | **0.80** | 0.67 | 1    | ✅                   |
+218	| P₄        | **0.80** | 0.75     | 0.70     | 0.75 | 1    | ✅                   |
+220	In this example:
+222	- **P₀** (the original prompt) is dominated by P₁, which scores better on all goldens
+223	- **P₁** is dominated by P₄, which also scores better on all goldens—so P₁ is off the frontier too
+224	- **P₂** specializes in Golden 2-type problems (e.g., reasoning tasks) but struggles with others
+225	- **P₃** specializes in Golden 3-type problems (e.g., creative tasks) but scores lower elsewhere
+226	- **P₄** has the highest mean but doesn't dominate P₂ or P₃—it loses to P₂ on Golden 2 and to P₃ on Golden 3
+228	The Pareto frontier contains **P₂, P₃, and P₄**. Each wins exactly 1 golden, giving them **equal selection probability** (33% each). Despite P₄ having the highest mean score, GEPA might still select P₂ or P₃ as parents to explore their specialized strategies—this is how GEPA avoids local optima and maintains prompt diversity.
+230	### Step 3: Feedback & Rewrite
+232	Once a parent prompt is selected, GEPA creates a child prompt through **feedback-driven rewriting**:
+234	1. **Sample a minibatch**: Draw up to `minibatch_size` examples from `D_feedback`
+235	2. **Diagnose**: Gather scorer feedback (`get_minibatch_feedback`) on the parent
+236	3. **Baseline score**: Score the parent on that same minibatch
+237	4. **Rewrite**: Use the rewriter to generate a child prompt from the diagnosis
+238	5. **Sanity filter**: Skip the child if it is effectively unchanged or has a different prompt type
+240	This keeps mutations targeted: changes are driven by metric feedback rather than random prompt edits.
+242	### Step 4: Acceptance
+244	GEPA applies acceptance in two gates:
+246	1. **Minibatch gate**: The child must strictly beat the parent on the same minibatch.
+247	2. **Pareto gate**: On `D_pareto`, the child must be non-dominated relative to both:
+248	   - the parent prompt configuration
+249	   - all existing configurations in the archive
+251	When accepted, GEPA:
+253	1. Adds the child to the prompt-configuration graph
+254	2. Inserts the child's Pareto scores into the archive
+255	3. Removes archive entries that are dominated by the new child
+257	If rejected by the Pareto gate, GEPA increments a consecutive-rejection counter and can early-stop once it reaches `patience`.
+259	### Step 5: Final Selection
+261	After all iterations complete, GEPA selects the **final optimized prompt** from the candidate pool:
+263	1. **Aggregate scores**: Each prompt's scores across all `D_pareto` goldens are aggregated (mean by default)
+264	2. **Rank candidates**: Prompts are ranked by their aggregate score
+265	3. **Break ties**: If multiple prompts tie for the highest score, the `tie_breaker` policy determines the winner (`PREFER_CHILD` by default, which favors more recently evolved prompts)
+267	The winning prompt is returned as the optimized result.
+269	## FAQs
+271	<AccordionGroup>
+272	<Accordion title="What is GEPA and when should I use it?">
+273	`GEPA` (Genetic-Pareto) combines evolutionary optimization with multi-objective Pareto selection to improve prompts while keeping a diverse pool of candidates. Use it when your task spans different problem types and you want to avoid converging prematurely on a single prompt that only does well on some [goldens](/docs/evaluation-datasets#what-are-goldens) .
+274	</Accordion>
+275	<Accordion title="Do I need to pass GEPA() explicitly to the optimizer?">
+276	No. `GEPA` is already the default for the `algorithm` argument of [PromptOptimizer](/docs/prompt-optimization-introduction) , so you only need to construct a `GEPA` instance and pass it in when you want to customize how it runs.
+277	</Accordion>
+278	<Accordion title="How do I make GEPA runs reproducible?">
+279	Set a fixed `random_seed` (for example `42` ) on the `GEPA` constructor. It controls golden splitting, minibatch sampling, Pareto parent selection, and tie-breaking. By default it uses `time.time_ns()` , so runs vary unless you pin the seed.
+280	</Accordion>
+281	<Accordion title="What is the difference between pareto_size and minibatch_size?">
+282	`pareto_size` (default `3` ) is the number of goldens in the held-out validation set `D_pareto` that every candidate is scored on for fair comparison. `minibatch_size` (default `8` ) is how many goldens are drawn from `D_feedback` each iteration to drive feedback and mutation. The two sets are disjoint to avoid overfitting.
+283	</Accordion>
+284	<Accordion title="How does GEPA decide when to stop early?">
+285	GEPA tracks consecutive rejected children. When a child is rejected by the Pareto gate it increments a rejection counter, and once that counter reaches `patience` (default `3` ) the search stops early before exhausting all `iterations` (default `5` ).
+286	</Accordion>
+287	<Accordion title="What happens when prompts tie on the final score?">
+288	During final selection, prompts are ranked by their aggregate `D_pareto` score (mean by default via `aggregate_instances` ). If several tie for the top score the `tie_breaker` policy decides the winner— `PREFER_CHILD` (the default) favors more recently evolved prompts, with `PREFER_ROOT` and `RANDOM` also available.
+289	</Accordion>
+290	<Accordion title="Which models does GEPA use to diagnose and rewrite prompts?">
+291	GEPA uses two separate LLMs: `reflection_model` (default `"gpt-4o-mini"` ) generates the diagnosis and feedback, and `mutation_model` (default `"gpt-4o"` ) rewrites the prompt from that feedback. You can override either when constructing the `GEPA` instance.
+292	</Accordion>
+293	</AccordionGroup>

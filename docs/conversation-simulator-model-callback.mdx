@@ -2,13 +2,13 @@
 title: Model Callback
 ---
 
-The `model_callback` is the bridge between the simulator and your LLM application. It receives the simulated user input and returns your chatbot's assistant turn.
+`model_callback` 是模拟器与你的 LLM 应用之间的桥梁。它接收对话历史，生成聊天机器人的下一条回复。
 
 <Note>
-Simulating a **voice agent** instead of a text chatbot? In [voice mode](/docs/conversation-simulator-voice-mode), `voice_config` replaces `model_callback` — the simulator talks to your agent over a live audio connection rather than a Python callback, and providing both raises an error.
+要模拟的是**语音智能体**而不是文本聊天机器人？见[语音模式](/docs/conversation-simulator-voice-mode)。
 </Note>
 
-Only the `input` argument is required when defining your `model_callback`, but you may also define optional arguments that `deepeval` will pass by name.
+定义 `model_callback` 时，`input` 参数是必需的，`turns` 和 `thread_id` 是可选的。只取你需要的即可。
 
 ```python title="main.py"
 from deepeval.test_case import Turn
@@ -20,17 +20,17 @@ async def model_callback(input: str) -> Turn:
 
 ## Supported Arguments
 
-- `input`: the latest simulated user message.
-- [Optional] `turns`: a list of `Turn`s accumulated up to this point in the simulation, including the latest simulated user message.
-- [Optional] `thread_id`: a unique identifier for each conversation.
+- `input`：最新模拟的用户消息。
+- [可选] `turns`：模拟中到当前点为止累积的 `Turn` 列表，包括最新模拟的用户消息。
+- [可选] `thread_id`：每次对话的唯一标识符。
 
-While `turns` captures the conversation history available at the moment your callback runs, some applications must persist additional state across turns — for example, when invoking external APIs or tracking user-specific data. In these cases, you'll want to take advantage of the `thread_id`.
+虽然 `turns` 捕获了回调运行时可用的对话历史，某些应用还需要跨轮次持久化额外状态。在这些情况下，你需要利用 `thread_id`。
 
 ## Common Use Cases
 
-### Stateless APIs
+### 无状态 API
 
-Some chatbot APIs manage conversation state internally or do not need prior turns. Use only `input` for this setup.
+一些聊天机器人 API 在内部管理对话状态或不需要先前轮次。这种设置下只需使用 `input`。
 
 ```python
 from deepeval.test_case import Turn
@@ -40,9 +40,9 @@ async def model_callback(input: str) -> Turn:
     return Turn(role="assistant", content=response)
 ```
 
-### Message History
+### 消息历史
 
-If your application expects the message history on every request, use `turns` to pass the simulated conversation transcript up to the current user message.
+如果你的应用在每次请求时都需要消息历史，使用 `turns` 将模拟对话的转写内容传递到当前用户消息。
 
 ```python
 from typing import List
@@ -54,9 +54,9 @@ async def model_callback(input: str, turns: List[Turn]) -> Turn:
     return Turn(role="assistant", content=response)
 ```
 
-### Backend Sessions
+### 后端会话
 
-For backend memory, tool state, carts, or API session data stored outside the transcript, use `thread_id` to keep each simulation connected to the right session.
+对于存储在转写内容之外的后端记忆、工具状态、购物车或 API 会话数据，使用 `thread_id` 使每次模拟连接到正确的会话。
 
 ```python title="main.py"
 from typing import List
@@ -67,17 +67,17 @@ async def model_callback(input: str, turns: List[Turn], thread_id: str) -> Turn:
     return Turn(role="assistant", content=res)
 ```
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="What does my model_callback have to return?">
-An assistant `Turn` — i.e. `Turn(role="assistant", content=response)` . The `ConversationSimulator` feeds it the simulated user `input` and records whatever assistant turn you return as the next message in the conversation.
+一条助手 `Turn`。`ConversationSimulator` 将模拟的用户 `input` 提供给它，并将你返回的助手轮次记录为对话中的下一条消息。
 </Accordion>
 <Accordion title="My chatbot keeps state on the backend — how do I keep simulations on the same path as production?">
-Add a `thread_id` argument to your callback and forward it to your app so each simulated conversation maps to its own backend session, cart, or tool state. Use `turns` instead (or as well) when your app expects the full message history on every request.
+在回调中添加 `thread_id` 参数并将其转发给你的应用，使每次模拟对话映射到其自己的后端会话。
 </Accordion>
 <Accordion title="Do I have to declare turns and thread_id if I don't use them?">
-No. Only `input` is required; `turns` and `thread_id` are optional and `deepeval` passes them by name only when your callback declares them. Stateless APIs can take just `input` .
+不需要。只有 `input` 是必需的；`turns` 和 `thread_id` 是可选的。
 </Accordion>
 <Accordion title="How do I wire the callback to my real chatbot?">
 Call your own app inside the callback — e.g. `await your_llm_app(input)` — and wrap its reply as `Turn(role="assistant", content=response)` . Pass `turns` or `thread_id` through to your app if it needs conversation history or session state.

@@ -2,14 +2,14 @@
 title: Lifecycle Hooks
 ---
 
-The `ConversationSimulator` provides an `on_simulation_complete` hook that allows you to execute custom logic whenever a simulation of an individual test case has completed. This allows you to process each `ConversationalTestCase` as soon as it's generated, rather than waiting for all simulations to finish.
+`ConversationSimulator` 提供了 `on_simulation_complete` 钩子，让你在单个测试用例的模拟完成时执行自定义逻辑。这让你可以在每个 `ConversationalTestCase` 生成后立即处理它，而不必等待所有模拟完成。
 
 ## Supported Arguments
 
-The hook function receives two parameters:
+钩子函数接收两个参数：
 
-- `test_case`: the completed `ConversationalTestCase` object containing all turns and metadata.
-- `index`: the index of the corresponding golden that was simulated (**ordering is preserved** during simulation).
+- `test_case`：已完成的 `ConversationalTestCase` 对象，包含所有轮次和元数据。
+- `index`：被模拟的对应金标（golden）的索引（**模拟期间保持顺序**）。
 
 ## Example
 
@@ -30,7 +30,7 @@ conversational_test_cases = simulator.simulate(
 
 ### Result Storage
 
-Large simulation batches are easier to work with when each conversation is persisted as soon as it completes.
+大批量模拟时，每段对话在完成后立即持久化会更容易处理。
 
 ```python
 def save_completed_simulation(test_case, index):
@@ -48,7 +48,7 @@ simulator.simulate(
 
 ### Progress Logging
 
-Progress logs give you lightweight observability while a batch of simulations is running.
+进度日志在批量模拟运行时为你提供轻量级的可观测性。
 
 ```python
 def print_summary(test_case, index):
@@ -61,19 +61,19 @@ simulator.simulate(
 ```
 
 <Tip>
-When using `async_mode=True`, conversations may complete in any order due to concurrent execution. Use the `index` parameter to track which golden each test case corresponds to.
+使用 `async_mode=True` 时，由于并发执行，对话可能以任意顺序完成。使用 `index` 参数追踪每个测试用例对应的金标。
 </Tip>
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="How do I process each conversation as it finishes instead of waiting for the whole batch?">
-Pass an `on_simulation_complete` hook to `simulate` . It fires the moment each `ConversationalTestCase` is generated, letting you persist, inspect, or post-process results without waiting for the full batch.
+将 `on_simulation_complete` 钩子传给 `simulate`。它在每个 `ConversationalTestCase` 生成时立即触发，让你无需等待整批完成即可持久化、检查或后处理结果。
 </Accordion>
 <Accordion title="What arguments does the hook receive?">
-Two: the completed `test_case` (the `ConversationalTestCase` with all turns and metadata) and the `index` of the golden it was simulated from.
+两个：已完成的 `test_case`（包含所有轮次和元数据的 `ConversationalTestCase`）和被模拟金标的 `index`。
 </Accordion>
 <Accordion title="With async_mode on, how do I know which golden a result belongs to?">
-Use the `index` argument. Under `async_mode=True` conversations can complete in any order, so `index` is how you map each test case back to its source golden.
+使用 `index` 参数。在 `async_mode=True` 下对话可能以任意顺序完成，因此 `index` 是你将每个测试用例映射回其源金标的方式。
 </Accordion>
 </AccordionGroup>
