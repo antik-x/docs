@@ -1,0 +1,22 @@
+docs/prompt-optimization-copro.mdx
+  h_04c00a69eeb820 5,7,10,15,37,41,54,56-59,105,107-112,134,136,140-143,145,147,150,155,159,161-162,164,174,178,180,183,188,190,200,204,206,215,219,241,243,245,247,253,259,262,265,268
+docs/prompt-optimization-copro.mdx.pending.tsv
+  h_04c00a69eeb820 1-118
+docs/prompt-optimization-gepa.mdx
+  h_04c00a69eeb820 5,7,10,15,17,39,42,47,61,63-72,74,91,147,149-153
+docs/prompt-optimization-miprov2.mdx
+  h_04c00a69eeb820 5,7,10,18,20,42,46,62,64-71,73,125,145,147-148,152,161,171,179,183,185-188,191,233,252,254,260,263,269,275
+docs/prompt-optimization-simba.mdx
+  h_04c00a69eeb820 5,7,10,13,15,37,41,56,58-59,63,65,125,277,298,300,308,314,317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "cb5c3ef0c1d09a70306e30bab1a1802e4cab80c9",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
