@@ -2,13 +2,13 @@
 title: HumanEval
 ---
 
-The **HumanEval** benchmark is a dataset designed to evaluate an LLM’s code generation capabilities. The benchmark consists of 164 hand-crafted programming challenges comparable to simple software interview questions. For more information, [visit the HumanEval GitHub page](https://github.com/openai/human-eval).
+**HumanEval** 基准评估 LLM 的代码生成能力。它包含 164 个 Python 编程问题。更多信息见 [HumanEval 论文](https://arxiv.org/abs/2107.03374)。
 
 <Info>
 `HumanEval` assesses the **functional correctness** of generated code instead of merely measuring textual similarity to a reference solution.
 </Info>
 
-## Arguments
+## 参数
 
 There are **TWO** optional arguments when using the `HumanEval` benchmark:
 
@@ -19,7 +19,7 @@ There are **TWO** optional arguments when using the `HumanEval` benchmark:
 By default, each task will be evaluated 200 times, as specified by `n`, the number of code generation samples. This means your LLM is being invoked **200 times on the same prompt** by default.
 </Warning>
 
-## Usage
+## 用法
 
 The code below evaluates a custom `GPT-4` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) and assesses its performance on HAS_CLOSE_ELEMENTS and SORT_NUMBERS tasks using 100 code generation samples.
 
@@ -59,7 +59,7 @@ class GPT4Model(DeepEvalBaseLLM):
 gpt_4 = GPT4Model()
 ```
 
-The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on the **pass@k** metric, is calculated by determining the proportion of code generations for which the model passes all the test cases (7.7 test cases average per problem) for at least k samples in relation to the total number of questions.
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数通过功能正确性（即通过所有测试用例的程序比例）来计算。
 
 ## Pass@k Metric
 
@@ -243,7 +243,7 @@ Below is the comprehensive list of all available tasks:
 - `STRING_TO_MD5`
 - `GENERATE_INTEGERS`
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="What does the HumanEval benchmark measure?">

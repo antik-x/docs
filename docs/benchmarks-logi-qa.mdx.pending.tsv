@@ -1,0 +1,46 @@
+1	---
+2	title: LogiQA
+3	---
+5	**LogiQA** is a comprehensive dataset designed to assess an LLM's logical reasoning capabilities, encompassing various types of deductive reasoning, including categorical and disjunctive reasoning. It features 8,678 multiple-choice questions, each paired with a reading passage. To learn more about the dataset and its construction, you can [read the original paper here](https://arxiv.org/pdf/2007.08124).
+7	<Info>
+8	LogiQA is derived from publicly available logical comprehension questions from China's **National Civil Servants Examination**. These questions are designed to evaluate candidates' critical thinking and problem-solving skills.
+9	</Info>
+11	## Arguments
+13	There are **TWO** optional arguments when using the `LogiQA` benchmark:
+15	- [Optional] `tasks`: a list of tasks (`LogiQATask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `LogiQATask` enums can be found [here](#logiqa-tasks).
+16	- [Optional] `n_shots`: the number of examples for few-shot learning. This is **set to 5** by default and **cannot exceed 5**.
+18	## Usage
+20	The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on categorical reasoning and sufficient conditional reasoning using 3-shot prompting.
+37	The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on **exact matching**, is calculated by determining the proportion of questions for which the model produces the precise correct multiple choice answer (e.g. 'A' or ‘C’) in relation to the total number of questions.
+39	<Tip>
+40	As a result, utilizing more few-shot prompts (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+41	</Tip>
+43	## LogiQA Tasks
+45	The `LogiQATask` enum classifies the diverse range of reasoning categories covered in the LogiQA benchmark.
+53	Below is the comprehensive list of available tasks:
+55	- `CATEGORICAL_REASONING`
+56	- `SUFFICIENT_CONDITIONAL_REASONING`
+57	- `NECESSARY_CONDITIONAL_REASONING`
+58	- `DISJUNCTIVE_REASONING`
+59	- `CONJUNCTIVE_REASONING`
+61	## FAQs
+63	<AccordionGroup>
+64	<Accordion title="What does the LogiQA benchmark measure?">
+65	LogiQA assesses an LLM's logical reasoning across various types of deductive reasoning, including categorical and disjunctive reasoning. It features 8,678 multiple-choice questions, each paired with a reading passage. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+66	</Accordion>
+67	<Accordion title="How is LogiQA scored?">
+68	Scoring is based on **exact matching**: the `overall_score` is the proportion of questions for which the model produces the precise correct multiple-choice answer (e.g. 'A' or 'C') out of the total. It ranges from 0 to 1, where 1 signifies perfect performance.
+69	</Accordion>
+70	<Accordion title="What is the default n_shots for LogiQA?">
+71	It defaults to `5` and cannot exceed that. Use the `n_shots` argument to lower it for few-shot prompting.
+72	</Accordion>
+73	<Accordion title="Which reasoning tasks can I evaluate with LogiQA?">
+74	Pass a list of `LogiQATask` enums to the `tasks` argument. Available tasks are `CATEGORICAL_REASONING` , `SUFFICIENT_CONDITIONAL_REASONING` , `NECESSARY_CONDITIONAL_REASONING` , `DISJUNCTIVE_REASONING` , and `CONJUNCTIVE_REASONING` . By default, all tasks are evaluated.
+75	</Accordion>
+76	<Accordion title="Can using more few-shot prompts improve the LogiQA score?">
+77	Yes. Utilizing more few-shot prompts via `n_shots` can greatly improve the model's robustness in generating answers in the exact correct format and boost the `overall_score` .
+78	</Accordion>
+79	<Accordion title="How do I run LogiQA on a custom LLM?">
+80	Define the benchmark, then call `evaluate()` with your model and read `overall_score` . See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) to learn how to use any custom LLM.
+81	</Accordion>
+82	</AccordionGroup>

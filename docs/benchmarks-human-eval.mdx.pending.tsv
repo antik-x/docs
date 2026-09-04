@@ -1,0 +1,206 @@
+1	---
+2	title: HumanEval
+3	---
+5	The **HumanEval** benchmark is a dataset designed to evaluate an LLM’s code generation capabilities. The benchmark consists of 164 hand-crafted programming challenges comparable to simple software interview questions. For more information, [visit the HumanEval GitHub page](https://github.com/openai/human-eval).
+7	<Info>
+8	`HumanEval` assesses the **functional correctness** of generated code instead of merely measuring textual similarity to a reference solution.
+9	</Info>
+11	## Arguments
+13	There are **TWO** optional arguments when using the `HumanEval` benchmark:
+15	- [Optional] `tasks`: a list of tasks (`HumanEvalTask` enums), specifying which of the **164 programming tasks** to evaluate in the language model. By default, this is set to all tasks. Detailed descriptions of the `HumanEvalTask` enum can be found [here](#humaneval-tasks).
+16	- [Optional] `n`: the number of code generation samples for each task for model evaluation using the pass@k metric. This is set to **200 by default**. A more detailed description of the `pass@k` metric and `n` parameter can be found [here](#passk-metric).
+18	<Warning>
+19	By default, each task will be evaluated 200 times, as specified by `n`, the number of code generation samples. This means your LLM is being invoked **200 times on the same prompt** by default.
+20	</Warning>
+22	## Usage
+24	The code below evaluates a custom `GPT-4` model ([click here to learn how to use **ANY** custom LLM](/docs/benchmarks-introduction#benchmarking-your-llm)) and assesses its performance on HAS_CLOSE_ELEMENTS and SORT_NUMBERS tasks using 100 code generation samples.
+41	**You must define a** `generate_samples` **method in your custom model to perform HumanEval evaluation**. In addition, when calling `evaluate`, you must supply `k`, the number of top samples chosen for the `pass@k` metric.
+62	The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on the **pass@k** metric, is calculated by determining the proportion of code generations for which the model passes all the test cases (7.7 test cases average per problem) for at least k samples in relation to the total number of questions.
+64	## Pass@k Metric
+66	The pass@k metric evaluates the **functional correctness** of generated code samples by focusing on whether at least one of the top k samples passes predefined unit tests. It calculates this probability by determining the complement of the probability that all k chosen samples are incorrect, using the formula:
+68	$$
+69	\text{pass@k} = 1 - \frac{C(n-c, k)}{C(n, k)}
+70	$$
+72	where C represents combinations, n is the total number of samples, c is the number of correct samples, and k is the number of top samples chosen.
+74	Using n helps ensure that the evaluation metric considers the full range of generated outputs, thereby reducing the risk of bias that can arise from only considering a small, possibly non-representative set of samples.
+76	## HumanEval Tasks
+78	The HumanEvalTask enum classifies the diverse range of subject areas covered in the HumanEval benchmark.
+86	Below is the comprehensive list of all available tasks:
+88	- `HAS_CLOSE_ELEMENTS`
+89	- `SEPARATE_PAREN_GROUPS`
+90	- `TRUNCATE_NUMBER`
+91	- `BELOW_ZERO`
+92	- `MEAN_ABSOLUTE_DEVIATION`
+93	- `INTERSPERSE`
+94	- `PARSE_NESTED_PARENS`
+95	- `FILTER_BY_SUBSTRING`
+96	- `SUM_PRODUCT`
+97	- `ROLLING_MAX`
+98	- `MAKE_PALINDROME`
+99	- `STRING_XOR`
+100	- `LONGEST`
+101	- `GREATEST_COMMON_DIVISOR`
+102	- `ALL_PREFIXES`
+103	- `STRING_SEQUENCE`
+104	- `COUNT_DISTINCT_CHARACTERS`
+105	- `PARSE_MUSIC`
+106	- `HOW_MANY_TIMES`
+107	- `SORT_NUMBERS`
+108	- `FIND_CLOSEST_ELEMENTS`
+109	- `RESCALE_TO_UNIT`
+110	- `FILTER_INTEGERS`
+111	- `STRLEN`
+112	- `LARGEST_DIVISOR`
+113	- `FACTORIZE`
+114	- `REMOVE_DUPLICATES`
+115	- `FLIP_CASE`
+116	- `CONCATENATE`
+117	- `FILTER_BY_PREFIX`
+118	- `GET_POSITIVE`
+119	- `IS_PRIME`
+120	- `FIND_ZERO`
+121	- `SORT_THIRD`
+122	- `UNIQUE`
+123	- `MAX_ELEMENT`
+124	- `FIZZ_BUZZ`
+125	- `SORT_EVEN`
+126	- `DECODE_CYCLIC`
+127	- `PRIME_FIB`
+128	- `TRIPLES_SUM_TO_ZERO`
+129	- `CAR_RACE_COLLISION`
+130	- `INCR_LIST`
+131	- `PAIRS_SUM_TO_ZERO`
+132	- `CHANGE_BASE`
+133	- `TRIANGLE_AREA`
+134	- `FIB4`
+135	- `MEDIAN`
+136	- `IS_PALINDROME`
+137	- `MODP`
+138	- `DECODE_SHIFT`
+139	- `REMOVE_VOWELS`
+140	- `BELOW_THRESHOLD`
+141	- `ADD`
+142	- `SAME_CHARS`
+143	- `FIB`
+144	- `CORRECT_BRACKETING`
+145	- `MONOTONIC`
+146	- `COMMON`
+147	- `LARGEST_PRIME_FACTOR`
+148	- `SUM_TO_N`
+149	- `DERIVATIVE`
+150	- `FIBFIB`
+151	- `VOWELS_COUNT`
+152	- `CIRCULAR_SHIFT`
+153	- `DIGITSUM`
+154	- `FRUIT_DISTRIBUTION`
+155	- `PLUCK`
+156	- `SEARCH`
+157	- `STRANGE_SORT_LIST`
+158	- `WILL_IT_FLY`
+159	- `SMALLEST_CHANGE`
+160	- `TOTAL_MATCH`
+161	- `IS_MULTIPLY_PRIME`
+162	- `IS_SIMPLE_POWER`
+163	- `IS_CUBE`
+164	- `HEX_KEY`
+165	- `DECIMAL_TO_BINARY`
+166	- `IS_HAPPY`
+167	- `NUMERICAL_LETTER_GRADE`
+168	- `PRIME_LENGTH`
+169	- `STARTS_ONE_ENDS`
+170	- `SOLVE`
+171	- `ANTI_SHUFFLE`
+172	- `GET_ROW`
+173	- `SORT_ARRAY`
+174	- `ENCRYPT`
+175	- `NEXT_SMALLEST`
+176	- `IS_BORED`
+177	- `ANY_INT`
+178	- `ENCODE`
+179	- `SKJKASDKD`
+180	- `CHECK_DICT_CASE`
+181	- `COUNT_UP_TO`
+182	- `MULTIPLY`
+183	- `COUNT_UPPER`
+184	- `CLOSEST_INTEGER`
+185	- `MAKE_A_PILE`
+186	- `WORDS_STRING`
+187	- `CHOOSE_NUM`
+188	- `ROUNDED_AVG`
+189	- `UNIQUE_DIGITS`
+190	- `BY_LENGTH`
+191	- `EVEN_ODD_PALINDROME`
+192	- `COUNT_NUMS`
+193	- `MOVE_ONE_BALL`
+194	- `EXCHANGE`
+195	- `HISTOGRAM`
+196	- `REVERSE_DELETE`
+197	- `ODD_COUNT`
+198	- `MINSUBARRAYSUM`
+199	- `MAX_FILL`
+200	- `SELECT_WORDS`
+201	- `GET_CLOSEST_VOWEL`
+202	- `MATCH_PARENS`
+203	- `MAXIMUM`
+204	- `SOLUTION`
+205	- `ADD_ELEMENTS`
+206	- `GET_ODD_COLLATZ`
+207	- `VALID_DATE`
+208	- `SPLIT_WORDS`
+209	- `IS_SORTED`
+210	- `INTERSECTION`
+211	- `PROD_SIGNS`
+212	- `MINPATH`
+213	- `TRI`
+214	- `DIGITS`
+215	- `IS_NESTED`
+216	- `SUM_SQUARES`
+217	- `CHECK_IF_LAST_CHAR_IS_A_LETTER`
+218	- `CAN_ARRANGE`
+219	- `LARGEST_SMALLEST_INTEGERS`
+220	- `COMPARE_ONE`
+221	- `IS_EQUAL_TO_SUM_EVEN`
+222	- `SPECIAL_FACTORIAL`
+223	- `FIX_SPACES`
+224	- `FILE_NAME_CHECK`
+225	- `WORDS_IN_SENTENCE`
+226	- `SIMPLIFY`
+227	- `ORDER_BY_POINTS`
+228	- `SPECIALFILTER`
+229	- `GET_MAX_TRIPLES`
+230	- `BF`
+231	- `SORTED_LIST_SUM`
+232	- `X_OR_Y`
+233	- `DOUBLE_THE_DIFFERENCE`
+234	- `COMPARE`
+235	- `STRONGEST_EXTENSION`
+236	- `CYCPATTERN_CHECK`
+237	- `EVEN_ODD_COUNT`
+238	- `INT_TO_MINI_ROMAN`
+239	- `RIGHT_ANGLE_TRIANGLE`
+240	- `FIND_MAX`
+241	- `EAT`
+242	- `DO_ALGEBRA`
+243	- `STRING_TO_MD5`
+244	- `GENERATE_INTEGERS`
+246	## FAQs
+248	<AccordionGroup>
+249	<Accordion title="What does the HumanEval benchmark measure?">
+250	`HumanEval` evaluates an LLM's code generation capabilities using 164 hand-crafted programming challenges comparable to simple software interview questions. It assesses the **functional correctness** of generated code rather than textual similarity to a reference solution.
+251	</Accordion>
+252	<Accordion title="Which tasks can I run with HumanEval?">
+253	You can pass a list of `HumanEvalTask` enums to the `tasks` argument, for example `HAS_CLOSE_ELEMENTS` or `SORT_NUMBERS` . By default, all 164 programming tasks are evaluated.
+254	</Accordion>
+255	<Accordion title="How is HumanEval scored?">
+256	The `overall_score` ranges from 0 to 1 and is based on the **pass@k** metric: the proportion of code generations that pass all test cases (7.7 test cases on average per problem) for at least k samples. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+257	</Accordion>
+258	<Accordion title="What does the n argument control?">
+259	`n` is the number of code generation samples produced for each task, used by the `pass@k` metric. It is set to `200` by default, meaning your LLM is invoked **200 times on the same prompt** per task unless you lower it.
+260	</Accordion>
+261	<Accordion title="What is the difference between n and k?">
+262	`n` is the total number of samples generated per task, while `k` is the number of top samples chosen for the `pass@k` metric. You supply `k` when calling `evaluate()` , for example `benchmark.evaluate(model=gpt_4, k=10)` .
+263	</Accordion>
+264	<Accordion title="How do I run HumanEval on a custom LLM?">
+265	You must define a `generate_samples` method on your `DeepEvalBaseLLM` subclass, then create a benchmark with `HumanEval(tasks=[...], n=100)` and call `benchmark.evaluate(model=gpt_4, k=10)` . See the [benchmarking guide](/docs/benchmarks-introduction#benchmarking-your-llm) for using any custom LLM.
+266	</Accordion>
+267	</AccordionGroup>

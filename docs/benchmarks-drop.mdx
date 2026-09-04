@@ -2,24 +2,24 @@
 title: DROP
 ---
 
-**DROP (Discrete Reasoning Over Paragraphs)** is a benchmark designed to evaluate language models' advanced reasoning capabilities through complex question answering tasks. It encompasses over 9500 intricate challenges that demand numerical manipulations, multi-step reasoning, and the interpretation of text-based data. For more insights and access to the dataset, you can [read the original DROP paper here](https://arxiv.org/pdf/1903.00161v2.pdf).
+**DROP**（Discrete Reasoning Over Paragraphs）是一个需要离散推理的阅读理解基准。更多信息见 [DROP 论文](https://arxiv.org/abs/1903.00161)。
 
 <Info>
 `DROP` challenges models to process textual data, **perform numerical reasoning tasks** such as addition, subtraction, and counting, and also to **comprehend and analyze text** to extract or infer answers from paragraphs about **NFL and history**.
 </Info>
 
-## Arguments
+## 参数
 
 There are **TWO** optional arguments when using the `DROP` benchmark:
 
 - [Optional] `tasks`: a list of tasks (`DROPTask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `DROPTask` enums can be found [here](#drop-tasks).
-- [Optional] `n_shots`: the number of examples for few-shot learning. This is **set to 5** by default and **cannot exceed 5**.
+- [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 
 <Note>
 Notice unlike `BIGBenchHard`, there is no CoT prompting for the `DROP` benchmark.
 </Note>
 
-## Usage
+## 用法
 
 The code below assesses a custom mistral_7b model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on `HISTORY_1002` and `NFL_649` in DROP using 3-shot prompting.
 
@@ -38,9 +38,9 @@ benchmark.evaluate(model=mistral_7b)
 print(benchmark.overall_score)
 ```
 
-The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on **exact matching**, is calculated by determining the proportion of questions for which the model produces the precise correct answer (e.g. '3' or ‘John Doe’) in relation to the total number of questions.
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数通过 F1 和 EM 指标的组合来计算。
 
-As a result, utilizing more few-shot prompts (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+因此，使用更多少样本提示（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
 
 ## DROP Tasks
 
@@ -637,7 +637,7 @@ Below is the comprehensive list of available tasks:
 - `NFL_824`
 - `NFL_2034`
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="What does the DROP benchmark measure?">

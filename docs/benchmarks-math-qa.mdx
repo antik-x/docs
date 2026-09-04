@@ -2,20 +2,20 @@
 title: MathQA
 ---
 
-**MathQA** is a large-scale benchmark consisting of 37K English multiple-choice math word problems across diverse domains such as probability and geometry. It is designed to assess an LLM's capability for multi-step mathematical reasoning. To learn more about the dataset and its construction, you can [read the original MathQA paper here](https://arxiv.org/pdf/1905.13319.pdf).
+**MathQA** 基准包含 37,000 道多选数学题，评估 LLM 的数学推理能力。更多信息见 [MathQA 数据集](https://math-qa.github.io/)。
 
 <Info>
 `MathQA` was constructed from the AQuA dataset, which contains over 100K **GRE- and GMAT-level** math word problems.
 </Info>
 
-## Arguments
+## 参数
 
 There are **TWO** optional arguments when using the `MathQA` benchmark:
 
 - [Optional] `tasks`: a list of tasks (`MathQATask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `MathQATask` enums can be found [here](#mathqa-tasks).
-- [Optional] `n_shots`: the number of examples for few-shot learning. This is **set to 5** by default and **cannot exceed 5**.
+- [可选] `n_shots`：用于少样本学习的示例数量。**默认设为 5**，**不能超过 5**。
 
-## Usage
+## 用法
 
 The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on geometry and probability in `MathQA` using 3-shot prompting.
 
@@ -34,10 +34,10 @@ benchmark.evaluate(model=mistral_7b)
 print(benchmark.overall_score)
 ```
 
-The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on **exact matching**, is calculated by determining the proportion of questions for which the model produces the precise correct multiple choice answer (e.g. 'A' or ‘C’) in relation to the total number of questions.
+该基准的 `overall_score` 范围为 0 到 1，1 表示完美表现，0 表示全部答错。模型分数基于**精确匹配**，通过确定模型给出精确正确选项的多选题占总题数的比例来计算。
 
 <Tip>
-As a result, utilizing more few-shot prompts (`n_shots`) can greatly improve the model's robustness in generating answers in the exact correct format and boost the overall score.
+因此，使用更多少样本提示（`n_shots`）可以大幅提升模型以精确正确格式生成答案的稳健性，并提高总分。
 </Tip>
 
 ## MathQA Tasks
@@ -59,7 +59,7 @@ Below is the comprehensive list of available tasks:
 - `GENERAL`
 - `OTHER`
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="What does the MathQA benchmark measure?">

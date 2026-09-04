@@ -1,0 +1,91 @@
+1	---
+2	title: SQuAD
+3	---
+5	**SQuAD (Stanford Question Answering Dataset)** is a QA benchmark designed to test a language model's reading comprehension capabilities. It consists of 100K question-answer pairs (including 10K in the validation set), where each answer is a segment of text taken directly from the accompanying reading passage. To learn more about the dataset and its construction, you can [read the original SQuAD paper here](https://arxiv.org/pdf/1606.05250).
+7	<Info>
+8	SQuAD was constructed by sampling **536 articles from the top 10K Wikipedia articles**. A total of 23,215 paragraphs were extracted, and question-answer pairs were manually curated for these paragraphs.
+9	</Info>
+11	## Arguments
+13	There are **THREE** optional arguments when using the `SQuAD` benchmark:
+15	- [Optional] `tasks`: a list of tasks (`SQuADTask` enums), which specifies the subject areas for model evaluation. By default, this is set to all tasks. The list of `SQuADTask` enums can be found [here](#squad-tasks).
+16	- [Optional] `n_shots`: the number of examples for few-shot learning. This is **set to 5** by default and **cannot exceed 5**.
+17	- [Optional] `evaluation_model`: a string specifying which of OpenAI's GPT models to use for scoring, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+19	<Note>
+20	Unlike most benchmarks, ``deepeval``'s SQuAD implementation requires an `evaluation_model`, using an **LLM-as-a-judge** to generate a binary score determining if the prediction and expected output align given the context.
+21	</Note>
+23	## Usage
+25	The code below assesses a custom `mistral_7b` model ([click here](/guides/guides-using-custom-llms) to learn how to use ANY custom LLM) on passages about pharmacy and Normans in `SQuAD` using 3-shot prompting.
+42	The `overall_score` for this benchmark ranges from 0 to 1, where 1 signifies perfect performance and 0 indicates no correct answers. The model's score, based on LLM-as-a-judge, is calculated by evaluating whether the predicted answer aligns with the expected output based on the passage context.
+44	For example, if the question asks, "How many atoms are present?" and the model predicts "two atoms," the LLM-as-a-judge determines whether this aligns with the expected answer of "2" by assessing semantic equivalence rather than exact text matching.
+46	## SQuAD Tasks
+48	The `SQuADTask` enum classifies the diverse range of categories covered in the SQuAD benchmark.
+56	Below is the comprehensive list of available tasks:
+58	- `PHARMACY`
+59	- `NORMANS`
+60	- `HUGUENOT`
+61	- `DOCTOR_WHO`
+62	- `OIL_CRISIS_1973`
+63	- `COMPUTATIONAL_COMPLEXITY_THEORY`
+64	- `WARSAW`
+65	- `AMERICAN_BROADCASTING_COMPANY`
+66	- `CHLOROPLAST`
+67	- `APOLLO_PROGRAM`
+68	- `TEACHER`
+69	- `MARTIN_LUTHER`
+70	- `ECONOMIC_INEQUALITY`
+71	- `YUAN_DYNASTY`
+72	- `SCOTTISH_PARLIAMENT`
+73	- `ISLAMISM`
+74	- `UNITED_METHODIST_CHURCH`
+75	- `IMMUNE_SYSTEM`
+76	- `NEWCASTLE_UPON_TYNE`
+77	- `CTENOPHORA`
+78	- `FRESNO_CALIFORNIA`
+79	- `STEAM_ENGINE`
+80	- `PACKET_SWITCHING`
+81	- `FORCE`
+82	- `JACKSONVILLE_FLORIDA`
+83	- `EUROPEAN_UNION_LAW`
+84	- `SUPER_BOWL_50`
+85	- `VICTORIA_AND_ALBERT_MUSEUM`
+86	- `BLACK_DEATH`
+87	- `CONSTRUCTION`
+88	- `SKY_UK`
+89	- `UNIVERSITY_OF_CHICAGO`
+90	- `VICTORIA_AUSTRALIA`
+91	- `FRENCH_AND_INDIAN_WAR`
+92	- `IMPERIALISM`
+93	- `PRIVATE_SCHOOL`
+94	- `GEOLOGY`
+95	- `HARVARD_UNIVERSITY`
+96	- `RHINE`
+97	- `PRIME_NUMBER`
+98	- `INTERGOVERNMENTAL_PANEL_ON_CLIMATE_CHANGE`
+99	- `AMAZON_RAINFOREST`
+100	- `KENYA`
+101	- `SOUTHERN_CALIFORNIA`
+102	- `NIKOLA_TESLA`
+103	- `CIVIL_DISOBEDIENCE`
+104	- `GENGHIS_KHAN`
+105	- `OXYGEN`
+107	## FAQs
+109	<AccordionGroup>
+110	<Accordion title="What does the SQuAD benchmark measure?">
+111	SQuAD tests a language model's reading comprehension by asking question-answer pairs where each answer is a segment of text taken directly from an accompanying Wikipedia passage. It contains 100K question-answer pairs, including 10K in the validation set. See the [benchmarks introduction](/docs/benchmarks-introduction) for how scoring works across benchmarks.
+112	</Accordion>
+113	<Accordion title="How is SQuAD scored in deepeval?">
+114	Unlike most benchmarks, deepeval's SQuAD implementation uses an **LLM-as-a-judge** to generate a binary score that determines whether the prediction aligns with the expected output given the passage context. This assesses semantic equivalence rather than relying on **exact match**, so an answer of "two atoms" can still align with an expected "2".
+115	</Accordion>
+116	<Accordion title="Why does SQuAD require an evaluation_model?">
+117	Because scoring is performed by an LLM-as-a-judge, you must supply an `evaluation_model` . It accepts a string for one of OpenAI's GPT models, or any custom LLM of type `DeepEvalBaseLLM` , and the judge decides whether a prediction and the expected output align.
+118	</Accordion>
+119	<Accordion title="What is the default n_shots for SQuAD?">
+120	It defaults to `5` and cannot exceed that. Use the `n_shots` argument to lower it for few-shot prompting.
+121	</Accordion>
+122	<Accordion title="Which tasks can I evaluate with SQuAD?">
+123	You can pass a list of `SQuADTask` enums to the `tasks` argument to target specific subject areas such as `PHARMACY` or `NORMANS` . By default, all tasks are evaluated.
+124	</Accordion>
+125	<Accordion title="How do I run SQuAD on a custom LLM?">
+126	Define the benchmark, then call `evaluate()` with your model (for example a custom `DeepEvalBaseLLM` ) and read `overall_score` , which ranges from 0 to 1. See [benchmarking your LLM](/docs/benchmarks-introduction#benchmarking-your-llm) for details.
+127	</Accordion>
+128	</AccordionGroup>
