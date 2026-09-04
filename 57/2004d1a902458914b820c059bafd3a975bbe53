@@ -1,0 +1,110 @@
+.agents/skills/docs-translation/state/translation-memory.json
+  h_04c00a69eeb820 3136-3254
+docs/benchmarks-ifeval.mdx
+  h_04c00a69eeb820 5
+docs/evaluation-end-to-end-llm-evals/index.mdx
+  h_04c00a69eeb820 54,56-57,61-62,76,88,102
+docs/evaluation-end-to-end-single-turn.mdx
+  h_04c00a69eeb820 11,1827
+docs/evaluation-llm-tracing.mdx
+  h_04c00a69eeb820 578,647,649-653
+docs/evaluation-voice.mdx
+  h_04c00a69eeb820 122,124-127,135
+docs/faq.mdx
+  h_04c00a69eeb820 171,191,371,409,436-438
+docs/metrics-agent-loop-detection.mdx
+  h_04c00a69eeb820 22,141,156,170,177,184,191,245,247-249,267,278
+docs/metrics-agent-responsiveness.mdx
+  h_04c00a69eeb820 43-47
+docs/metrics-answer-relevancy.mdx
+  h_04c00a69eeb820 20
+docs/metrics-argument-correctness.mdx
+  h_04c00a69eeb820 21,287
+docs/metrics-audio-integrity.mdx
+  h_04c00a69eeb820 43-47,97,99-100,115
+docs/metrics-bias.mdx
+  h_04c00a69eeb820 20,222-223
+docs/metrics-contextual-precision.mdx
+  h_04c00a69eeb820 24
+docs/metrics-contextual-recall.mdx
+  h_04c00a69eeb820 27
+docs/metrics-contextual-relevancy.mdx
+  h_04c00a69eeb820 30,438
+docs/metrics-conversational-dag.mdx
+  h_04c00a69eeb820 23-29,129-130,132,146-147,149,371-373,438-440,513-515
+docs/metrics-conversational-g-eval.mdx
+  h_04c00a69eeb820 283,286,289
+docs/metrics-custom.mdx
+  h_04c00a69eeb820 532,538,541
+docs/metrics-dag.mdx
+  h_04c00a69eeb820 23-29,129-130,132,146-147,149,478,543-544,613-614,814
+docs/metrics-exact-match.mdx
+  h_04c00a69eeb820 21
+docs/metrics-faithfulness.mdx
+  h_04c00a69eeb820 21,304
+docs/metrics-hallucination.mdx
+  h_04c00a69eeb820 21
+docs/metrics-json-correctness.mdx
+  h_04c00a69eeb820 22
+docs/metrics-mcp-task-completion.mdx
+  h_04c00a69eeb820 154
+docs/metrics-misuse.mdx
+  h_04c00a69eeb820 20
+docs/metrics-non-advice.mdx
+  h_04c00a69eeb820 18
+docs/metrics-pattern-match.mdx
+  h_04c00a69eeb820 20
+docs/metrics-pii-leakage.mdx
+  h_04c00a69eeb820 20
+docs/metrics-plan-adherence.mdx
+  h_04c00a69eeb820 15
+docs/metrics-plan-quality.mdx
+  h_04c00a69eeb820 15
+docs/metrics-prompt-alignment.mdx
+  h_04c00a69eeb820 25
+docs/metrics-role-violation.mdx
+  h_04c00a69eeb820 20
+docs/metrics-speech-intelligibility.mdx
+  h_04c00a69eeb820 43-47,49,58,76
+docs/metrics-step-efficiency.mdx
+  h_04c00a69eeb820 15,162
+docs/metrics-summarization.mdx
+  h_04c00a69eeb820 20
+docs/metrics-task-completion.mdx
+  h_04c00a69eeb820 15
+docs/metrics-tool-correctness.mdx
+  h_04c00a69eeb820 22
+docs/metrics-tool-permission.mdx
+  h_04c00a69eeb820 7,10,15,19,48,50-52,54,58,62,73,79,85,88,91
+docs/metrics-tool-use.mdx
+  h_04c00a69eeb820 157
+docs/metrics-toxicity.mdx
+  h_04c00a69eeb820 23,27,83,89,105
+docs/metrics-turn-faithfulness.mdx
+  h_04c00a69eeb820 169
+docs/metrics-turn-relevancy.mdx
+  h_04c00a69eeb820 150
+docs/metrics-turn-taking-naturalness.mdx
+  h_04c00a69eeb820 43-47,95
+docs/metrics-voice-consistency.mdx
+  h_04c00a69eeb820 43-47
+docs/metrics-voice-naturalness.mdx
+  h_04c00a69eeb820 88
+docs/metrics-voice-reliability.mdx
+  h_04c00a69eeb820 43-47
+docs/multimodal-metrics-image-helpfulness.mdx
+  h_04c00a69eeb820 21,24,93
+docs/vibe-coding.mdx
+  h_04c00a69eeb820 146-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "572004d1a902458914b820c059bafd3a975bbe53",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
