@@ -1,0 +1,26 @@
+.agents/skills/docs-translation/state/translation-memory.json
+  h_04c00a69eeb820 2341-2562
+docs/golden-synthesizer/index.mdx
+  h_04c00a69eeb820 5,7-9,12,14,20,22,28,30,67,70,72,77,85,87-94,97,99,104,120,128,130,147,149-152,155,157,163,170,174-175,178,185,195,212,223,225-228,230,232,251,259,262,267,281,283-285,287,291,310,312-313,317,319,339,358,360-363,365,385,387-391,393,400,402-405,407,410,412,414,419,424,427,429-430,442,444,448,450,454,472,475,477,483,486,489,492,495
+docs/synthesizer-generate-from-contexts.mdx
+  h_04c00a69eeb820 5,18,23,41,43-46,50,52,71,73-76,80,82,88,94,97,100,103
+docs/synthesizer-generate-from-docs.mdx
+  h_04c00a69eeb820 5,7,21,23,28,30-31,40,43,57,59-62,76,78-81,86,89,94,96,108-121,124,126,131,133,135-137,139,142,147,149,152,157,159,161-164,166,169,174,176,192,195,198,201
+docs/synthesizer-generate-from-goldens.mdx
+  h_04c00a69eeb820 5,18,23,39,41-43,47,49,66,68-70,76,83,86,89,92
+docs/synthesizer-generate-from-scratch.mdx
+  h_04c00a69eeb820 5,18,23,61,88,90,96,99,102,105
+docs/synthetic-data-generation-introduction.mdx
+  h_04c00a69eeb820 5,8,13,15-17,20,23,27,29-31,35,37-38,42,54,66,70,82,84,88,92,95,103,106,109,112,115,118,121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "b417d62615e27cbc3937f907b88dbb645f046d78",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
