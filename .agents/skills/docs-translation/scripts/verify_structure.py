@@ -82,7 +82,7 @@ def check_pair(src_path, dst_path, label):
     bk, body_b = frontmatter(b_txt)
     if "title" not in bk:
         issues.append("frontmatter 缺 title")
-    extra = bk - {"title", "description"}
+    extra = bk - {"title", "description", "sidebarTitle"}
     if extra:
         issues.append(f"frontmatter 多余键 {sorted(extra)}")
 

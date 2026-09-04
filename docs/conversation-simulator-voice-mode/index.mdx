@@ -1,5 +1,6 @@
 ---
 title: Voice Mode
+sidebarTitle: "语音模式"
 ---
 
 语音模式让 `ConversationSimulator` 与**语音代理**对话，而不是文本聊天机器人。你无需把应用包装进 `model_callback`，而是传入一个 `VoiceConfig`：每条模拟的用户轮次被朗读出来（文本转语音），通过实时连接流式发送给你的代理，代理的口头回复被录音并转写（语音转文本）回对话。

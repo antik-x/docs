@@ -18,6 +18,21 @@ NAV_ZH = os.path.join(SKILL, CFG.get("nav_translations", "state/nav-zh.json"))
 
 zh = json.load(open(NAV_ZH, encoding="utf-8")) if os.path.exists(NAV_ZH) else \
     {"groups": {}, "pages": {}}
+
+_zh_norm = {}
+
+
+def _norm_key(k):
+    return re.sub(r"\([^)]*\)/", "", k)
+
+
+for _k, _v in zh["pages"].items():
+    _n = _norm_key(_k)
+    _cur = _zh_norm.get(_n)
+    if _cur is None or ("(" not in _k and "(" in _cur[0]):
+        _zh_norm[_n] = (_k, _v)
+
+SITE_DOCS = os.path.normpath(os.path.join(SKILL, CFG["site_root"], CFG["target_content_dir"]))
 missing = []
 
 
@@ -52,33 +67,44 @@ def meta_title_for(group_dir):
 
 
 def convert_page(slug):
-    """上游 page 字符串 → docs.json 页面对象。"""
-    # 子目录页面（conversation-simulator → 其 index）
-    rel_noext = slug
-    cand = os.path.join(SRC, slug + ".mdx")
-    if not os.path.exists(cand):
-        idx = os.path.join(SRC, slug, "index.mdx")
-        if os.path.exists(idx):
-            rel_noext = slug + "/index"
-    fallback = slug
-    # 尝试从译文/源文 frontmatter 取 sidebar_label 作回退
-    src_md = os.path.join(SRC, rel_noext + ".mdx")
-    if os.path.exists(src_md):
-        head = open(src_md, encoding="utf-8").read(600)
-        m = re.search(r"sidebar_label:\s*(.+)", head)
-        if not m:
-            m = re.search(r"title:\s*(.+)", head)
-        if m:
-            fallback = m.group(1).strip()
-    key = page_key(rel_noext)
-    title = page_title(rel_noext, fallback)
-    return {"page": key, "title": title}
+    """上游 page 字符串 → docs.json 页面路径字符串（侧栏标题走 frontmatter sidebarTitle）。
+
+    站点文件已剥离 () 路由组以对齐 URL，因此导航路径同样剥离；
+    index 页引用目录路径（与站点 URL 一致）。
+    """
+    # 范围外页面（上游 meta 引用但站点不含）
+    if slug.rstrip("/").endswith("getting-started-llm-arena"):
+        return None
+    rel_noext = re.sub(r"\([^)]*\)/", "", slug)
+    if rel_noext not in _zh_norm:
+        missing.append(f"page:{rel_noext}")
+    if os.path.exists(os.path.join(SITE_DOCS, rel_noext + ".mdx")):
+        return page_key(rel_noext)
+    if os.path.exists(os.path.join(SITE_DOCS, rel_noext, "index.mdx")):
+        return page_key(rel_noext + "/index")
+    return page_key(rel_noext)
 
 
 def walk(entries, group_dir=""):
-    """meta.json 的 pages 列表 → docs.json pages 数组。"""
+    """meta.json 的 pages 列表 → docs.json pages 数组。
+
+    Fumadocs 的 `---[Icon]Title---` 分隔符作用于其后直至下一个分隔符的页面，
+    因此页面要挂进当前分隔符组的 pages 里，而不是作为兄弟项。
+    """
     out = []
+    current = None  # 当前分隔符组（dict），页面挂到它的 pages 下
+
+    def emit(item):
+        if current is not None:
+            current["pages"].append(item)
+        else:
+            out.append(item)
+
     for e in entries:
+        if e.startswith("../"):  # 子目录 meta 引用的外部页面（可能带路由组）
+            e_clean = re.sub(r"^(\.\./)+", "", e)
+            out.extend(walk([e_clean], group_dir=""))
+            continue
         if e.startswith("---") and e.endswith("---"):
             m = re.match(r"---\[?([A-Za-z]*)\]?(.*)---", e)
             icon_src, title = m.group(1), m.group(2).strip()
@@ -89,26 +115,28 @@ def walk(entries, group_dir=""):
             if icon_src:
                 g["icon"] = re.sub(r"(?<!^)(?=[A-Z])", "-", icon_src).lower()
             out.append(g)
+            current = g
         elif e.startswith("(") and e.endswith(")"):
             sub = os.path.join(group_dir, e) if group_dir else e
             mp = os.path.join(SRC, sub, "meta.json")
             entries2 = read_meta(mp).get("pages", []) if os.path.exists(mp) else []
             g = {"group": group_zh(e), "pages": walk(entries2, sub)}
             mt = read_meta(mp) if os.path.exists(mp) else {}
-            icon = mt.get("icon") or mt.get("defaultOpen")
             if mt.get("icon"):
                 g["icon"] = re.sub(r"(?<!^)(?=[A-Z])", "-", mt["icon"]).lower()
-            out.append(g)
-        elif "/" in e and os.path.isdir(os.path.join(SRC, group_dir, e) if group_dir
-                                        else os.path.join(SRC, e)):
+            emit(g)
+        elif os.path.isdir(os.path.join(SRC, group_dir, e) if group_dir
+                           else os.path.join(SRC, e)):
             sub = os.path.join(group_dir, e) if group_dir else e
             mp = os.path.join(SRC, sub, "meta.json")
             entries2 = read_meta(mp).get("pages", []) if os.path.exists(mp) else []
             g = {"group": group_zh(meta_title_for(sub)), "pages": walk(entries2, sub)}
-            out.append(g)
+            emit(g)
         else:
             slug = os.path.join(group_dir, e) if group_dir else e
-            out.append(convert_page(slug))
+            page = convert_page(slug)
+            if page is not None:
+                emit(page)
     return out
 
 

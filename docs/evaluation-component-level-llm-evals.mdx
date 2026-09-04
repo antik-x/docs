@@ -1,5 +1,6 @@
 ---
 title: 组件级 LLM 评估
+sidebarTitle: "组件级 LLM 评估"
 ---
 
 Component-level evaluation (sometimes also known as **step-wise evals**) grades **internal components** of your LLM app — retrievers, tool calls, LLM generations, sub-agents — instead of treating the whole system as a black box. The unit of evaluation is still an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases), but it's attached to a span (an `@observe`（TypeScript 中为 `observe()`）'d function or a framework-emitted span) rather than the whole trace.

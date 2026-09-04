@@ -1,5 +1,6 @@
 ---
 title: Environment Variables
+sidebarTitle: "环境变量"
 ---
 
 `deepeval` 会按以下顺序自动从 dotenv 文件加载环境变量：`.env` → `.env.{APP_ENV}` → `.env.local`（最高优先级）。已有的进程环境变量永远不会被覆盖——进程环境变量总是优先。

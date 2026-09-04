@@ -39,588 +39,274 @@
   },
   "navigation": {
     "pages": [
-      {
-        "page": "docs/introduction",
-        "title": "简介"
-      },
-      {
-        "page": "docs/introduction-design-philosophy",
-        "title": "设计哲学"
-      },
-      {
-        "page": "docs/introduction-comparisons",
-        "title": "对比"
-      },
+      "docs/introduction",
+      "docs/introduction-design-philosophy",
+      "docs/introduction-comparisons",
       {
         "group": "快速开始",
-        "pages": [],
+        "pages": [
+          "docs/getting-started",
+          "docs/vibe-coder-quickstart",
+          "docs/vibe-coding",
+          {
+            "group": "使用场景",
+            "pages": [
+              "docs/getting-started-agents",
+              "docs/getting-started-chatbots",
+              "docs/getting-started-rag",
+              "docs/getting-started-mcp"
+            ]
+          }
+        ],
         "icon": "rocket"
       },
       {
-        "page": "docs/getting-started",
-        "title": "快速上手"
-      },
-      {
-        "page": "docs/vibe-coder-quickstart",
-        "title": "Vibe Coder 快速上手"
-      },
-      {
-        "page": "docs/vibe-coding",
-        "title": "Vibe Coding"
-      },
-      {
-        "group": "使用场景",
-        "pages": [
-          {
-            "page": "docs/(use-cases)/getting-started-agents",
-            "title": "AI 智能体"
-          },
-          {
-            "page": "docs/(use-cases)/getting-started-chatbots",
-            "title": "聊天机器人"
-          },
-          {
-            "page": "docs/(use-cases)/getting-started-rag",
-            "title": "RAG"
-          },
-          {
-            "page": "docs/(use-cases)/getting-started-mcp",
-            "title": "MCP"
-          },
-          {
-            "page": "docs/(use-cases)/getting-started-llm-arena",
-            "title": "LLM Arena"
-          }
-        ]
-      },
-      {
         "group": "LLM 评估",
-        "pages": [],
-        "icon": "flask-conical"
-      },
-      {
-        "page": "docs/evaluation-introduction",
-        "title": "LLM 评估简介"
-      },
-      {
-        "group": "核心概念",
         "pages": [
+          "docs/evaluation-introduction",
           {
-            "group": "测试用例",
+            "group": "核心概念",
             "pages": [
               {
-                "page": "docs/(concepts)/(test-cases)/evaluation-test-cases",
-                "title": "测试用例"
+                "group": "测试用例",
+                "pages": [
+                  "docs/evaluation-test-cases",
+                  "docs/evaluation-multiturn-test-cases",
+                  "docs/evaluation-arena-test-cases"
+                ]
               },
-              {
-                "page": "docs/(concepts)/(test-cases)/evaluation-multiturn-test-cases",
-                "title": "Multi-Turn"
-              },
-              {
-                "page": "docs/(concepts)/(test-cases)/evaluation-arena-test-cases",
-                "title": "Arena"
-              }
+              "docs/evaluation-datasets",
+              "docs/evaluation-llm-tracing",
+              "docs/evaluation-voice",
+              "docs/evaluation-prompts",
+              "docs/evaluation-mcp"
             ]
           },
           {
-            "page": "docs/(concepts)/evaluation-datasets",
-            "title": "数据集"
+            "group": "端到端评估",
+            "pages": [
+              "docs/evaluation-end-to-end-single-turn",
+              "docs/evaluation-end-to-end-multi-turn"
+            ]
           },
-          {
-            "page": "docs/(concepts)/evaluation-llm-tracing",
-            "title": "LLM 追踪"
-          },
-          {
-            "page": "docs/(concepts)/evaluation-voice",
-            "title": "Voice"
-          },
-          {
-            "page": "docs/(concepts)/evaluation-prompts",
-            "title": "提示词"
-          },
-          {
-            "page": "docs/(concepts)/evaluation-mcp",
-            "title": "MCP"
-          }
-        ]
-      },
-      {
-        "page": "docs/evaluation-end-to-end-llm-evals/index",
-        "title": "端到端 LLM 评估"
-      },
-      {
-        "page": "docs/evaluation-trajectory-based-llm-evals",
-        "title": "基于轨迹的评估"
-      },
-      {
-        "page": "docs/evaluation-component-level-llm-evals",
-        "title": "组件级 LLM 评估"
-      },
-      {
-        "page": "docs/evaluation-unit-testing-in-ci-cd",
-        "title": "CI/CD 中的单元测试"
-      },
-      {
-        "page": "docs/evaluation-flags-and-configs",
-        "title": "开关与配置"
+          "docs/evaluation-trajectory-based-llm-evals",
+          "docs/evaluation-component-level-llm-evals",
+          "docs/evaluation-unit-testing-in-ci-cd",
+          "docs/evaluation-flags-and-configs"
+        ],
+        "icon": "flask-conical"
       },
       {
         "group": "评估指标",
-        "pages": [],
+        "pages": [
+          "docs/metrics-introduction",
+          {
+            "group": "自定义指标",
+            "pages": [
+              "docs/metrics-llm-evals",
+              "docs/metrics-dag",
+              "docs/metrics-conversational-g-eval",
+              "docs/metrics-conversational-dag",
+              "docs/metrics-arena-g-eval",
+              "docs/metrics-custom"
+            ]
+          },
+          {
+            "group": "智能体指标",
+            "pages": [
+              "docs/metrics-task-completion",
+              "docs/metrics-step-efficiency",
+              "docs/metrics-argument-correctness",
+              "docs/metrics-tool-correctness",
+              "docs/metrics-plan-adherence",
+              "docs/metrics-plan-quality"
+            ]
+          },
+          {
+            "group": "RAG 指标",
+            "pages": [
+              "docs/metrics-answer-relevancy",
+              "docs/metrics-faithfulness",
+              "docs/metrics-contextual-precision",
+              "docs/metrics-contextual-recall",
+              "docs/metrics-contextual-relevancy"
+            ]
+          },
+          {
+            "group": "多轮指标",
+            "pages": [
+              "docs/metrics-turn-relevancy",
+              "docs/metrics-role-adherence",
+              "docs/metrics-knowledge-retention",
+              "docs/metrics-conversation-completeness",
+              "docs/metrics-goal-accuracy",
+              "docs/metrics-tool-use",
+              "docs/metrics-topic-adherence",
+              "docs/metrics-turn-faithfulness",
+              "docs/metrics-turn-contextual-precision",
+              "docs/metrics-turn-contextual-recall",
+              "docs/metrics-turn-contextual-relevancy"
+            ]
+          },
+          {
+            "group": "语音指标",
+            "pages": [
+              "docs/metrics-voice-naturalness",
+              "docs/metrics-speech-intelligibility",
+              "docs/metrics-voice-consistency",
+              "docs/metrics-turn-taking-naturalness",
+              "docs/metrics-agent-responsiveness",
+              "docs/metrics-audio-integrity",
+              "docs/metrics-voice-reliability"
+            ]
+          },
+          {
+            "group": "MCP 指标",
+            "pages": [
+              "docs/metrics-mcp-use",
+              "docs/metrics-multi-turn-mcp-use",
+              "docs/metrics-mcp-task-completion"
+            ]
+          },
+          {
+            "group": "安全指标",
+            "pages": [
+              "docs/metrics-bias",
+              "docs/metrics-toxicity",
+              "docs/metrics-non-advice",
+              "docs/metrics-misuse",
+              "docs/metrics-pii-leakage",
+              "docs/metrics-role-violation"
+            ]
+          },
+          {
+            "group": "非 LLM 指标",
+            "pages": [
+              "docs/metrics-exact-match",
+              "docs/metrics-pattern-match",
+              "docs/metrics-json-correctness"
+            ]
+          },
+          {
+            "group": "图像指标",
+            "pages": [
+              "docs/multimodal-metrics-image-coherence",
+              "docs/multimodal-metrics-image-helpfulness",
+              "docs/multimodal-metrics-image-reference",
+              "docs/multimodal-metrics-text-to-image",
+              "docs/multimodal-metrics-image-editing"
+            ]
+          },
+          {
+            "group": "其他指标",
+            "pages": [
+              "docs/metrics-summarization",
+              "docs/metrics-prompt-alignment",
+              "docs/metrics-hallucination",
+              "docs/metrics-ragas"
+            ]
+          },
+          {
+            "group": "社区指标",
+            "pages": [
+              "docs/community-metrics-overview",
+              "docs/metrics-citation-faithfulness",
+              "docs/metrics-agent-loop-detection",
+              "docs/metrics-tool-permission"
+            ]
+          }
+        ],
         "icon": "gauge"
       },
       {
-        "page": "docs/metrics-introduction",
-        "title": "指标简介"
-      },
-      {
-        "group": "自定义指标",
-        "pages": [
-          {
-            "page": "docs/(custom)/metrics-llm-evals",
-            "title": "G-Eval"
-          },
-          {
-            "page": "docs/(custom)/metrics-dag",
-            "title": "DAG"
-          },
-          {
-            "page": "docs/(custom)/metrics-conversational-g-eval",
-            "title": "对话式 G-Eval"
-          },
-          {
-            "page": "docs/(custom)/metrics-conversational-dag",
-            "title": "对话式 DAG"
-          },
-          {
-            "page": "docs/(custom)/metrics-arena-g-eval",
-            "title": "竞技场 G-Eval"
-          },
-          {
-            "page": "docs/(custom)/metrics-custom",
-            "title": "自定义指标"
-          }
-        ]
-      },
-      {
-        "group": "智能体指标",
-        "pages": [
-          {
-            "page": "docs/(agentic)/metrics-task-completion",
-            "title": "任务完成"
-          },
-          {
-            "page": "docs/(agentic)/metrics-step-efficiency",
-            "title": "步骤效率"
-          },
-          {
-            "page": "docs/(agentic)/metrics-argument-correctness",
-            "title": "参数正确性"
-          },
-          {
-            "page": "docs/(agentic)/metrics-tool-correctness",
-            "title": "工具正确性"
-          },
-          {
-            "page": "docs/(agentic)/metrics-plan-adherence",
-            "title": "计划遵循"
-          },
-          {
-            "page": "docs/(agentic)/metrics-plan-quality",
-            "title": "计划质量"
-          }
-        ]
-      },
-      {
-        "group": "RAG 指标",
-        "pages": [
-          {
-            "page": "docs/(rag)/metrics-answer-relevancy",
-            "title": "答案相关性"
-          },
-          {
-            "page": "docs/(rag)/metrics-faithfulness",
-            "title": "忠实度"
-          },
-          {
-            "page": "docs/(rag)/metrics-contextual-precision",
-            "title": "上下文精确率"
-          },
-          {
-            "page": "docs/(rag)/metrics-contextual-recall",
-            "title": "上下文召回率"
-          },
-          {
-            "page": "docs/(rag)/metrics-contextual-relevancy",
-            "title": "上下文相关性"
-          }
-        ]
-      },
-      {
-        "group": "多轮指标",
-        "pages": [
-          {
-            "page": "docs/(multi-turn)/metrics-turn-relevancy",
-            "title": "Turn Relevancy"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-role-adherence",
-            "title": "Role Adherence"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-knowledge-retention",
-            "title": "Knowledge Retention"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-conversation-completeness",
-            "title": "Conversation Completeness"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-goal-accuracy",
-            "title": "目标准确率"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-tool-use",
-            "title": "工具使用"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-topic-adherence",
-            "title": "主题遵循"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-turn-faithfulness",
-            "title": "轮次忠实度"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-turn-contextual-precision",
-            "title": "轮次上下文精确率"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-turn-contextual-recall",
-            "title": "轮次上下文召回率"
-          },
-          {
-            "page": "docs/(multi-turn)/metrics-turn-contextual-relevancy",
-            "title": "轮次上下文相关性"
-          }
-        ]
-      },
-      {
-        "group": "语音指标",
-        "pages": [
-          {
-            "page": "docs/(voice)/metrics-voice-naturalness",
-            "title": "语音自然度"
-          },
-          {
-            "page": "docs/(voice)/metrics-speech-intelligibility",
-            "title": "语音可懂度"
-          },
-          {
-            "page": "docs/(voice)/metrics-voice-consistency",
-            "title": "语音一致性"
-          },
-          {
-            "page": "docs/(voice)/metrics-turn-taking-naturalness",
-            "title": "轮次切换自然度"
-          },
-          {
-            "page": "docs/(voice)/metrics-agent-responsiveness",
-            "title": "智能体响应性"
-          },
-          {
-            "page": "docs/(voice)/metrics-audio-integrity",
-            "title": "音频完整性"
-          },
-          {
-            "page": "docs/(voice)/metrics-voice-reliability",
-            "title": "语音可靠性"
-          }
-        ]
-      },
-      {
-        "group": "MCP 指标",
-        "pages": [
-          {
-            "page": "docs/(mcp)/metrics-mcp-use",
-            "title": "MCP 使用"
-          },
-          {
-            "page": "docs/(mcp)/metrics-multi-turn-mcp-use",
-            "title": "多轮 MCP 使用"
-          },
-          {
-            "page": "docs/(mcp)/metrics-mcp-task-completion",
-            "title": "MCP 任务完成"
-          }
-        ]
-      },
-      {
-        "group": "安全指标",
-        "pages": [
-          {
-            "page": "docs/(safety)/metrics-bias",
-            "title": "偏见"
-          },
-          {
-            "page": "docs/(safety)/metrics-toxicity",
-            "title": "毒性"
-          },
-          {
-            "page": "docs/(safety)/metrics-non-advice",
-            "title": "非建议"
-          },
-          {
-            "page": "docs/(safety)/metrics-misuse",
-            "title": "滥用"
-          },
-          {
-            "page": "docs/(safety)/metrics-pii-leakage",
-            "title": "PII 泄露"
-          },
-          {
-            "page": "docs/(safety)/metrics-role-violation",
-            "title": "角色违规"
-          }
-        ]
-      },
-      {
-        "group": "非 LLM 指标",
-        "pages": [
-          {
-            "page": "docs/(non-llm)/metrics-exact-match",
-            "title": "精确匹配"
-          },
-          {
-            "page": "docs/(non-llm)/metrics-pattern-match",
-            "title": "模式匹配"
-          },
-          {
-            "page": "docs/(non-llm)/metrics-json-correctness",
-            "title": "JSON 正确性"
-          }
-        ]
-      },
-      {
-        "group": "图像指标",
-        "pages": [
-          {
-            "page": "docs/(images)/multimodal-metrics-image-coherence",
-            "title": "图像连贯性"
-          },
-          {
-            "page": "docs/(images)/multimodal-metrics-image-helpfulness",
-            "title": "图像有用性"
-          },
-          {
-            "page": "docs/(images)/multimodal-metrics-image-reference",
-            "title": "图像引用"
-          },
-          {
-            "page": "docs/(images)/multimodal-metrics-text-to-image",
-            "title": "文生图"
-          },
-          {
-            "page": "docs/(images)/multimodal-metrics-image-editing",
-            "title": "图像编辑"
-          }
-        ]
-      },
-      {
-        "group": "其他指标",
-        "pages": [
-          {
-            "page": "docs/(metrics-others)/metrics-summarization",
-            "title": "摘要"
-          },
-          {
-            "page": "docs/(metrics-others)/metrics-prompt-alignment",
-            "title": "提示词对齐"
-          },
-          {
-            "page": "docs/(metrics-others)/metrics-hallucination",
-            "title": "幻觉"
-          },
-          {
-            "page": "docs/(metrics-others)/metrics-ragas",
-            "title": "RAGAS"
-          }
-        ]
-      },
-      {
-        "group": "社区指标",
-        "pages": [
-          {
-            "page": "docs/(community)/community-metrics-overview",
-            "title": "社区指标概览"
-          },
-          {
-            "page": "docs/(community)/metrics-citation-faithfulness",
-            "title": "引用忠实度"
-          },
-          {
-            "page": "docs/(community)/metrics-agent-loop-detection",
-            "title": "智能体循环检测"
-          },
-          {
-            "page": "docs/(community)/metrics-tool-permission",
-            "title": "工具权限"
-          }
-        ]
-      },
-      {
         "group": "提示词优化",
-        "pages": [],
+        "pages": [
+          "docs/prompt-optimization-introduction",
+          {
+            "group": "优化算法",
+            "pages": [
+              "docs/prompt-optimization-gepa",
+              "docs/prompt-optimization-miprov2",
+              "docs/prompt-optimization-simba",
+              "docs/prompt-optimization-copro"
+            ]
+          }
+        ],
         "icon": "sparkles"
       },
       {
-        "page": "docs/prompt-optimization-introduction",
-        "title": "Introduction"
-      },
-      {
-        "group": "优化算法",
-        "pages": [
-          {
-            "page": "docs/(algorithms)/prompt-optimization-gepa",
-            "title": "GEPA"
-          },
-          {
-            "page": "docs/(algorithms)/prompt-optimization-miprov2",
-            "title": "MIPROv2"
-          },
-          {
-            "page": "docs/(algorithms)/prompt-optimization-simba",
-            "title": "SIMBA"
-          },
-          {
-            "page": "docs/(algorithms)/prompt-optimization-copro",
-            "title": "COPRO"
-          }
-        ]
-      },
-      {
         "group": "合成数据生成",
-        "pages": [],
+        "pages": [
+          "docs/synthetic-data-generation-introduction",
+          {
+            "group": "金标合成器",
+            "pages": [
+              "docs/synthesizer-generate-from-docs",
+              "docs/synthesizer-generate-from-contexts",
+              "docs/synthesizer-generate-from-goldens",
+              "docs/synthesizer-generate-from-scratch"
+            ]
+          },
+          {
+            "group": "对话模拟器",
+            "pages": [
+              "docs/conversation-simulator-model-callback",
+              {
+                "group": "语音模式",
+                "pages": [
+                  "docs/conversation-simulator-voice-connectors",
+                  "docs/conversation-simulator-voice-personas",
+                  "docs/conversation-simulator-voice-interruptions"
+                ]
+              },
+              "docs/conversation-simulator-simulation-graph",
+              "docs/conversation-simulator-stopping-logic",
+              "docs/conversation-simulator-custom-templates",
+              "docs/conversation-simulator-lifecycle-hooks"
+            ]
+          }
+        ],
         "icon": "database"
       },
       {
-        "page": "docs/synthetic-data-generation-introduction",
-        "title": "Introduction"
-      },
-      {
-        "page": "docs/golden-synthesizer/index",
-        "title": "Golden Synthesizer"
-      },
-      {
-        "page": "docs/conversation-simulator/index",
-        "title": "Conversation Simulator"
-      },
-      {
         "group": "基准测试",
-        "pages": [],
+        "pages": [
+          "docs/benchmarks-introduction",
+          {
+            "group": "可用基准",
+            "pages": [
+              "docs/benchmarks-mmlu",
+              "docs/benchmarks-hellaswag",
+              "docs/benchmarks-big-bench-hard",
+              "docs/benchmarks-drop",
+              "docs/benchmarks-truthful-qa",
+              "docs/benchmarks-human-eval",
+              "docs/benchmarks-ifeval",
+              "docs/benchmarks-squad",
+              "docs/benchmarks-gsm8k",
+              "docs/benchmarks-math-qa",
+              "docs/benchmarks-logi-qa",
+              "docs/benchmarks-bool-q",
+              "docs/benchmarks-arc",
+              "docs/benchmarks-bbq",
+              "docs/benchmarks-lambada",
+              "docs/benchmarks-winogrande"
+            ]
+          }
+        ],
         "icon": "trophy"
       },
       {
-        "page": "docs/benchmarks-introduction",
-        "title": "基准测试简介"
-      },
-      {
-        "group": "可用基准",
-        "pages": [
-          {
-            "page": "docs/(benchmarks)/benchmarks-mmlu",
-            "title": "MMLU"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-hellaswag",
-            "title": "HellaSwag"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-big-bench-hard",
-            "title": "BIG-Bench Hard"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-drop",
-            "title": "DROP"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-truthful-qa",
-            "title": "TruthfulQA"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-human-eval",
-            "title": "HumanEval"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-ifeval",
-            "title": "IFEval"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-squad",
-            "title": "SQuAD"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-gsm8k",
-            "title": "GSM8K"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-math-qa",
-            "title": "MathQA"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-logi-qa",
-            "title": "LogiQA"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-bool-q",
-            "title": "BoolQ"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-arc",
-            "title": "ARC"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-bbq",
-            "title": "BBQ"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-lambada",
-            "title": "LAMBADA"
-          },
-          {
-            "page": "docs/(benchmarks)/benchmarks-winogrande",
-            "title": "Winogrande"
-          }
-        ]
-      },
-      {
         "group": "其他",
-        "pages": [],
+        "pages": [
+          "docs/command-line-interface",
+          "docs/environment-variables",
+          "docs/troubleshooting",
+          "docs/faq",
+          "docs/data-privacy",
+          "docs/miscellaneous"
+        ],
         "icon": "boxes"
-      },
-      {
-        "page": "docs/command-line-interface",
-        "title": "CLI Settings"
-      },
-      {
-        "page": "docs/environment-variables",
-        "title": "Environment Variables"
-      },
-      {
-        "page": "docs/troubleshooting",
-        "title": "Troubleshooting"
-      },
-      {
-        "page": "docs/faq",
-        "title": "FAQ"
-      },
-      {
-        "page": "docs/data-privacy",
-        "title": "Data Privacy"
-      },
-      {
-        "page": "docs/miscellaneous",
-        "title": "Miscellaneous"
       }
     ]
   }
