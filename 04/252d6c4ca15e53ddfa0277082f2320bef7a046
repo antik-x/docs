@@ -1,0 +1,30 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 103-104
+docs/metrics-hallucination.mdx
+  h_04c00a69eeb820 1-245
+docs/metrics-hallucination.mdx.pending.tsv
+  h_04c00a69eeb820 1-70
+docs/metrics-prompt-alignment.mdx
+  h_04c00a69eeb820 1-248
+docs/metrics-prompt-alignment.mdx.pending.tsv
+  h_04c00a69eeb820 1-69
+docs/metrics-ragas.mdx
+  h_04c00a69eeb820 1-111
+docs/metrics-ragas.mdx.pending.tsv
+  h_04c00a69eeb820 1-50
+docs/metrics-summarization.mdx
+  h_04c00a69eeb820 1-348
+docs/metrics-summarization.mdx.pending.tsv
+  h_04c00a69eeb820 1-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "04252d6c4ca15e53ddfa0277082f2320bef7a046",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
