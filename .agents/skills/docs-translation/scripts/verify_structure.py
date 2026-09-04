@@ -120,11 +120,25 @@ def check_pair(src_path, dst_path, label):
             content = re.sub(r"^\s*[-*+]\s*", "", ln)
             if not re.search(r"[A-Za-z0-9\u4e00-\u9fff]", content):
                 continue
-            if re.match(r"^<Only\b", content) or re.match(r"^</Only>", content):
-                continue  # Only 包裹行会被解包，源多出的这一行不计
             n += 1
         return n
-    la = count_list(na)
+    def count_src_list(prose):
+        # 源侧：跳过 <Only 包裹行（dst 中会与后续内容合并）
+        n = 0
+        prev_only = False
+        for ln in prose.split("\n"):
+            if not LIST_RE.match(ln):
+                continue
+            content = re.sub(r"^\s*[-*+]\s*", "", ln)
+            if content.startswith("<Only"):
+                prev_only = True
+                continue  # Only 包裹行不计数
+            if prev_only and ln.startswith("    "):
+                continue  # Only 内容的缩进延续行也不计
+            prev_only = False
+            n += 1
+        return n
+    la = count_src_list(na)
     lb = count_list(nb)
     if la != lb:
         issues.append(f"列表项 {la} != {lb}")
