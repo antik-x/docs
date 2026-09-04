@@ -113,6 +113,23 @@
     "(benchmarks)/benchmarks-winogrande": "Winogrande",
     "(benchmarks)/benchmarks-bool-q": "BoolQ",
     "(benchmarks)/benchmarks-lambada": "LAMBADA",
-    "(benchmarks)/benchmarks-ifeval": "IFEval"
+    "(benchmarks)/benchmarks-ifeval": "IFEval",
+    "benchmarks-introduction": "基准测试简介",
+    "benchmarks-hellaswag": "HellaSwag",
+    "benchmarks-mmlu": "MMLU",
+    "benchmarks-gsm8k": "GSM8K",
+    "benchmarks-arc": "ARC",
+    "benchmarks-winogrande": "Winogrande",
+    "benchmarks-bool-q": "BoolQ",
+    "benchmarks-lambada": "LAMBADA",
+    "benchmarks-ifeval": "IFEval",
+    "benchmarks-logi-qa": "LogiQA",
+    "benchmarks-math-qa": "MathQA",
+    "benchmarks-bbq": "BBQ",
+    "benchmarks-squad": "SQuAD",
+    "benchmarks-truthful-qa": "TruthfulQA",
+    "benchmarks-big-bench-hard": "BIG-Bench Hard",
+    "benchmarks-human-eval": "HumanEval",
+    "benchmarks-drop": "DROP"
   }
 }
