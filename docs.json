@@ -289,19 +289,19 @@
           },
           {
             "page": "docs/(multi-turn)/metrics-turn-faithfulness",
-            "title": "Turn Faithfulness"
+            "title": "轮次忠实度"
           },
           {
             "page": "docs/(multi-turn)/metrics-turn-contextual-precision",
-            "title": "Turn Contextual Precision"
+            "title": "轮次上下文精确率"
           },
           {
             "page": "docs/(multi-turn)/metrics-turn-contextual-recall",
-            "title": "Turn Contextual Recall"
+            "title": "轮次上下文召回率"
           },
           {
             "page": "docs/(multi-turn)/metrics-turn-contextual-relevancy",
-            "title": "Turn Contextual Relevancy"
+            "title": "轮次上下文相关性"
           }
         ]
       },

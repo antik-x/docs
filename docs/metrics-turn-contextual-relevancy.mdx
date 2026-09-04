@@ -4,19 +4,19 @@ title: Turn Contextual Relevancy
 
 **标签**：LLM-as-a-judge · 多轮 · RAG · 聊天机器人 · 多模态
 
-The turn contextual relevancy metric is a conversational metric that evaluates whether the retrieval context contains relevant information to address the user's input **throughout a conversation**.
+轮次上下文相关性（turn contextual relevancy）指标是一个对话式指标，评估**在整个对话过程中**检索上下文是否包含解决用户输入的相关信息。
 
 ## Required Arguments
 
-To use the `TurnContextualRelevancyMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases):
+要使用 `TurnContextualRelevancyMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
 
 - `turns`
 
-You must provide the `role`, `content`, and `retrieval_context` for evaluation to happen. Read the [How Is It Calculated](#how-is-it-calculated) section below to learn more.
+你必须提供每个轮次的 `role`、`content` 与 `retrieval_context`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
 
 ## Usage
 
-The `TurnContextualRelevancyMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluation:
+`TurnContextualRelevancyMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
 
 <Tabs>
 
@@ -88,13 +88,13 @@ await evaluate([convoTestCase], [metric]);
 
 <Tab title="Python">
 
-There are **EIGHT** optional parameters when creating a `TurnContextualRelevancyMetric`:
+创建 `TurnContextualRelevancyMetric` 时有**八个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SEVEN** optional parameters when creating a `TurnContextualRelevancyMetric`:
+创建 `TurnContextualRelevancyMetric` 时有**七个**可选参数：
 
 </Tab>
 
@@ -104,15 +104,15 @@ There are **SEVEN** optional parameters when creating a `TurnContextualRelevancy
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `window_size`: an integer which defines the size of the sliding window of turns used during evaluation. Defaulted to `10`.
+- [可选] `window_size`：整数，定义评估期间使用的轮次滑动窗口大小。默认为 `10`。
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 独立运行
 
-You can also run the `TurnContextualRelevancyMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `TurnContextualRelevancyMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -146,37 +146,37 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `TurnContextualRelevancyMetric` score is calculated according to the following equation:
+`TurnContextualRelevancyMetric` 的分数按以下公式计算：
 
 $$
 \text{Turn Contextual Relevancy} = \frac{\sum \text{Turn Contextual Relevancy Scores}}{\text{Total Number of Assistant Turns}}
 $$
 
-The `TurnContextualRelevancyMetric` first constructs a sliding windows of turns. For each window, it:
+`TurnContextualRelevancyMetric` 首先构建轮次滑动窗口。对每个窗口，它会：
 
-1. **Extracts statements** from each retrieval context node
-2. **Evaluates each statement** to determine if it is relevant to the user's input
-3. **Calculates the interaction score** as the ratio of relevant statements to total statements
+1. 从每个检索上下文节点**抽取陈述**
+2. **评估每条陈述**，判断它是否与用户的输入相关
+3. **计算该交互的分数**，即相关陈述占全部陈述的比例
 
 $$
 \text{Contextual Relevancy} = \frac{\text{Number of Relevant Statements}}{\text{Total Number of Statements}}
 $$
 
-The final score is the average of all relevancy scores across the conversation. This measures whether your retrieval system is returning contextually relevant information for each turn.
+最终分数是整段对话中所有相关性分数的平均值。它衡量你的检索系统是否在为每个轮次返回上下文相关的信息。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="When should I use TurnContextualRelevancyMetric instead of the single-turn version?">
-When retrieval happens turn-by-turn in a `ConversationalTestCase` and you want each turn's `retrieval_context` signal-to-noise measured in context. The single-turn [ContextualRelevancyMetric](/docs/metrics-contextual-relevancy) inspects one retrieval against one query.
+当 `ConversationalTestCase` 中逐轮进行检索、而你想在上下文中衡量每轮 `retrieval_context` 的信噪比时使用。单轮的 [ContextualRelevancyMetric](/docs/metrics-contextual-relevancy) 一次只检查一次检索对一个查询。
 </Accordion>
 <Accordion title="Is this a retriever metric or a generator metric?">
-A **retriever** metric. It only measures how much of each turn's `retrieval_context` is relevant to the user's input and never reads the answer — a low score points to a noisy retriever, not a bad generator.
+它是**检索器**指标。它只衡量每轮 `retrieval_context` 中有多少内容与用户输入相关，从不读答案——低分数指向嘈杂的检索器，而不是糟糕的生成器。
 </Accordion>
 <Accordion title="How is relevancy different from Turn Contextual Recall and Precision?">
-Relevancy measures signal vs noise, [recall](/docs/metrics-turn-contextual-recall) measures completeness, and [precision](/docs/metrics-turn-contextual-precision) measures ranking.
+相关性衡量信噪比，[召回率](/docs/metrics-turn-contextual-recall)衡量完整性，[精确率](/docs/metrics-turn-contextual-precision)衡量排序。
 </Accordion>
 <Accordion title="My chatbot answered correctly but this score is low — is that a bug?">
-No. It grades the retrieved context, not the reply, so irrelevant nodes lower the score even when the answer is good. Tighten retrieval (fewer, more targeted chunks) to raise it.
+不是 bug。它评的是检索到的上下文而不是回复，因此无关节点会拉低分数，即使回答是好的。收紧检索（更少、更聚焦的文本块）即可提高分数。
 </Accordion>
 </AccordionGroup>

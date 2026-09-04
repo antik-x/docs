@@ -4,20 +4,20 @@ title: Turn Contextual Precision
 
 **标签**：LLM-as-a-judge · 多轮 · RAG · 聊天机器人 · 多模态
 
-The turn contextual precision metric is a conversational metric that evaluates whether relevant nodes in your retrieval context are ranked higher than irrelevant nodes **throughout a conversation**.
+轮次上下文精确率（turn contextual precision）指标是一个对话式指标，评估**在整个对话过程中**检索上下文中的相关节点是否排在无关节点之前。
 
 ## Required Arguments
 
-To use the `TurnContextualPrecisionMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases):
+要使用 `TurnContextualPrecisionMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
 
 - `turns`
 - `expected_outcome`
 
-You must provide the `role`, `content`, and `retrieval_context` for evaluation to happen. Read the [How Is It Calculated](#how-is-it-calculated) section below to learn more.
+你必须提供每个轮次的 `role`、`content` 与 `retrieval_context`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
 
 ## Usage
 
-The `TurnContextualPrecisionMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluation:
+`TurnContextualPrecisionMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
 
 <Tabs>
 
@@ -89,13 +89,13 @@ await evaluate([convoTestCase], [metric]);
 
 <Tab title="Python">
 
-There are **EIGHT** optional parameters when creating a `TurnContextualPrecisionMetric`:
+创建 `TurnContextualPrecisionMetric` 时有**八个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SEVEN** optional parameters when creating a `TurnContextualPrecisionMetric`:
+创建 `TurnContextualPrecisionMetric` 时有**七个**可选参数：
 
 </Tab>
 
@@ -105,15 +105,15 @@ There are **SEVEN** optional parameters when creating a `TurnContextualPrecision
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `window_size`: an integer which defines the size of the sliding window of turns used during evaluation. Defaulted to `10`.
+- [可选] `window_size`：整数，定义评估期间使用的轮次滑动窗口大小。默认为 `10`。
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 独立运行
 
-You can also run the `TurnContextualPrecisionMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `TurnContextualPrecisionMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -147,16 +147,16 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `TurnContextualPrecisionMetric` score is calculated according to the following equation:
+`TurnContextualPrecisionMetric` 的分数按以下公式计算：
 
 $$
 \text{Turn Contextual Precision} = \frac{\sum \text{Turn Contextual Precision Scores}}{\text{Total Number of Assistant Turns}}
 $$
 
-The `TurnContextualPrecisionMetric` first constructs a sliding windows of turns. For each window, it:
+`TurnContextualPrecisionMetric` 首先构建轮次滑动窗口。对每个窗口，它会：
 
-1. **Evaluates each retrieval context node** to determine if it was useful in arriving at the expected outcome
-2. **Calculates weighted precision** where earlier relevant nodes contribute more to the score:
+1. **评估每个检索上下文节点**，判断它是否对达成预期结果有帮助
+2. **计算加权精确率**，越早出现的相关节点对分数的贡献越大：
 
 $$
 \text{Contextual Precision} = \frac{1}{\text{Number of Relevant Nodes}} \sum_{k=1}^{n} \left( \frac{\text{Number of Relevant Nodes Up to Position } k}{k} \times r_{k} \right)
@@ -164,29 +164,29 @@ $$
 
 <Info>
 
-- **_k_** is the (i+1)<sup>th</sup> node in the `retrieval_context`
-- **_n_** is the length of the `retrieval_context`
-- **_r<sub>k</sub>_** is the binary relevance for the k<sup>th</sup> node in the `retrieval_context`. _r<sub>k</sub>_ = 1 for nodes that are relevant, 0 if not.
+- **_k_** 是 `retrieval_context` 中的第 (i+1) 个节点
+- **_n_** 是 `retrieval_context` 的长度
+- **_r<sub>k</sub>_** 是 `retrieval_context` 中第 k 个节点的二元相关性。相关节点 _r<sub>k</sub>_ = 1，否则为 0。
 
 </Info>
 
-3. Where nodes ranked higher (lower rank number) contribute more weight to the score
+3. 排名越靠前（排名数字越小）的节点对分数的权重贡献越大
 
-The final score is the average of all precision scores across the conversation. This ensures that relevant retrieval context nodes appear earlier in the ranking.
+最终分数是整段对话中所有精确率分数的平均值。这确保相关的检索上下文节点在排序中更早出现。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="When should I use TurnContextualPrecisionMetric instead of the single-turn version?">
-When retrieval runs per turn in a `ConversationalTestCase` and you want to grade each turn's node ranking against the `expected_outcome` . The single-turn [ContextualPrecisionMetric](/docs/metrics-contextual-precision) grades one retrieval only.
+当 `ConversationalTestCase` 中逐轮进行检索、而你想依据 `expected_outcome` 为每轮的节点排序打分时使用。单轮的 [ContextualPrecisionMetric](/docs/metrics-contextual-precision) 一次只能评一次检索。
 </Accordion>
 <Accordion title="How is precision different from recall and relevancy?">
-Precision is **ranking** — are relevant nodes ranked above irrelevant ones, weighted so earlier nodes matter more. [Recall](/docs/metrics-turn-contextual-recall) measures completeness and [relevancy](/docs/metrics-turn-contextual-relevancy) measures signal vs noise.
+精确率是**排序**——相关节点是否排在无关节点之上，且越早的节点权重越大。[召回率](/docs/metrics-turn-contextual-recall)衡量完整性，[相关性](/docs/metrics-turn-contextual-relevancy)衡量信噪比。
 </Accordion>
 <Accordion title="The right info is in my retrieval context but precision is low — what's wrong?">
-Relevant nodes are ranked too low. Since the score weights nodes by position, burying a useful node beneath irrelevant ones tanks precision even when it's present. Add or tune a reranker.
+相关节点排得太靠后。由于分数按位置为节点加权，把有用节点埋在无关节点之下，即使内容存在也会让精确率暴跌。请增加或调优重排序器。
 </Accordion>
 <Accordion title="Why does this metric need expected outcome?">
-It uses the `expected_outcome` to decide which nodes in the `retrieval_context` were useful before scoring their ranking. Without it there's no ground truth for labeling nodes relevant or irrelevant.
+它使用 `expected_outcome` 判断 `retrieval_context` 中哪些节点有用，然后再为它们的排序打分。没有它，就没有为节点标注相关/不相关的基准真值。
 </Accordion>
 </AccordionGroup>

@@ -4,20 +4,20 @@ title: Turn Contextual Recall
 
 **标签**：LLM-as-a-judge · 多轮 · RAG · 聊天机器人 · 多模态
 
-The turn contextual recall metric is a conversational metric that evaluates whether the retrieval context contains sufficient information to support the expected outcome **throughout a conversation**.
+轮次上下文召回率（turn contextual recall）指标是一个对话式指标，评估**在整个对话过程中**检索上下文是否包含足够的信息来支撑预期结果。
 
 ## Required Arguments
 
-To use the `TurnContextualRecallMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases):
+要使用 `TurnContextualRecallMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
 
 - `turns`
 - `expected_outcome`
 
-You must provide the `role`, `content`, and `retrieval_context` for evaluation to happen. Read the [How Is It Calculated](#how-is-it-calculated) section below to learn more.
+你必须提供每个轮次的 `role`、`content` 与 `retrieval_context`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
 
 ## Usage
 
-The `TurnContextualRecallMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluation:
+`TurnContextualRecallMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
 
 <Tabs>
 
@@ -89,13 +89,13 @@ await evaluate([convoTestCase], [metric]);
 
 <Tab title="Python">
 
-There are **EIGHT** optional parameters when creating a `TurnContextualRecallMetric`:
+创建 `TurnContextualRecallMetric` 时有**八个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SEVEN** optional parameters when creating a `TurnContextualRecallMetric`:
+创建 `TurnContextualRecallMetric` 时有**七个**可选参数：
 
 </Tab>
 
@@ -105,15 +105,15 @@ There are **SEVEN** optional parameters when creating a `TurnContextualRecallMet
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `window_size`: an integer which defines the size of the sliding window of turns used during evaluation. Defaulted to `10`.
+- [可选] `window_size`：整数，定义评估期间使用的轮次滑动窗口大小。默认为 `10`。
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 独立运行
 
-You can also run the `TurnContextualRecallMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `TurnContextualRecallMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -147,37 +147,37 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `TurnContextualRecallMetric` score is calculated according to the following equation:
+`TurnContextualRecallMetric` 的分数按以下公式计算：
 
 $$
 \text{Turn Contextual Recall} = \frac{\sum \text{Turn Contextual Recall Scores}}{\text{Total Number of Assistant Turns}}
 $$
 
-The `TurnContextualRecallMetric` first constructs a sliding windows of turns. For each window, it:
+`TurnContextualRecallMetric` 首先构建轮次滑动窗口。对每个窗口，它会：
 
-1. **Breaks down the expected outcome** into individual sentences or statements
-2. **Evaluates each sentence** to determine if it can be attributed to any node in the retrieval context
-3. **Calculates the interaction score** as the ratio of attributable sentences to total sentences
+1. **把预期结果拆解**为单独的句子或陈述
+2. **评估每条句子**，判断它能否归因于检索上下文中的某个节点
+3. **计算该交互的分数**，即可归因句子占全部句子的比例
 
 $$
 \text{Contextual Recall} = \frac{\text{Number of Attributable Statements}}{\text{Total Number of Statements}}
 $$
 
-The final score is the average of all recall scores across the conversation. This measures whether your retrieval system is providing sufficient information to generate the expected responses.
+最终分数是整段对话中所有召回率分数的平均值。它衡量你的检索系统是否在提供足以生成预期回复的信息。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="When should I use TurnContextualRecallMetric instead of the single-turn version?">
-When retrieval feeds a multi-turn `ConversationalTestCase` and you want to confirm each turn retrieved everything needed for the `expected_outcome` . The single-turn [ContextualRecallMetric](/docs/metrics-contextual-recall) checks one query/context pair only.
+当检索为多轮 `ConversationalTestCase` 供料、而你想确认每轮都检索到了 `expected_outcome` 所需的一切时使用。单轮的 [ContextualRecallMetric](/docs/metrics-contextual-recall) 只检查一对查询/上下文。
 </Accordion>
 <Accordion title="Why does recall require expected outcome when relevancy doesn't?">
-Recall is measured against a reference: it breaks the `expected_outcome` into statements and checks how many map to a node in the `retrieval_context` . Without it there's nothing to test completeness against, which is why [relevancy](/docs/metrics-turn-contextual-relevancy) (referenceless) doesn't need it.
+召回率是对照参考来度量的：它把 `expected_outcome` 拆成陈述，检查其中多少能对应到 `retrieval_context` 的某个节点。没有它就没有检验完整性的依据，这也是[相关性](/docs/metrics-turn-contextual-relevancy)（无参考）不需要它的原因。
 </Accordion>
 <Accordion title="How is recall different from relevancy and precision?">
-Recall measures completeness, [relevancy](/docs/metrics-turn-contextual-relevancy) measures signal vs noise, and [precision](/docs/metrics-turn-contextual-precision) measures ranking.
+召回率衡量完整性，[相关性](/docs/metrics-turn-contextual-relevancy)衡量信噪比，[精确率](/docs/metrics-turn-contextual-precision)衡量排序。
 </Accordion>
 <Accordion title="My bot missed a detail the user needed — does a low recall confirm it's a retriever problem?">
-Largely, yes. Low recall means the `retrieval_context` never contained the info the `expected_outcome` needed, so the generator never had it. Fix the retriever (chunking, embeddings, top-k) before blaming the LLM.
+基本可以这么认为。召回率低意味着 `retrieval_context` 从未包含 `expected_outcome` 需要的信息，生成器自然无从获取。先修检索器（分块、嵌入、top-k），再考虑 LLM 的责任。
 </Accordion>
 </AccordionGroup>

@@ -72,6 +72,10 @@
     "(agentic)/metrics-argument-correctness": "参数正确性",
     "(multi-turn)/metrics-goal-accuracy": "目标准确率",
     "(multi-turn)/metrics-tool-use": "工具使用",
-    "(multi-turn)/metrics-topic-adherence": "主题遵循"
+    "(multi-turn)/metrics-topic-adherence": "主题遵循",
+    "(multi-turn)/metrics-turn-faithfulness": "轮次忠实度",
+    "(multi-turn)/metrics-turn-contextual-precision": "轮次上下文精确率",
+    "(multi-turn)/metrics-turn-contextual-recall": "轮次上下文召回率",
+    "(multi-turn)/metrics-turn-contextual-relevancy": "轮次上下文相关性"
   }
 }

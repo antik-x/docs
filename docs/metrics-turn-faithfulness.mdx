@@ -4,19 +4,19 @@ title: Turn Faithfulness
 
 **标签**：LLM-as-a-judge · 多轮 · RAG · 聊天机器人 · 多模态
 
-The turn faithfulness metric is a conversational metric that determines whether your LLM chatbot generates factually accurate responses grounded in the retrieval context **throughout a conversation**.
+轮次忠实度（turn faithfulness）指标是一个对话式指标，判断你的 LLM 聊天机器人**在整个对话过程中**生成的回复是否事实准确、并以检索上下文为依据。
 
 ## Required Arguments
 
-To use the `TurnFaithfulnessMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases):
+要使用 `TurnFaithfulnessMetric`，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
 
 - `turns`
 
-You must provide the `role`, `content`, and `retrieval_context` for evaluation to happen. Read the [How Is It Calculated](#how-is-it-calculated) section below to learn more.
+你必须提供每个轮次的 `role`、`content` 与 `retrieval_context`，评估才能进行。更多信息见下方的 [How Is It Calculated](#how-is-it-calculated) 一节。
 
 ## Usage
 
-The `TurnFaithfulnessMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluation:
+`TurnFaithfulnessMetric()` 可用于[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
 
 <Tabs>
 
@@ -74,13 +74,13 @@ await evaluate([convoTestCase], [metric]);
 
 <Tab title="Python">
 
-There are **TEN** optional parameters when creating a `TurnFaithfulnessMetric`:
+创建 `TurnFaithfulnessMetric` 时有**十个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **NINE** optional parameters when creating a `TurnFaithfulnessMetric`:
+创建 `TurnFaithfulnessMetric` 时有**九个**可选参数：
 
 </Tab>
 
@@ -90,17 +90,17 @@ There are **NINE** optional parameters when creating a `TurnFaithfulnessMetric`:
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
 - [Optional] `truths_extraction_limit`: an optional integer to limit the number of truths extracted from retrieval context per document. Defaulted to `None`（TypeScript 中为 `null`）.
 - [Optional] `penalize_ambiguous_claims`: a boolean which when set to `True`（TypeScript 中为 `true`）, penalizes claims that cannot be verified as true or false. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `window_size`: an integer which defines the size of the sliding window of turns used during evaluation. Defaulted to `10`.
+- [可选] `window_size`：整数，定义评估期间使用的轮次滑动窗口大小。默认为 `10`。
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 独立运行
 
-You can also run the `TurnFaithfulnessMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `TurnFaithfulnessMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -134,36 +134,36 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `TurnFaithfulnessMetric` score is calculated according to the following equation:
+`TurnFaithfulnessMetric` 的分数按以下公式计算：
 
 $$
 \text{Turn Faithfulness} = \frac{\sum \text{Turn Faithfulness Scores}}{\text{Total Number of Assistant Turns}}
 $$
 
-The `TurnFaithfulnessMetric` first constructs a sliding windows of turns. For each window, it:
+`TurnFaithfulnessMetric` 首先构建轮次滑动窗口。对每个窗口，它会：
 
-1. **Extracts truths** from the retrieval context provided in the turns
-2. **Generates claims** from the assistant's responses in the interaction
-3. **Evaluates verdicts** by checking if each claim contradicts the truths
-4. **Calculates the interaction score** as the ratio of faithful claims to total claims
+1. 从各轮次提供的检索上下文中**抽取真相**
+2. 从该交互中助手的回复**生成声明**
+3. **评估判定**，检查每条声明是否与真相矛盾
+4. **计算该交互的分数**，即忠实声明占全部声明的比例
 
 $$
 \text{Faithfulness} = \frac{\text{Number of Truthful Claims}}{\text{Total Number of Claims}}
 $$
 
-The final score is the average of all interaction faithfulness scores across the conversation.
+最终分数是整段对话中所有交互忠实度分数的平均值。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="When should I use TurnFaithfulnessMetric instead of the single-turn FaithfulnessMetric?">
-When a RAG assistant answers across turns and you want each claim checked against its window's `retrieval_context` . The single-turn [FaithfulnessMetric](/docs/metrics-faithfulness) grades one output against one context and can't pinpoint which turn hallucinated.
+当 RAG 助手跨轮次作答、而你想让每条声明对照其所在窗口的 `retrieval_context` 检查时使用。单轮的 [FaithfulnessMetric](/docs/metrics-faithfulness) 只把一个输出对照一个上下文打分，无法定位是哪一轮产生了幻觉。
 </Accordion>
 <Accordion title="Does every turn need its own retrieval context?">
-Attach `retrieval_context` to turns generated from retrieval. The metric extracts truths from that context and verifies the assistant's claims against them — turns with no grounding context are where faithfulness problems surface.
+把 `retrieval_context` 挂到由检索生成的轮次上。指标会从该上下文抽取真相，并对照它们验证助手的声明——没有依据上下文的轮次正是忠实度问题浮现的地方。
 </Accordion>
 <Accordion title="My answers are factually correct but faithfulness is low — how do I debug it?">
-Faithfulness rewards claims grounded in the `retrieval_context` , not claims that merely happen to be true — correct-but-unretrieved facts count as unfaithful. Inspect per-claim verdicts with `verbose_mode` , and try `penalize_ambiguous_claims` for vague claims.
+忠实度奖励的是以 `retrieval_context` 为依据的声明，而不是碰巧为真的声明——正确但未出现在检索内容中的事实也算不忠实。用 `verbose_mode` 检查逐声明的判定，并尝试 `penalize_ambiguous_claims` 处理含糊声明。
 </Accordion>
 <Accordion title="How do window size and truths extraction limit affect long conversations?">
 `window_size` (default `10` ) groups turns per evaluation; `truths_extraction_limit` caps truths pulled from each document. Tune them together when long conversations make scoring slow or noisy.
