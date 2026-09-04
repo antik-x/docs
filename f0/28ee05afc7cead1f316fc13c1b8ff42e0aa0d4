@@ -1,0 +1,22 @@
+docs/conversation-simulator-voice-personas.mdx
+  h_04c00a69eeb820 5,7,20,23,78,80,93,115,117,130,138,151,155
+docs/prompt-optimization-copro.mdx
+  h_04c00a69eeb820 249
+docs/prompt-optimization-gepa.mdx
+  h_04c00a69eeb820 269
+docs/prompt-optimization-miprov2.mdx
+  h_04c00a69eeb820 256
+docs/prompt-optimization-simba.mdx
+  h_04c00a69eeb820 304
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "f028ee05afc7cead1f316fc13c1b8ff42e0aa0d4",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
