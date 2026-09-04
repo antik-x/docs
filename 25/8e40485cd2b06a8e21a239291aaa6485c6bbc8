@@ -1,0 +1,118 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 111-116
+docs/benchmarks-arc.mdx
+  h_04c00a69eeb820 1-65
+docs/benchmarks-bbq.mdx
+  h_04c00a69eeb820 1-92
+docs/benchmarks-big-bench-hard.mdx
+  h_04c00a69eeb820 1-108
+docs/benchmarks-bool-q.mdx
+  h_04c00a69eeb820 1-63
+docs/benchmarks-drop.mdx
+  h_04c00a69eeb820 1-661
+docs/benchmarks-gsm8k.mdx
+  h_04c00a69eeb820 1-63
+docs/benchmarks-hellaswag.mdx
+  h_04c00a69eeb820 1-271
+docs/benchmarks-human-eval.mdx
+  h_04c00a69eeb820 1-267
+docs/benchmarks-ifeval.mdx
+  h_04c00a69eeb820 1-59
+docs/benchmarks-introduction.mdx
+  h_04c00a69eeb820 1-261
+docs/benchmarks-lambada.mdx
+  h_04c00a69eeb820 1-63
+docs/benchmarks-logi-qa.mdx
+  h_04c00a69eeb820 1-82
+docs/benchmarks-math-qa.mdx
+  h_04c00a69eeb820 1-83
+docs/benchmarks-mmlu.mdx
+  h_04c00a69eeb820 1-132
+docs/benchmarks-squad.mdx
+  h_04c00a69eeb820 1-128
+docs/benchmarks-truthful-qa.mdx
+  h_04c00a69eeb820 1-118
+docs/benchmarks-winogrande.mdx
+  h_04c00a69eeb820 1-63
+docs/command-line-interface.mdx
+  h_04c00a69eeb820 1-757
+docs/conversation-simulator-custom-templates.mdx
+  h_04c00a69eeb820 1-116
+docs/conversation-simulator-lifecycle-hooks.mdx
+  h_04c00a69eeb820 1-79
+docs/conversation-simulator-model-callback.mdx
+  h_04c00a69eeb820 1-85
+docs/conversation-simulator-simulation-graph.mdx
+  h_04c00a69eeb820 1-194
+docs/conversation-simulator-stopping-logic.mdx
+  h_04c00a69eeb820 1-173
+docs/conversation-simulator-voice-connectors.mdx
+  h_04c00a69eeb820 1-282
+docs/conversation-simulator-voice-interruptions.mdx
+  h_04c00a69eeb820 1-134
+docs/conversation-simulator-voice-mode/index.mdx
+  h_04c00a69eeb820 1-202
+docs/conversation-simulator-voice-mode/index.mdx.pending.tsv
+  h_04c00a69eeb820 1-85
+docs/conversation-simulator-voice-personas.mdx
+  h_04c00a69eeb820 1-189
+docs/conversation-simulator/index.mdx
+  h_04c00a69eeb820 1-172
+docs/conversation-simulator/index.mdx.pending.tsv
+  h_04c00a69eeb820 1-66
+docs/data-privacy.mdx
+  h_04c00a69eeb820 1-33
+docs/environment-variables.mdx
+  h_04c00a69eeb820 1-442
+docs/evaluation-component-level-llm-evals.mdx
+  h_04c00a69eeb820 1706
+docs/evaluation-datasets.mdx
+  h_04c00a69eeb820 881
+docs/evaluation-test-cases.mdx
+  h_04c00a69eeb820 765,891
+docs/faq.mdx
+  h_04c00a69eeb820 1-444
+docs/getting-started.mdx
+  h_04c00a69eeb820 1305
+docs/golden-synthesizer/index.mdx
+  h_04c00a69eeb820 1-497
+docs/golden-synthesizer/index.mdx.pending.tsv
+  h_04c00a69eeb820 1-202
+docs/metrics-agent-loop-detection.mdx
+  h_04c00a69eeb820 72,95
+docs/miscellaneous.mdx
+  h_04c00a69eeb820 1-11
+docs/prompt-optimization-copro.mdx
+  h_04c00a69eeb820 1-270
+docs/prompt-optimization-gepa.mdx
+  h_04c00a69eeb820 1-293
+docs/prompt-optimization-introduction.mdx
+  h_04c00a69eeb820 1-267
+docs/prompt-optimization-miprov2.mdx
+  h_04c00a69eeb820 1-277
+docs/prompt-optimization-simba.mdx
+  h_04c00a69eeb820 1-325
+docs/synthesizer-generate-from-contexts.mdx
+  h_04c00a69eeb820 1-105
+docs/synthesizer-generate-from-docs.mdx
+  h_04c00a69eeb820 1-203
+docs/synthesizer-generate-from-goldens.mdx
+  h_04c00a69eeb820 1-94
+docs/synthesizer-generate-from-scratch.mdx
+  h_04c00a69eeb820 1-107
+docs/synthetic-data-generation-introduction.mdx
+  h_04c00a69eeb820 1-125
+docs/troubleshooting.mdx
+  h_04c00a69eeb820 1-271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "258e40485cd2b06a8e21a239291aaa6485c6bbc8",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
