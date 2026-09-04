@@ -2,17 +2,17 @@
 title: COPRO
 ---
 
-**COPRO (Co-operative Prompt Optimizer)** is a prompt optimization algorithm within `deepeval` adapted from the DSPy optimizer of the same name. It uses **Coordinate Ascent** to iteratively improve a prompt — evaluating a batch of candidates at each depth step, committing the best performer as the new baseline, and using the scored history plus metric feedback to generate an increasingly targeted next batch.
+**COPRO（Co-operative Prompt Optimizer）**是 `deepeval` 中的一种提示优化算法，改编自 DSPy 的同名优化器。它使用**坐标上升**（Coordinate Ascent）迭代改进提示——在每个深度步骤评估一批候选、将最佳者提交为新基线，并利用评分历史和指标反馈生成越来越有针对性的下一批候选。
 
-The core insight is that prompt optimization is most efficient when each new generation of candidates is **informed by what failed before** and **why it failed**. Rather than generating variations blindly, COPRO feeds the optimizer LLM a full diagnostic history — every past prompt attempt, its score, and the specific metric feedback explaining where points were lost — so each subsequent batch of candidates directly addresses known weaknesses.
+核心洞察是：当每新一代候选都**了解之前哪些失败了以及为什么失败**时，提示优化的效率最高。COPRO 不是盲目生成变体，而是将完整的诊断历史——每一次过去的提示尝试、其分数和解释失分原因的指标反馈——提供给优化器 LLM，使后续的候选批次直接针对已知的弱点。
 
 <Info>
-The term **Coordinate Ascent** comes from mathematical optimization. In classical coordinate ascent you optimize one variable at a time while holding the others fixed, ascending the objective function one dimension at a time. COPRO applies this idea to prompt space: at each depth step, it locks in the best-performing prompt as the new baseline and builds the next generation of candidates on top of that committed improvement — climbing steadily rather than wandering.
+**坐标上升**（Coordinate Ascent）一词来自数学优化。在经典坐标上升中，你一次优化一个变量而固定其他变量，沿目标函数逐维上升。COPRO 将这个想法应用到提示空间：在每个深度步骤，它锁定表现最佳的提示作为新基线，并在该已提交的改进之上构建下一代候选——稳步攀升而非漫无目的地游荡。
 </Info>
 
 ## Optimize Prompts With COPRO
 
-To optimize a prompt using COPRO, provide a `COPRO` algorithm instance to the `optimize()` method:
+要使用 COPRO 优化提示词，请将 `COPRO` 算法实例提供给 `optimize()` 方法：
 
 ```python
 from deepeval.metrics import AnswerRelevancyMetric
@@ -34,11 +34,11 @@ optimizer = PromptOptimizer(
 optimized_prompt = optimizer.optimize(prompt=prompt, goldens=goldens, metrics=[AnswerRelevancyMetric()])
 ```
 
-Done ✅. You just used `COPRO` to run a prompt optimization.
+完成 ✅。你刚刚使用了 `COPRO` 来运行提示优化。
 
 ## Customize COPRO
 
-You can customize COPRO's behavior by passing parameters directly to the `COPRO` constructor:
+你可以通过直接向 `COPRO` 构造函数传递参数来自定义其行为：
 
 ```python
 from deepeval.optimizer.algorithms import COPRO
@@ -51,12 +51,12 @@ copro = COPRO(
 )
 ```
 
-There are **FOUR** optional parameters when creating a `COPRO` instance:
+创建 `COPRO` 实例时有**四个**可选参数：
 
-- [Optional] `depth`: number of coordinate ascent steps to run. At each step, a new batch of candidates is evaluated and the best is committed as the baseline for the next step. Defaulted to `4`.
-- [Optional] `breadth`: number of prompt candidates generated and evaluated at each depth step. A higher breadth explores more of the prompt space per step but costs more. Defaulted to `7`.
-- [Optional] `minibatch_size`: number of goldens sampled per depth step for candidate evaluation. Larger batches give more reliable scores. Full-dataset validation is always run on the best candidate of each step. Defaulted to `25`.
-- [Optional] `random_state`: reproducibility control. You can pass either an `int` seed or a `random.Random` instance. This affects minibatch sampling and candidate deduplication. Defaulted to a random value.
+- [可选] `depth`：要运行的坐标上升步骤数。在每个步骤中，会评估一批新的候选，并将最佳者提交为下一步的基线。默认为 `4`。
+- [可选] `breadth`：在每个深度步骤生成和评估的提示候选数量。更高的广度每步探索更多的提示空间，但成本更高。默认为 `7`。
+- [可选] `minibatch_size`：每个深度步骤采样的金标数量，用于候选评估。更大的批次给出更可靠的分数。始终会对每步的最佳候选运行全数据集验证。默认为 `25`。
+- [可选] `random_state`：可复现性控制。你可以传入 `int` 种子或 `random.Random` 实例。这会影响小批量采样和候选去重。默认为随机值。
 
 ## How Does COPRO Work?
 
@@ -102,14 +102,14 @@ sequenceDiagram
     deactivate COPRO
 ```
 
-COPRO runs for `depth` steps. Each step evaluates a batch of `breadth` candidates, selects the best, validates it on the full dataset, then uses the scored history to propose the next batch. Here is the exact high-level flow:
+COPRO 运行 `depth` 个步骤。每个步骤评估一批 `breadth` 候选，选择最佳者，在全数据集上验证，然后利用评分历史提出下一批。以下是确切的高级流程：
 
-1. **Bootstrap** — Generate the initial `breadth` candidates from the original prompt using zero-shot variation
-2. **Evaluate** — Score all candidates on a stochastic minibatch and extract metric feedback per candidate
-3. **Commit** — Pick the best minibatch candidate and run full-dataset validation on it
-4. **Propose** — Feed the scored history back to the LLM to generate the next targeted batch
-5. **Repeat** — Steps 2–4 run for each of the `depth` steps
-6. **Final Selection** — Return the prompt with the highest average true validation score across all steps
+1. **引导** —— 使用零样本变体从原始提示生成初始的 `breadth` 个候选
+2. **评估** —— 在随机小批量上为所有候选打分，并为每个候选提取指标反馈
+3. **提交** —— 选择最佳的小批量候选并对其运行全数据集验证
+4. **提出** —— 将评分历史反馈给 LLM 以生成下一批有针对性的候选
+5. **重复** —— 步骤 2–4 在每个 `depth` 步骤中运行
+6. **最终选择** —— 返回在所有步骤中平均真实验证分数最高的提示
 
 ```mermaid
 flowchart TD
@@ -131,37 +131,37 @@ flowchart TD
 
 ### Phase 1: Bootstrap
 
-Before the coordinate ascent loop begins, COPRO generates an initial set of `breadth` candidate prompts from the original prompt using **zero-shot variation**. This is done by the `COPROProposer` in two passes:
+在坐标上升循环开始之前，COPRO 使用**零样本变体**从原始提示生成一组初始的 `breadth` 个候选提示。这由 `COPROProposer` 在两个阶段中完成：
 
-**Pass 1 — Guideline Generation:** The proposer asks the optimizer LLM to brainstorm `breadth` distinct "variation guidelines" — high-level strategies for how to meaningfully alter the prompt. Examples:
+**第一阶段——指南生成：** 提出器要求优化器 LLM 头脑风暴出 `breadth` 个不同的「变体指南」——关于如何有意义地改变提示的高层次策略。示例：
 
 | Guideline Example                                                              | Effect                                                     |
 |--------------------------------------------------------------------------------|------------------------------------------------------------|
-| "Reframe the prompt to require step-by-step reasoning before the final answer" | Generates an instruction that enforces chain-of-thought    |
-| "Condense instructions into a highly direct, concise format"                   | Produces a shorter, more aggressive instruction style      |
-| "Add strict output formatting constraints"                                     | Makes the instruction prescriptive about output structure  |
-| "Explicitly call out common mistakes to avoid"                                 | Generates a defensive, error-aware instruction             |
+| 「重新构建提示以要求在最终答案前进行逐步推理」 | 生成一个强制思维链的指令 |
+| 「将指令精简为高度直接、简洁的格式」 | 产生更简短、更激进指令风格 |
+| 「添加严格的输出格式约束」 | 使指令对输出结构更具规范性 |
+| 「明确指出要避免的常见错误」 | 生成一个防御性的、感知错误的指令 |
 
-**Pass 2 — Candidate Generation:** For each guideline, the proposer makes a separate LLM call to produce the actual rewritten prompt. These calls run **concurrently in the async path**, making the bootstrap phase significantly faster than sequential generation.
+**第二阶段——候选生成：** 对于每条指南，提出器会进行单独的 LLM 调用来产出实际重写后的提示。这些调用**在异步路径中并发运行**，使引导阶段比顺序生成快得多。
 
-The **original prompt is always inserted as candidate 0** before evaluation begins. This guarantees a baseline that the optimizer can always fall back to, and ensures that the first depth step has a fair reference point.
+**原始提示始终作为候选 0 插入**，在评估开始之前。这保证了优化器始终有可以退回的基线，并确保第一个深度步骤有公平的参考点。
 
 <Tip>
-The two-pass guideline approach ensures that candidates are **genuinely diverse** rather than superficially different. By first committing to a high-level strategy (the guideline) before writing the prompt, the LLM is less likely to produce variations that differ only in wording. Duplicate and near-duplicate candidates (≥90% similarity) are automatically filtered out.
+双阶段指南方法确保候选是**真正多样的**，而不是仅在措辞上不同。通过先确定高层次策略（指南）再编写提示，LLM 不太可能产生仅在措辞上不同的变体。重复和近似重复的候选（≥90% 相似度）会被自动过滤。
 </Tip>
 
 ### Phase 2: Coordinate Ascent Loop
 
-The loop runs for `depth` steps. Each step has three sub-stages: evaluate, commit, and propose.
+循环运行 `depth` 个步骤。每个步骤有三个子阶段：评估、提交和提出。
 
 #### Step 2a: Evaluate
 
-At the start of each depth step, COPRO draws a random minibatch from your goldens and evaluates **every candidate** in the current batch against it. For each candidate, two things are captured:
+在每个深度步骤开始时，COPRO 从你的金标中随机抽取一个小批量，并对其评估**当前批次中的每个候选**。对于每个候选，会捕获两件事：
 
-1. **Score** — the average metric score across all goldens in the minibatch
-2. **Metric feedback** — a diagnostic string describing exactly why points were lost, built from per-metric reasons on the failing examples
+1. **分数** —— 小批量中所有金标的平均指标分数
+2. **指标反馈** —— 一条诊断字符串，精确描述为什么失分，基于失败示例的逐指标原因
 
-The metric feedback is a key enhancement over simpler optimizers. Rather than just recording a score, COPRO captures explanations like:
+指标反馈是相较于更简单优化器的关键增强。COPRO 不仅记录分数，还会捕获如下解释：
 
 ```
 [Input]: Translate "Good morning" to French
@@ -171,23 +171,23 @@ The metric feedback is a key enhancement over simpler optimizers. Rather than ju
 - AnswerRelevancyMetric (Score: 0.4): Response contains unnecessary filler beyond the requested translation.
 ```
 
-This feedback is carried forward into the proposal step so the next generation of candidates is explicitly targeted at the failure modes identified here.
+此反馈会被带入提出步骤，使下一代候选明确针对这里识别出的失败模式。
 
 #### Step 2b: Commit
 
-After scoring, candidates are ranked by minibatch score. The **top-scoring candidate** is selected, then evaluated on the **full golden dataset** using `score_pareto`. This full-dataset score is stored in the validation archive.
+评分后，候选按小批量分数排名。**得分最高的候选**被选中，然后在**完整金标数据集**上使用 `score_pareto` 进行评估。此全数据集分数存储在验证存档中。
 
-If the full-dataset average beats the current `global_best_score`, the candidate is accepted as the new best. All depth steps record full-dataset scores, so the final selection can compare every step's committed winner on equal footing.
+如果全数据集平均值超过当前的 `global_best_score`，候选将被接受为新的最佳。所有深度步骤都会记录全数据集分数，因此最终选择可以在同等条件下比较每步的提交优胜者。
 
 <Info>
-COPRO runs full-dataset validation on the best candidate at **every depth step**, not just periodically. This makes COPRO's validation more thorough than SIMBA or MIPROv2, at the cost of more evaluations per step. It is what makes the coordinate ascent reliable — each committed baseline is genuinely validated, not just minibatch-estimated.
+COPRO 在**每个深度步骤**都对最佳候选运行全数据集验证，而不仅仅是定期验证。这使得 COPRO 的验证比 SIMBA 或 MIPROv2 更彻底，代价是每步更多的评估。这正是使坐标上升可靠的原因——每个提交的基线都经过了真正的验证，而不仅仅是小批量估计。
 </Info>
 
 #### Step 2c: Propose
 
-Unless this is the final depth step, COPRO generates the next batch of `breadth` candidates. This uses the same two-pass proposer as bootstrap, but now passes the full `history_log` — a bounded, sorted record of the top `breadth` (prompt, score, metric_feedback) triples seen across all prior steps.
+除非这是最后一个深度步骤，否则 COPRO 会生成下一批 `breadth` 个候选。这使用与引导相同的两阶段提出器，但现在会传入完整的 `history_log`——一个有界的、排序的记录，包含跨所有先前步骤的顶部 `breadth` 个（提示，分数，指标反馈）三元组。
 
-**Example: What the history log looks like at depth step 3**
+**示例：深度步骤 3 时历史日志的样子**
 
 | Attempt | Score | Metric Feedback Summary                                      |
 |---------|-------|--------------------------------------------------------------|
@@ -197,13 +197,13 @@ Unless this is the final depth step, COPRO generates the next batch of `breadth`
 | P₂ᵦ     | 0.68  | Lacked step-by-step reasoning on multi-hop questions         |
 | ...     | ...   | ...                                                          |
 
-The proposer sees this ranked history and generates guidelines that **explicitly fix the failure patterns** (e.g., "previous attempts failed the JSON schema metric — add a strict output format constraint") while **preserving the successful traits** of the highest-scoring attempts. The resulting candidates at each subsequent depth step are therefore more targeted and diagnostic than the zero-shot bootstrap.
+提出器会看到此排名历史并生成指南，**明确修复之前步骤中的失败**。
 
 ### Step 3: Final Selection
 
-After all `depth` steps, COPRO performs a **final sweep** over the full validation archive. It picks the configuration with the highest average full-dataset score across all committed depth-step winners. This is the `_extract_optimized_set` step — it ensures that even if a later depth step produced a worse result than an earlier one (possible with minibatch noise), the globally best validated prompt is always returned.
+在所有 `depth` 步骤之后，COPRO 会对完整验证存档执行**最终扫描**，以选出整体最佳的提示。
 
-**Example: Coordinate ascent progression over 4 depth steps**
+**示例：4 个深度步骤中的坐标上升进展**
 
 | Depth | Candidates Evaluated | Best Minibatch Score | Full Dataset Score | Accepted? |
 | ----- | -------------------- | -------------------- | ------------------ | --------- |
@@ -212,11 +212,11 @@ After all `depth` steps, COPRO performs a **final sweep** over the full validati
 | 3     | 7                    | 0.79                 | 0.76               | ✅        |
 | 4     | 7                    | 0.77                 | 0.73               | ❌        |
 
-In this example, depth step 4 produces a candidate that looks promising on the minibatch (0.77) but underperforms on the full dataset (0.73) compared to depth step 3's committed baseline (0.76). The final sweep correctly selects the depth step 3 result as the optimized prompt.
+在此示例中，深度步骤 4 产出的候选在小批量上看起来有希望（
 
 ## When to Use COPRO
 
-COPRO is particularly effective when:
+COPRO 在以下情况下特别有效：
 
 | Scenario                                           | Why COPRO Helps                                                                    |
 |----------------------------------------------------|------------------------------------------------------------------------------------|
@@ -238,33 +238,33 @@ COPRO is particularly effective when:
 | **Full eval frequency**    | Every depth step                         | Every N iterations                         | Per accepted candidate                 | Every N trials                              |
 | **Best for**               | Fast, instruction-focused optimization   | Inconsistent model behavior, complex tasks | Diverse problem types, multi-objective | Large search spaces, few-shot-heavy tasks   |
 
-Choose **COPRO** when you want fast, targeted instruction improvement with clear diagnostic feedback guiding each generation — especially when you don't need few-shot demonstrations and want reliable convergence in a small number of steps.
+当你想要快速、有针对性的指令改进并获得清晰的诊断反馈时，选择 ****COPRO****。
 
-Choose **SIMBA** when your model is inconsistent across runs and you want the optimizer to learn from that inconsistency, or when the task benefits from both instruction improvements and injected demonstrations.
+当你的模型在多次运行中不一致，而你希望优化器探索不同的改进策略时，选择 [SIMBA](/docs/prompt-optimization-simba)。
 
-Choose **GEPA** when your task spans diverse problem types and you need to maintain a diverse pool of prompt strategies without converging prematurely on a single approach.
+当你的任务跨越多种问题类型，且你需要在各金标上维持多样化的提示人口时，选择 ****GEPA****。
 
-Choose **MIPROv2** when the joint combination of instruction and few-shot demonstrations is the main lever and you want systematic Bayesian search over that space.
+当指令和少样本演示的联合组合很重要时，选择 [MIPROv2](/docs/prompt-optimization-miprov2)。
 
 ## 常见问题
 
 <AccordionGroup>
 <Accordion title="What is COPRO and when should I use it?">
-`COPRO` (Co-operative Prompt Optimizer) uses coordinate ascent: at each depth step it evaluates a batch of candidates, commits the best as the new baseline, and uses the scored history plus metric feedback to generate a more targeted next batch. Use it for fast, instruction-focused optimization with reliable, monotonic improvement in a small number of steps.
+`COPRO`（协作提示优化器）使用坐标上升：在每个深度步骤评估一批候选并提交最佳者。
 </Accordion>
 <Accordion title="What do depth and breadth control in COPRO?">
 `depth` (default `4` ) is the number of coordinate ascent steps; each step commits the best candidate as the baseline for the next. `breadth` (default `7` ) is how many candidates are generated and evaluated at each step. Higher `breadth` explores more of the prompt space per step but costs more.
 </Accordion>
 <Accordion title="Does COPRO optimize few-shot demonstrations?">
-No. COPRO focuses entirely on refining the instruction text and does not inject demos. If few-shot demonstrations are an important lever for your task, use [SIMBA](/docs/prompt-optimization-simba) or [MIPROv2](/docs/prompt-optimization-miprov2) , both of which optimize demos.
+不会。COPRO 完全专注于改进指令文本，不注入任何示例。
 </Accordion>
 <Accordion title="How does COPRO use metric feedback to improve candidates?">
-At each depth step COPRO captures both a score and a diagnostic metric feedback string per candidate, built from per-metric reasons on failing examples. This ranked `history_log` is fed back to the proposer via `propose_from_history` , so the next batch explicitly targets known failure modes while preserving the traits of high-scoring attempts.
+在每个深度步骤，COPRO 都会同时捕获分数和诊断性指标反馈字符串。
 </Accordion>
 <Accordion title="How often does COPRO run full-dataset validation?">
-At every depth step. COPRO runs `score_pareto` on the best minibatch candidate of each step against all goldens, which makes its validation more thorough than SIMBA or MIPROv2 at the cost of more evaluations. This is what makes each committed baseline genuinely validated rather than minibatch-estimated.
+在每个深度步骤。COPRO 对每步的最佳小批量候选运行 `score_pareto`。
 </Accordion>
 <Accordion title="How do I make COPRO runs reproducible?">
-Pass `random_state` as either an `int` seed or a `random.Random` instance. It affects minibatch sampling and candidate deduplication; by default it uses a random value, so pin it for repeatable runs.
+将 `random_state` 作为 `int` 种子或 `random.Random` 实例传递。它影响小批量采样和候选去重。
 </Accordion>
 </AccordionGroup>

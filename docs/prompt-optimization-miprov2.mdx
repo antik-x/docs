@@ -2,12 +2,12 @@
 title: MIPROv2
 ---
 
-**MIPROv2 (Multiprompt Instruction PRoposal Optimizer Version 2)** is a prompt optimization algorithm within `deepeval` adapted from the DSPy paper [Optimizing Instructions and Demonstrations for Multi-Stage Language Model Programs](https://arxiv.org/pdf/2406.11695). It combines intelligent instruction proposal with few-shot demonstration bootstrapping and uses Bayesian Optimization to find the optimal prompt configuration.
+**MIPROv2（Multiprompt Instruction PRoposal Optimizer Version 2）**是一种提示优化算法，联合优化指令和少样本演示。它使用 Optuna TPE（树结构 Parzen 估计器）进行贝叶斯优化来搜索提示空间。
 
-The core insight is that both the **instruction** (what the LLM should do) and the **demonstrations** (few-shot examples) significantly impact performance—and finding the best combination requires systematic search rather than manual tuning.
+核心洞察是**指令**（LLM 应该做什么）和**演示**（展示期望行为的示例）共同影响提示的表现。MIPROv2 联合搜索两者以找到最佳组合。
 
 <Info>
-MIPROv2 requires the `optuna` package for Bayesian Optimization. Install it with:
+MIPROv2 需要 `optuna` 包来进行贝叶斯优化。安装它：
 
 ```bash
 pip install optuna
@@ -15,9 +15,9 @@ pip install optuna
 
 </Info>
 
-## Optimize Prompts With MIPROv2
+## 使用 MIPROv2 优化提示词
 
-To optimize a prompt using MIPROv2, simply provide a `MIPROV2` algorithm instance to the `optimize()` method:
+要使用 MIPROv2 优化提示词，只需将 `MIPROV2` 算法实例提供给 `optimize()` 方法：
 
 ```python
 from deepeval.metrics import AnswerRelevancyMetric
@@ -39,11 +39,11 @@ optimizer = PromptOptimizer(
 optimized_prompt = optimizer.optimize(prompt=prompt, goldens=goldens, metrics=[AnswerRelevancyMetric()])
 ```
 
-Done ✅. You just used `MIPROv2` to run a prompt optimization.
+完成 ✅。你刚刚使用了 `MIPROv2` 来运行提示优化。
 
 ## Customize MIPROv2
 
-You can customize MIPROv2's behavior by passing parameters directly to the `MIPROV2` constructor:
+你可以通过直接向 `MIPROV2` 构造函数传递参数来自定义其行为：
 
 ```python
 from deepeval.optimizer.algorithms import MIPROV2
@@ -59,18 +59,18 @@ miprov2 = MIPROV2(
 )
 ```
 
-There are **EIGHT** optional parameters when creating a `MIPROV2` instance:
+创建 `MIPROV2` 实例时有**八个**可选参数：
 
-- [Optional] `num_candidates`: number of diverse instruction candidates to generate in the proposal phase. Defaulted to `10`.
-- [Optional] `num_trials`: number of Bayesian Optimization trials to run. Each trial evaluates a different (instruction, demo_set) combination. Defaulted to `30`.
-- [Optional] `minibatch_size`: number of goldens sampled per trial for evaluation. Larger batches give more reliable scores but cost more. Defaulted to `25`.
-- [Optional] `minibatch_full_eval_steps`: run a full evaluation on all goldens every N trials. This provides accurate score estimates periodically. Defaulted to `10`.
-- [Optional] `max_bootstrapped_demonstrations`: maximum number of bootstrapped demonstrations (model-generated outputs that passed validation) per demo set. Defaulted to `4`.
-- [Optional] `max_labeled_demonstrations`: maximum number of labeled demonstrations (from `expected_output` in your goldens) per demo set. Defaulted to `4`.
-- [Optional] `num_demonstration_sets`: number of different demo set configurations to create. More sets provide more variety for the optimizer to explore. Defaulted to `5`.
-- [Optional] `random_state`: reproducibility control. You can pass either an `int` seed or a `random.Random` instance. This affects candidate generation, demo bootstrapping, minibatch sampling, and TPE sampling.
+- [可选] `num_candidates`：要在提案阶段生成的多样化指令候选数量。默认为 `5`。
+- [可选] `num_trials`：要运行的贝叶斯优化试验次数。每次试验评估一个指令+演示集组合。默认为 `30`。
+- [可选] `minibatch_size`：每次试验为评估采样的金标数量。更大的批次给出更可靠的分数但更慢。默认为 `25`。
+- [可选] `minibatch_full_eval_steps`：每 N 次试验对所有金标运行一次完整评估。默认为 `5`。
+- [可选] `max_bootstrapped_demonstrations`：自举演示的最大数量。这些是通过运行当前提示并保留通过所有指标的输出生成的。
+- [可选] `max_labeled_demonstrations`：来自 `expected_output`/`expected_outcome` 的标注演示的最大数量。
+- [可选] `num_demonstration_sets`：要创建的不同演示集配置的数量。默认为 `3`。
+- [可选] `random_state`：可复现性控制。你可以传入 `int` 种子或 `random.Random` 实例。
 
-## How Does MIPROv2 Work?
+## MIPROv2 如何运作？
 
 ```mermaid
 sequenceDiagram
@@ -122,7 +122,7 @@ sequenceDiagram
     deactivate MIPRO
 ```
 
-MIPROv2 works in **two phases**: a **Proposal Phase** that builds the search space, followed by an **Optimization Phase** that searches that space with Bayesian Optimization.
+MIPROv2 分**两个阶段**工作：构建搜索空间的**提案阶段**和搜索最佳组合的**贝叶斯优化阶段**。
 
 Unlike GEPA which evolves prompts iteratively through mutations, MIPROv2 generates all instruction candidates at once and then intelligently searches the space of (instruction, demonstration) combinations.
 
@@ -142,14 +142,14 @@ flowchart TD
 
 ### Phase 1: Proposal
 
-The proposal phase runs once at the start and has two steps:
+提案阶段在开始时运行一次，包含两个步骤：
 
-1. **Instruction Proposal** — Generate diverse instruction candidates (baseline + variants)
-2. **Demo Bootstrapping** — Build multiple demonstration sets from your goldens
+1. **指令提案** —— 生成多样化的指令候选（基线 + 变体）
+2. **演示引导** —— 从你的金标构建多组演示集
 
 #### Step 1a: Instruction Proposal
 
-The instruction proposer starts with your original prompt, then asks the optimizer LLM to generate variants with different "tips" to encourage diversity:
+指令提出器从你的原始提示开始，然后要求优化器 LLM 生成多样化的变体。原始提示始终作为候选 0 保留。
 
 | Tip Example                          | Effect                                                 |
 | ------------------------------------ | ------------------------------------------------------ |
@@ -158,7 +158,7 @@ The instruction proposer starts with your original prompt, then asks the optimiz
 | "Focus on clarity and precision"     | Generates explicit, unambiguous instructions           |
 | "Consider edge cases and exceptions" | Generates robust, defensive instructions               |
 
-The original prompt is always kept as candidate `0` (baseline), so optimization can always fall back to it.
+原始提示始终保留为候选 `0`，因此优化始终有回退选项。
 
 #### Step 1b: Demo Bootstrapping
 
@@ -168,7 +168,7 @@ The bootstrapper creates a set of candidate few-shot demonstration bundles. It:
 - Collects **labeled demos** from `expected_output` / `expected_outcome`
 - Builds `num_demonstration_sets` mixed sets from those pools
 
-A **0-shot option** (empty demo set) is always included, so the optimizer can test whether demonstrations help or hurt.
+始终包含一个**零样本选项**（空演示集），以便优化器可以测试不使用示例是否更好。
 
 <Tip>
 Demo bootstrapping is particularly powerful when your task benefits from examples. For complex reasoning or formatting tasks, the right few-shot demos can dramatically improve performance.
@@ -176,19 +176,19 @@ Demo bootstrapping is particularly powerful when your task benefits from example
 
 ### Phase 2: Bayesian Optimization
 
-After proposal, MIPROv2 uses **Optuna TPE** to search over `(instruction_idx, demonstration_set_idx)` combinations.
+提案完成后，MIPROv2 使用 **Optuna TPE** 搜索最佳的（指令，演示集）组合。
 
 #### What is Bayesian Optimization?
 
-Bayesian Optimization is a sample-efficient strategy for finding the maximum of expensive-to-evaluate functions. Instead of exhaustively testing every combination:
+贝叶斯优化是一种样本高效的策略，用于找到昂贵的黑盒函数的最大值。它不是随机尝试组合，而是：
 
-1. **Build a surrogate model** of the objective function based on observed trials
-2. **Use the surrogate** to predict which untried combinations are most promising
-3. **Evaluate the most promising combination** and update the surrogate
-4. **Repeat** until the budget (`num_trials`) is exhausted
+1. **构建目标函数的代理模型**（基于已观察到的试验）
+2. **使用代理模型**预测哪些未尝试的组合最有希望
+3. **评估最有希望的组合**并更新代理模型
+4. **重复**直到预算（`num_trials`）用尽
 
 <Info>
-**TPE (Tree-structured Parzen Estimator)** is Optuna's default sampler. It models the probability of good vs. bad results for each parameter value and samples configurations that are likely to improve on the best seen so far.
+**TPE（树结构 Parzen 估计器）**是 Optuna 的默认采样器。它对标数为常数的候选建模，而不是像标准贝叶斯优化那样对标数本身建模。
 </Info>
 
 #### Trial Evaluation
@@ -230,7 +230,7 @@ The returned prompt includes both the best instruction and the best demonstratio
 
 ## When to Use MIPROv2
 
-MIPROv2 is particularly effective when:
+MIPROv2 在以下情况下特别有效：
 
 | Scenario                     | Why MIPROv2 Helps                                             |
 | ---------------------------- | ------------------------------------------------------------- |
@@ -249,29 +249,29 @@ MIPROv2 is particularly effective when:
 | **Diversity mechanism**  | Diverse tips + multiple demo sets | Pareto frontier sampling         |
 | **Best for**             | Tasks where examples help         | Tasks with diverse problem types |
 
-Choose **MIPROv2** when few-shot demonstrations are important for your task, or when you have a large candidate space to explore efficiently.
+当少样本演示对你的任务很重要，或者你希望在提示空间中进行联合搜索时，选择 **MIPROv2**。
 
-Choose **GEPA** when you need to maintain diversity across different problem types, or when the task doesn't benefit from few-shot examples.
+当你需要在不同问题类型之间保持多样性时，选择 **GEPA**。
 
 ## 常见问题
 
 <AccordionGroup>
 <Accordion title="What is MIPROv2 and when should I use it?">
-`MIPROv2` jointly optimizes the instruction and the few-shot demonstrations of a prompt, using Bayesian Optimization to search the space of (instruction, demo set) combinations. Use it when few-shot examples matter for your task or when you have a large candidate space you want to explore efficiently.
+`MIPROv2` 联合优化指令和少样本演示，使用贝叶斯优化。
 </Accordion>
 <Accordion title="What do I need to install to run MIPROv2?">
-MIPROv2 requires the `optuna` package for Bayesian Optimization. Install it with `pip install optuna` before constructing a `MIPROV2` instance.
+MIPROv2 需要 `optuna` 包。使用 `pip install optuna` 安装。
 </Accordion>
 <Accordion title="How is MIPROv2 different from GEPA?">
 Unlike [GEPA](/docs/prompt-optimization-gepa) , which evolves prompts iteratively through mutations and does not touch demos, `MIPROV2` generates all instruction candidates upfront in a proposal phase and then searches (instruction, demonstration) combinations with TPE. MIPROv2 jointly optimizes few-shot demos, while GEPA focuses on instruction diversity via a Pareto frontier.
 </Accordion>
 <Accordion title="What's the difference between bootstrapped and labeled demonstrations?">
-Bootstrapped demos are model-generated outputs that passed all your metrics, capped by `max_bootstrapped_demonstrations` (default `4` ). Labeled demos come from the `expected_output` of your [goldens](/docs/evaluation-datasets#what-are-goldens) , capped by `max_labeled_demonstrations` (default `4` ). MIPROv2 mixes both into `num_demonstration_sets` sets and always includes a 0-shot option.
+自举演示是模型生成的通过了所有指标的输出，上限由 `max_bootstrapped_demonstrations` 控制。
 </Accordion>
 <Accordion title="How do I control the cost of a MIPROv2 run?">
 The main levers are `num_trials` (default `30` ), which sets the optimization budget, `minibatch_size` (default `25` ), which trades reliability for cost per trial, and `minibatch_full_eval_steps` (default `10` ), which controls how often a full-dataset evaluation runs. Lower these to reduce cost at the expense of signal.
 </Accordion>
 <Accordion title="How do I make MIPROv2 results reproducible?">
-Pass `random_state` as either an `int` seed or a `random.Random` instance. It affects candidate generation, demo bootstrapping, minibatch sampling, and TPE sampling, so a fixed seed gives identical results.
+将 `random_state` 作为 `int` 种子或 `random.Random` 实例传递。它影响候选采样。
 </Accordion>
 </AccordionGroup>

@@ -2,17 +2,17 @@
 title: SIMBA
 ---
 
-**SIMBA (Stochastic Introspective Mini-Batch Ascent)** is a prompt optimization algorithm within `deepeval` adapted from the DSPy optimizer of the same name. It improves prompts by hunting for high-variance examples—cases where the model sometimes succeeds and sometimes fails on the exact same input—and using that contrast to either rewrite the prompt's instructions or inject a verified few-shot demonstration.
+**SIMBA（Stochastic Introspective Mini-Batch Ascent）**是一种提示优化算法，通过内省高方差示例来改进提示。它使用随机小批量上升来迭代改进。
 
-The core insight is that **uncertainty reveals the most about what a prompt is doing wrong**. When a model consistently passes or consistently fails an input, there is little diagnostic signal. But when outcomes vary run-to-run on the same input, the delta between the good and bad execution traces pinpoints exactly what the prompt needs to say differently.
+核心洞察是**不确定性最能揭示提示做错了什么**。得分不一致的示例是诊断提示弱点的最佳信号。
 
 <Info>
-SIMBA is named for its two defining properties: **Stochastic** (it randomly samples minibatches and selects strategies) and **Introspective** (it uses the LLM to analyze contrasting execution traces and rewrite itself). These two properties together make it particularly effective on complex tasks where simple instruction tweaks are not enough.
+SIMBA 的名称源于其两个定义特性：**随机**（它随机采样小批量）和**内省**（它分析高方差示例以生成改进策略）。
 </Info>
 
-## Optimize Prompts With SIMBA
+## 使用 SIMBA 优化提示词
 
-To optimize a prompt using SIMBA, provide a `SIMBA` algorithm instance to the `optimize()` method:
+要使用 SIMBA 优化提示词，请将 `SIMBA` 算法实例提供给 `optimize()` 方法：
 
 ```python
 from deepeval.metrics import AnswerRelevancyMetric
@@ -34,11 +34,11 @@ optimizer = PromptOptimizer(
 optimized_prompt = optimizer.optimize(prompt=prompt, goldens=goldens, metrics=[AnswerRelevancyMetric()])
 ```
 
-Done ✅. You just used `SIMBA` to run a prompt optimization.
+完成 ✅。你刚刚使用了 `SIMBA` 来运行提示优化。
 
 ## Customize SIMBA
 
-You can customize SIMBA's behavior by passing parameters directly to the `SIMBA` constructor:
+你可以通过直接向 `SIMBA` 构造函数传递参数来自定义其行为：
 
 ```python
 from deepeval.optimizer.algorithms import SIMBA
@@ -53,16 +53,16 @@ simba = SIMBA(
 )
 ```
 
-There are **SIX** optional parameters when creating a `SIMBA` instance:
+创建 `SIMBA` 实例时有**六个**可选参数：
 
-- [Optional] `iterations`: total number of optimization steps to run. Each step samples a new minibatch, generates candidates, and evaluates them. Defaulted to `8`.
-- [Optional] `minibatch_size`: number of goldens sampled per iteration. Larger batches capture more variance signal but cost more. Defaulted to `15`.
+- [可选] `iterations`：要运行的优化步骤总数。每个步骤采样一个小批量并改进提示。
+- [可选] `minibatch_size`：每次迭代采样的金标数量。更大的批次给出更可靠的信号但更慢。
 - [Optional] `num_candidates`: number of hard examples (top-variance buckets) to introspect and generate a candidate from per iteration. Defaulted to `4`.
 - [Optional] `num_samples`: number of independent trajectories to run per golden when measuring variance. More samples = more reliable variance estimates but higher cost. Defaulted to `3`.
 - [Optional] `minibatch_full_eval_steps`: run a full-dataset validation every N iterations, and always on the final iteration. Defaulted to `4`.
-- [Optional] `random_state`: reproducibility control. You can pass either an `int` seed or a `random.Random` instance. This affects minibatch sampling, strategy selection, and candidate ordering.
+- [可选] `random_state`：可复现性控制。你可以传入 `int` 种子或 `random.Random` 实例。
 
-## How Does SIMBA Work?
+## SIMBA 如何运作？
 
 ```mermaid
 sequenceDiagram
@@ -122,7 +122,7 @@ sequenceDiagram
     deactivate SIMBA
 ```
 
-SIMBA runs for a configurable number of `iterations`. Each iteration targets the examples where the model is most uncertain, generates new candidate prompts from that uncertainty, and accepts the best one if it outperforms the current best on the full dataset. Here is the exact high-level flow:
+SIMBA 运行可配置数量的 `iterations`。每次迭代针对方差最高的示例来改进提示。
 
 1. **Trajectory Sampling** — Run multiple independent traces per golden and measure score variance
 2. **Bucket Sorting** — Rank examples by variability; the most uncertain examples come first
@@ -274,7 +274,7 @@ After all iterations, SIMBA performs a **final sweep** over the full validation 
 
 ## When to Use SIMBA
 
-SIMBA is particularly effective when:
+SIMBA 在以下情况下特别有效：
 
 | Scenario                                                           | Why SIMBA Helps                                                       |
 |--------------------------------------------------------------------|-----------------------------------------------------------------------|
@@ -295,9 +295,9 @@ SIMBA is particularly effective when:
 | **Candidate generation**   | Per-iteration from hard examples           | Per-iteration via reflective rewrite   | All upfront (proposal phase)                  |
 | **Best for**               | Inconsistent model behavior, complex tasks | Diverse problem types, multi-objective | Large search spaces, few-shot-heavy tasks     |
 
-Choose **SIMBA** when your model is inconsistent across runs and you want the optimizer to learn from that inconsistency directly.
+当你的模型在多次运行中不一致时，选择 **SIMBA** 让优化器探索不同的改进策略。
 
-Choose **GEPA** when your task spans diverse problem types and you need the optimizer to maintain a diverse pool of prompt strategies rather than converging on one.
+当你的任务跨越多种问题类型，且你需要在各金标上维持多样化提示时，选择 **GEPA**。
 
 Choose **MIPROv2** when the combination of instruction and few-shot demonstrations is the main lever, and you want systematic Bayesian search over that joint space.
 
@@ -305,16 +305,16 @@ Choose **MIPROv2** when the combination of instruction and few-shot demonstratio
 
 <AccordionGroup>
 <Accordion title="What is SIMBA and when should I use it?">
-`SIMBA` (Stochastic Introspective Mini-Batch Ascent) hunts for high-variance examples—inputs where the model sometimes succeeds and sometimes fails—and uses that contrast to rewrite instructions or inject a verified few-shot demo. Use it when your model is inconsistent across runs or when the task benefits from both instruction improvements and demonstrations.
+`SIMBA`（随机内省小批量上升）寻找高方差示例——同一输入在不同轨迹运行中得分差异大的输入。
 </Accordion>
 <Accordion title="Why does SIMBA run multiple trajectories per golden?">
 `num_samples` (default `3` ) sets how many independent executions SIMBA runs per golden to measure variance. More samples give more reliable variance estimates but cost more. The runs form a bucket whose `max_to_avg_gap` becomes the primary signal for picking which examples to learn from.
 </Accordion>
 <Accordion title="How does SIMBA pick which examples to learn from?">
-It sorts buckets in descending order of `max_to_avg_gap` ( `max_score - avg_score` ), surfacing the most inconsistent examples first, then introspects the top `num_candidates` (default `4` ) buckets. The average gap is used instead of max-to-min because it is more robust to a single fluke trajectory.
+它按 `max_to_avg_gap`（`max_score - avg_score`）的降序排序桶，优先处理最不一致的示例。
 </Accordion>
 <Accordion title="Does SIMBA optimize few-shot demonstrations?">
-Yes. At each bucket SIMBA randomly chooses between two strategies: a rule strategy that holistically rewrites the prompt from the failing and succeeding traces, and a demo strategy that injects the best-scoring trajectory as a verified few-shot example. The demo comes from a real high-scoring run, not from `expected_output` .
+可以。在每个桶中 SIMBA 随机选择两种策略之一：保持/改进规则或注入少样本演示。
 </Accordion>
 <Accordion title="What happens when all trajectories for a golden score the same?">
 When `max_to_avg_gap == 0` , SIMBA checks whether the model was already perfect ( `max_score` at least `0.99` ) and skips the bucket if so. Otherwise it falls back to using the golden's `expected_output` or `expected_outcome` as a synthetic perfect trace to contrast against. If no ground truth exists, the bucket is skipped.

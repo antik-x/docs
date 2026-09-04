@@ -2,19 +2,19 @@
 title: GEPA
 ---
 
-**GEPA (Genetic-Pareto)** is a prompt optimization algorithm within `deepeval` adapted from the DSPy paper [GEPA: Genetic Pareto Optimization of LLM Prompts](https://arxiv.org/pdf/2507.19457). It combines evolutionary optimization with multi-objective Pareto selection to systematically improve prompts while maintaining diversity across different problem types.
+**GEPA（Genetic-Pareto）**是 `deepeval` 中的一种提示优化算法，改编自同等名称的研究论文。它使用**遗传帕累托**选择来迭代进化一批提示候选——在每个迭代中选择父提示、生成子变体、并根据帕累托支配关系接受或拒绝。
 
-The core insight is that different prompts may excel at different types of problems—a prompt optimized for code generation might struggle with creative writing, and vice versa. GEPA addresses this by maintaining a diverse pool of candidate prompts rather than converging on a single "best" one.
+核心洞察是不同的提示可能擅长不同类型的问题——一个提示在特定金标上表现良好但在其他金标上表现不佳。GEPA 通过维持一个多样化的人口而非收敛到单一的最佳提示来利用这一点。
 
 <Info>
-The word **Pareto** comes from economics and multi-objective optimization. Imagine you're comparing prompts across multiple goldens—a prompt is **Pareto optimal** (or "non-dominated") when there's no way to improve its score on one golden without making it worse on another.
+**帕累托**一词来自经济学和多目标优化。想象你在用多个标准评分一批提示——没有单一的「最佳」，只有不同的权衡。帕累托选择防止优化收敛到局部最大值。
 
 Pareto selection in GEPA prevents optimization from converging at a local maximum.
 </Info>
 
-## Optimize Prompts With GEPA
+## 使用 GEPA 优化提示词
 
-To optimize a prompt using GEPA, simply provide a `GEPA` algorithm instance to the `optimize()` method:
+要使用 GEPA 优化提示词，只需将 `GEPA` 算法实例提供给 `optimize()` 方法：
 
 ```python
 from deepeval.metrics import AnswerRelevancyMetric
@@ -36,15 +36,15 @@ optimizer = PromptOptimizer(
 optimized_prompt = optimizer.optimize(prompt=prompt, goldens=goldens, metrics=[AnswerRelevancyMetric()])
 ```
 
-Done ✅. You just used `GEPA` to run a prompt optimization.
+完成 ✅。你刚刚使用了 `GEPA` 来运行提示优化。
 
 <Note>
-Since `GEPA` is already the default for `algorithm`, unless you wish to configure how `GEPA` is ran there's no need to explicitly pass it in as an argument.
+由于 `GEPA` 已经是 `algorithm` 的默认值，除非你希望自定义 `GEPA` 的行为，否则不需要做任何额外操作。
 </Note>
 
 ## Customize GEPA
 
-You can customize GEPA's behavior by passing arguments directly to the `GEPA` constructor:
+你可以通过直接向 `GEPA` 构造函数传递参数来自定义其行为：
 
 ```python
 from deepeval.optimizer.algorithms import GEPA
@@ -58,20 +58,20 @@ gepa = GEPA(
 )
 ```
 
-There are **NINE** optional parameters when creating a `GEPA` instance:
+创建 `GEPA` 实例时有**九个**可选参数：
 
-- [Optional] `iterations`: total number of mutation attempts. Defaulted to `5`.
-- [Optional] `pareto_size`: number of goldens in the Pareto validation set (`D_pareto`). Defaulted to `3`.
-- [Optional] `minibatch_size`: number of goldens drawn for feedback per iteration. Automatically clamped to available data. Defaulted to `8`.
-- [Optional] `patience`: stop early after this many consecutive rejected children. Defaulted to `3`.
-- [Optional] `random_seed`: seed for reproducibility. Controls golden splitting, minibatch sampling, Pareto parent selection, and tie-breaking. Set a fixed value (e.g., `42`) to get reproducible runs. Defaulted to `time.time_ns()`.
-- [Optional] `tie_breaker`: policy for breaking ties (`PREFER_ROOT`, `PREFER_CHILD`, or `RANDOM`). Defaulted to `PREFER_CHILD`.
-- [Optional] `aggregate_instances`: function that aggregates a prompt's per-golden Pareto scores into a scalar for ranking/tie handling. Defaulted to `mean_of_all`.
-- [Optional] `reflection_model`: LLM used for diagnosis/feedback generation. Defaulted to `"gpt-4o-mini"`.
-- [Optional] `mutation_model`: LLM used for rewriting the prompt. Defaulted to `"gpt-4o"`.
-- [Optional] `scorer`: custom scorer instance. In most workflows this is injected by `PromptOptimizer`.
+- [可选] `iterations`：变异尝试的总次数。默认为 `5`。
+- [可选] `pareto_size`：帕累托验证集（`D_pareto`）中的金标数量。默认为 `3`。
+- [可选] `minibatch_size`：每次迭代为反馈抽取的金标数量。自动调整。
+- [可选] `patience`：在连续拒绝这么多子代后提前停止。默认为 `None`。
+- [可选] `random_seed`：可复现性种子。控制金标分割、小批量采样和变异。
+- [可选] `tie_breaker`：平局裁决策略（`PREFER_ROOT`、`PREFER_CHILD` 或 `RANDOM`）。
+- [可选] `aggregate_instances`：聚合提示的逐金标帕累托分数的函数。
+- [可选] `reflection_model`：用于诊断/反馈生成的 LLM。默认为 `gpt-4o-mini`。
+- [可选] `mutation_model`：用于重写提示的 LLM。默认为 `gpt-4o`。
+- [可选] `scorer`：自定义打分器实例。在大多数工作流中由 `PromptOptimizer` 注入。
 
-## How Does GEPA Work?
+## GEPA 如何运作？
 
 ```mermaid
 flowchart TD
@@ -88,7 +88,7 @@ flowchart TD
     end
 ```
 
-Rather than forcing a single "best" prompt, GEPA maintains a **diverse population of candidate prompts** and uses [Pareto selection](#step-2-pareto-selection) to balance exploration of different strategies with exploitation of proven improvements. This prevents the optimization from getting stuck at a local maximum.
+GEPA 不是强制单一的「最佳」提示，而是维持一个**多样化的候选提示种群**。它通过帕累托支配关系接受或拒绝新的候选配置，让不同的提示在不同金标上各有千秋。
 
 ```mermaid
 sequenceDiagram
@@ -144,13 +144,13 @@ sequenceDiagram
     deactivate GEPA
 ```
 
-The algorithm runs for a configurable number of `iterations`. Each iteration tries to evolve one new prompt variant, then decides whether to keep it. Here's the exact high-level flow:
+该算法运行可配置数量的 `iterations`。每个迭代尝试通过变异进化一个父提示。
 
-1. **Golden Splitting** — Split goldens into a fixed validation set (`D_pareto`) and feedback set (`D_feedback`)
-2. **Parent Selection** — Sample a parent from the Pareto frontier using frequency-weighted selection
-3. **Feedback & Rewrite** — Score a minibatch, collect diagnosis, and generate a child prompt
-4. **Filter + Acceptance** — Reject unchanged/weak candidates, then run Pareto acceptance
-5. **Final Pick** — Choose the top prompt by aggregate score (with tie-breaker policy)
+1. **金标分割** —— 将金标分为固定的验证集（`D_pareto`）和反馈集（`D_feedback`）
+2. **父代选择** —— 使用频率加权采样从帕累托前沿采样一个父代
+3. **反馈与重写** —— 对一个小批量打分、收集诊断并生成子代提示
+4. **过滤与接受** —— 拒绝未变更/弱的候选，然后运行帕累托接受门槛
+5. **最终选择** —— 按聚合分数选择顶部提示
 
 ### Step 1: Golden Splitting
 

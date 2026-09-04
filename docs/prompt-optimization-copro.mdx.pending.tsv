@@ -1,0 +1,118 @@
+1	---
+2	title: COPRO
+3	---
+5	**COPRO (Co-operative Prompt Optimizer)** is a prompt optimization algorithm within `deepeval` adapted from the DSPy optimizer of the same name. It uses **Coordinate Ascent** to iteratively improve a prompt — evaluating a batch of candidates at each depth step, committing the best performer as the new baseline, and using the scored history plus metric feedback to generate an increasingly targeted next batch.
+7	The core insight is that prompt optimization is most efficient when each new generation of candidates is **informed by what failed before** and **why it failed**. Rather than generating variations blindly, COPRO feeds the optimizer LLM a full diagnostic history — every past prompt attempt, its score, and the specific metric feedback explaining where points were lost — so each subsequent batch of candidates directly addresses known weaknesses.
+9	<Info>
+10	The term **Coordinate Ascent** comes from mathematical optimization. In classical coordinate ascent you optimize one variable at a time while holding the others fixed, ascending the objective function one dimension at a time. COPRO applies this idea to prompt space: at each depth step, it locks in the best-performing prompt as the new baseline and builds the next generation of candidates on top of that committed improvement — climbing steadily rather than wandering.
+11	</Info>
+13	## Optimize Prompts With COPRO
+15	To optimize a prompt using COPRO, provide a `COPRO` algorithm instance to the `optimize()` method:
+37	Done ✅. You just used `COPRO` to run a prompt optimization.
+39	## Customize COPRO
+41	You can customize COPRO's behavior by passing parameters directly to the `COPRO` constructor:
+54	There are **FOUR** optional parameters when creating a `COPRO` instance:
+56	- [Optional] `depth`: number of coordinate ascent steps to run. At each step, a new batch of candidates is evaluated and the best is committed as the baseline for the next step. Defaulted to `4`.
+57	- [Optional] `breadth`: number of prompt candidates generated and evaluated at each depth step. A higher breadth explores more of the prompt space per step but costs more. Defaulted to `7`.
+58	- [Optional] `minibatch_size`: number of goldens sampled per depth step for candidate evaluation. Larger batches give more reliable scores. Full-dataset validation is always run on the best candidate of each step. Defaulted to `25`.
+59	- [Optional] `random_state`: reproducibility control. You can pass either an `int` seed or a `random.Random` instance. This affects minibatch sampling and candidate deduplication. Defaulted to a random value.
+61	## How Does COPRO Work?
+105	COPRO runs for `depth` steps. Each step evaluates a batch of `breadth` candidates, selects the best, validates it on the full dataset, then uses the scored history to propose the next batch. Here is the exact high-level flow:
+107	1. **Bootstrap** — Generate the initial `breadth` candidates from the original prompt using zero-shot variation
+108	2. **Evaluate** — Score all candidates on a stochastic minibatch and extract metric feedback per candidate
+109	3. **Commit** — Pick the best minibatch candidate and run full-dataset validation on it
+110	4. **Propose** — Feed the scored history back to the LLM to generate the next targeted batch
+111	5. **Repeat** — Steps 2–4 run for each of the `depth` steps
+112	6. **Final Selection** — Return the prompt with the highest average true validation score across all steps
+132	### Phase 1: Bootstrap
+134	Before the coordinate ascent loop begins, COPRO generates an initial set of `breadth` candidate prompts from the original prompt using **zero-shot variation**. This is done by the `COPROProposer` in two passes:
+136	**Pass 1 — Guideline Generation:** The proposer asks the optimizer LLM to brainstorm `breadth` distinct "variation guidelines" — high-level strategies for how to meaningfully alter the prompt. Examples:
+138	| Guideline Example                                                              | Effect                                                     |
+139	|--------------------------------------------------------------------------------|------------------------------------------------------------|
+140	| "Reframe the prompt to require step-by-step reasoning before the final answer" | Generates an instruction that enforces chain-of-thought    |
+141	| "Condense instructions into a highly direct, concise format"                   | Produces a shorter, more aggressive instruction style      |
+142	| "Add strict output formatting constraints"                                     | Makes the instruction prescriptive about output structure  |
+143	| "Explicitly call out common mistakes to avoid"                                 | Generates a defensive, error-aware instruction             |
+145	**Pass 2 — Candidate Generation:** For each guideline, the proposer makes a separate LLM call to produce the actual rewritten prompt. These calls run **concurrently in the async path**, making the bootstrap phase significantly faster than sequential generation.
+147	The **original prompt is always inserted as candidate 0** before evaluation begins. This guarantees a baseline that the optimizer can always fall back to, and ensures that the first depth step has a fair reference point.
+149	<Tip>
+150	The two-pass guideline approach ensures that candidates are **genuinely diverse** rather than superficially different. By first committing to a high-level strategy (the guideline) before writing the prompt, the LLM is less likely to produce variations that differ only in wording. Duplicate and near-duplicate candidates (≥90% similarity) are automatically filtered out.
+151	</Tip>
+153	### Phase 2: Coordinate Ascent Loop
+155	The loop runs for `depth` steps. Each step has three sub-stages: evaluate, commit, and propose.
+157	#### Step 2a: Evaluate
+159	At the start of each depth step, COPRO draws a random minibatch from your goldens and evaluates **every candidate** in the current batch against it. For each candidate, two things are captured:
+161	1. **Score** — the average metric score across all goldens in the minibatch
+162	2. **Metric feedback** — a diagnostic string describing exactly why points were lost, built from per-metric reasons on the failing examples
+164	The metric feedback is a key enhancement over simpler optimizers. Rather than just recording a score, COPRO captures explanations like:
+174	This feedback is carried forward into the proposal step so the next generation of candidates is explicitly targeted at the failure modes identified here.
+176	#### Step 2b: Commit
+178	After scoring, candidates are ranked by minibatch score. The **top-scoring candidate** is selected, then evaluated on the **full golden dataset** using `score_pareto`. This full-dataset score is stored in the validation archive.
+180	If the full-dataset average beats the current `global_best_score`, the candidate is accepted as the new best. All depth steps record full-dataset scores, so the final selection can compare every step's committed winner on equal footing.
+182	<Info>
+183	COPRO runs full-dataset validation on the best candidate at **every depth step**, not just periodically. This makes COPRO's validation more thorough than SIMBA or MIPROv2, at the cost of more evaluations per step. It is what makes the coordinate ascent reliable — each committed baseline is genuinely validated, not just minibatch-estimated.
+184	</Info>
+186	#### Step 2c: Propose
+188	Unless this is the final depth step, COPRO generates the next batch of `breadth` candidates. This uses the same two-pass proposer as bootstrap, but now passes the full `history_log` — a bounded, sorted record of the top `breadth` (prompt, score, metric_feedback) triples seen across all prior steps.
+190	**Example: What the history log looks like at depth step 3**
+192	| Attempt | Score | Metric Feedback Summary                                      |
+193	|---------|-------|--------------------------------------------------------------|
+194	| P₃ᵦ     | 0.81  | Minor formatting issues on 1/25 examples                     |
+195	| P₂ₐ     | 0.74  | Consistently missed JSON schema on structured outputs        |
+196	| P₁ᵦ     | 0.71  | Verbose responses triggered conciseness metric failures      |
+197	| P₂ᵦ     | 0.68  | Lacked step-by-step reasoning on multi-hop questions         |
+198	| ...     | ...   | ...                                                          |
+200	The proposer sees this ranked history and generates guidelines that **explicitly fix the failure patterns** (e.g., "previous attempts failed the JSON schema metric — add a strict output format constraint") while **preserving the successful traits** of the highest-scoring attempts. The resulting candidates at each subsequent depth step are therefore more targeted and diagnostic than the zero-shot bootstrap.
+202	### Step 3: Final Selection
+204	After all `depth` steps, COPRO performs a **final sweep** over the full validation archive. It picks the configuration with the highest average full-dataset score across all committed depth-step winners. This is the `_extract_optimized_set` step — it ensures that even if a later depth step produced a worse result than an earlier one (possible with minibatch noise), the globally best validated prompt is always returned.
+206	**Example: Coordinate ascent progression over 4 depth steps**
+208	| Depth | Candidates Evaluated | Best Minibatch Score | Full Dataset Score | Accepted? |
+209	| ----- | -------------------- | -------------------- | ------------------ | --------- |
+210	| 1     | 8 (7 + original)     | 0.68                 | 0.65               | ✅ (root) |
+211	| 2     | 7                    | 0.74                 | 0.71               | ✅        |
+212	| 3     | 7                    | 0.79                 | 0.76               | ✅        |
+213	| 4     | 7                    | 0.77                 | 0.73               | ❌        |
+215	In this example, depth step 4 produces a candidate that looks promising on the minibatch (0.77) but underperforms on the full dataset (0.73) compared to depth step 3's committed baseline (0.76). The final sweep correctly selects the depth step 3 result as the optimized prompt.
+217	## When to Use COPRO
+219	COPRO is particularly effective when:
+221	| Scenario                                           | Why COPRO Helps                                                                    |
+222	|----------------------------------------------------|------------------------------------------------------------------------------------|
+223	| **Instruction quality is the main lever**          | COPRO focuses entirely on refining the instruction text                            |
+224	| **You have clear metric feedback**                 | Diagnostic feedback per candidate makes each generation more targeted              |
+225	| **You want predictable, monotonic improvement**    | Coordinate ascent commits each improvement before building on it                   |
+226	| **Smaller datasets**                               | Full-dataset validation at every step works well when goldens are not too numerous |
+227	| **You need fast convergence**                      | Depth steps are shallow and focused; typically 3-5 steps is enough                 |
+229	## COPRO vs. Other Algorithms
+231	| Aspect                     | COPRO                                   | SIMBA                                      | GEPA                                   | MIPROv2                                      |
+232	|----------------------------|------------------------------------------|--------------------------------------------|----------------------------------------|---------------------------------------------|
+233	| **Search strategy**        | Informed coordinate ascent               | Variance-driven introspective ascent       | Pareto-based evolutionary              | Bayesian Optimization (TPE)                 |
+234	| **Feedback signal**        | Score + metric feedback per candidate    | Score variance across trajectories         | LLM diagnosis of failures/successes    | Minibatch score per trial                   |
+235	| **Optimizes instructions?**| ✅ Yes                                    | ✅ Yes                                     | ✅ Yes                                 | ✅ Yes                                      |
+236	| **Optimizes demos?**       | ❌ No                                     | ✅ Yes                                     | ❌ No                                  | ✅ Yes                                      |
+237	| **Candidate generation**   | Two-pass guideline + rewrite             | Per-iteration from hard examples           | Per-iteration via reflective mutation  | All upfront (proposal phase)                |
+238	| **Full eval frequency**    | Every depth step                         | Every N iterations                         | Per accepted candidate                 | Every N trials                              |
+239	| **Best for**               | Fast, instruction-focused optimization   | Inconsistent model behavior, complex tasks | Diverse problem types, multi-objective | Large search spaces, few-shot-heavy tasks   |
+241	Choose **COPRO** when you want fast, targeted instruction improvement with clear diagnostic feedback guiding each generation — especially when you don't need few-shot demonstrations and want reliable convergence in a small number of steps.
+243	Choose **SIMBA** when your model is inconsistent across runs and you want the optimizer to learn from that inconsistency, or when the task benefits from both instruction improvements and injected demonstrations.
+245	Choose **GEPA** when your task spans diverse problem types and you need to maintain a diverse pool of prompt strategies without converging prematurely on a single approach.
+247	Choose **MIPROv2** when the joint combination of instruction and few-shot demonstrations is the main lever and you want systematic Bayesian search over that space.
+251	<AccordionGroup>
+252	<Accordion title="What is COPRO and when should I use it?">
+253	`COPRO` (Co-operative Prompt Optimizer) uses coordinate ascent: at each depth step it evaluates a batch of candidates, commits the best as the new baseline, and uses the scored history plus metric feedback to generate a more targeted next batch. Use it for fast, instruction-focused optimization with reliable, monotonic improvement in a small number of steps.
+254	</Accordion>
+255	<Accordion title="What do depth and breadth control in COPRO?">
+256	`depth` (default `4` ) is the number of coordinate ascent steps; each step commits the best candidate as the baseline for the next. `breadth` (default `7` ) is how many candidates are generated and evaluated at each step. Higher `breadth` explores more of the prompt space per step but costs more.
+257	</Accordion>
+258	<Accordion title="Does COPRO optimize few-shot demonstrations?">
+259	No. COPRO focuses entirely on refining the instruction text and does not inject demos. If few-shot demonstrations are an important lever for your task, use [SIMBA](/docs/prompt-optimization-simba) or [MIPROv2](/docs/prompt-optimization-miprov2) , both of which optimize demos.
+260	</Accordion>
+261	<Accordion title="How does COPRO use metric feedback to improve candidates?">
+262	At each depth step COPRO captures both a score and a diagnostic metric feedback string per candidate, built from per-metric reasons on failing examples. This ranked `history_log` is fed back to the proposer via `propose_from_history` , so the next batch explicitly targets known failure modes while preserving the traits of high-scoring attempts.
+263	</Accordion>
+264	<Accordion title="How often does COPRO run full-dataset validation?">
+265	At every depth step. COPRO runs `score_pareto` on the best minibatch candidate of each step against all goldens, which makes its validation more thorough than SIMBA or MIPROv2 at the cost of more evaluations. This is what makes each committed baseline genuinely validated rather than minibatch-estimated.
+266	</Accordion>
+267	<Accordion title="How do I make COPRO runs reproducible?">
+268	Pass `random_state` as either an `int` seed or a `random.Random` instance. It affects minibatch sampling and candidate deduplication; by default it uses a random value, so pin it for repeatable runs.
+269	</Accordion>
+270	</AccordionGroup>
