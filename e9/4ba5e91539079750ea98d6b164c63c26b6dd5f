@@ -1,0 +1,22 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 86-89
+docs.json
+  h_04c00a69eeb820 346,350,354
+docs/metrics-mcp-task-completion.mdx
+  h_04c00a69eeb820 1-156
+docs/metrics-mcp-use.mdx
+  h_04c00a69eeb820 1-165
+docs/metrics-multi-turn-mcp-use.mdx
+  h_04c00a69eeb820 1-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "e94ba5e91539079750ea98d6b164c63c26b6dd5f",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
