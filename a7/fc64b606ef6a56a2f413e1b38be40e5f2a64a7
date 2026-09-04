@@ -1,0 +1,16 @@
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 125-141
+docs/metrics-bias.mdx
+  h_04c00a69eeb820 94-96,98-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "a7fc64b606ef6a56a2f413e1b38be40e5f2a64a7",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
