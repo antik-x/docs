@@ -1,0 +1,22 @@
+.agents/skills/docs-translation/state/nav-zh.json
+  h_04c00a69eeb820 95-98
+docs.json
+  h_04c00a69eeb820 392,396,400
+docs/metrics-exact-match.mdx
+  h_04c00a69eeb820 1-148
+docs/metrics-json-correctness.mdx
+  h_04c00a69eeb820 1-309
+docs/metrics-pattern-match.mdx
+  h_04c00a69eeb820 1-149
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "62d74c69fdb3c4093b780306327474394b9a78ff",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
