@@ -1,0 +1,198 @@
+---
+title: Arena G-Eval
+---
+
+**标签**：LLM-as-a-judge · 自定义 · 单轮 · 多模态
+
+竞技场 G-Eval 是 `deepeval` 广受欢迎的 [`GEval` 指标](/docs/metrics-llm-evals)的改编版本，用于挑选哪个 `LLMTestCase` 表现更好。
+
+<Info>
+为确保无偏，`ArenaGEval` 采用盲评、随机位置、n-成对的 LLM-as-a-Judge 方法，把你的 LLM 应用各迭代表示为「参赛者」，从中选出表现最好的一版。
+</Info>
+
+## Required Arguments
+
+要使用 `ArenaGEval` 指标，你需要在创建 [`ArenaTestCase`](/docs/evaluation-arena-test-cases) 时提供以下参数：
+
+- `contestants`
+
+如果你的评估标准依赖这些参数，还需要在 `contestants` 的 `LLMTestCase` 内提供 `expected_output`、`context` 等额外参数。
+
+## Usage
+
+要创建挑选最佳 `LLMTestCase` 的自定义指标，只需实例化一个 `ArenaGEval` 类并用日常语言定义评估标准：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import ArenaTestCase, LLMTestCase, SingleTurnParams, Contestant
+from deepeval.metrics import ArenaGEval
+from deepeval import compare
+
+a_test_case = ArenaTestCase(
+    contestants=[
+        Contestant(
+            name="GPT-4",
+            hyperparameters={"model": "gpt-4"},
+            test_case=LLMTestCase(
+                input="What is the capital of France?",
+                actual_output="Paris",
+            ),
+        ),
+        Contestant(
+            name="Claude-4",
+            hyperparameters={"model": "claude-4"},
+            test_case=LLMTestCase(
+                input="What is the capital of France?",
+                actual_output="Paris is the capital of France.",
+            ),
+        )
+    ]
+)
+metric = ArenaGEval(
+    name="Friendly",
+    criteria="Choose the winner of the more friendly contestant based on the input and actual output",
+    evaluation_params=[
+        SingleTurnParams.INPUT,
+        SingleTurnParams.ACTUAL_OUTPUT,
+    ],
+)
+
+compare(test_cases=[a_test_case], metric=metric)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import {
+  ArenaTestCase,
+  Contestant,
+  LLMTestCase,
+  SingleTurnParams,
+} from "deepeval/test-case";
+import { ArenaGEval } from "deepeval/metrics";
+import { compare } from "deepeval";
+
+const aTestCase = new ArenaTestCase({
+  contestants: [
+    new Contestant({
+      name: "GPT-4",
+      hyperparameters: { model: "gpt-4" },
+      testCase: new LLMTestCase({
+        input: "What is the capital of France?",
+        actualOutput: "Paris",
+      }),
+    }),
+    new Contestant({
+      name: "Claude-4",
+      hyperparameters: { model: "claude-4" },
+      testCase: new LLMTestCase({
+        input: "What is the capital of France?",
+        actualOutput: "Paris is the capital of France.",
+      }),
+    }),
+  ],
+});
+const metric = new ArenaGEval({
+  name: "Friendly",
+  criteria: "Choose the winner of the more friendly contestant based on the input and actual output",
+  evaluationParams: [
+    SingleTurnParams.INPUT,
+    SingleTurnParams.ACTUAL_OUTPUT,
+  ],
+});
+
+await compare([aTestCase], metric);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+实例化 `ArenaGEval` 类需要**三个**必填参数和**四个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+实例化 `ArenaGEval` 类需要**三个**必填参数和**三个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- `name`：指标名称。它**不会**影响评估。
+- `criteria`：描述每个测试用例的具体评估方面的说明。
+- `evaluation_params`：类型为 `SingleTurnParams` 的列表，只纳入与评估相关的参数。
+- [可选] `evaluation_steps`：字符串列表，列出 LLM 评估应采取的确切步骤。若未提供 `evaluation_steps`，`ConversationalGEval` 会根据给定的 `criteria` 替你生成一系列 `evaluation_steps`。`evaluation_steps` 与 `criteria` 只能二选一。
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+
+<Danger>
+为获得准确且有效的结果，`evaluation_params` 中只应包含 `criteria`/`evaluation_steps` 中提及的评估参数。
+</Danger>
+
+### 独立运行
+
+你还可以把 `ArenaGEval` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(a_test_case)
+print(metric.winner, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(aTestCase);
+console.log(metric.winner, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `compare()` 函数提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`ArenaGEval` 是 [`GEval`](/docs/metrics-llm-evals) 的改编版本，因此与 `GEval` 一样，`ArenaGEval` 指标是一个两步算法：先基于给定的 `criteria` 用思维链（CoT）生成一系列 `evaluation_steps`，再用生成的 `evaluation_steps` 依据每个 `LLMTestCase` 中呈现的 `evaluation_params` 决出获胜者。
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="When should I use ArenaGEval instead of scoring each output on its own?">
+当问题是*相对的*——哪个提示词、模型或配置更好——就用它。它把 `contestants` 正面对比并选出赢家，比逐个比较可能落在噪声区间内的 [GEval](/docs/metrics-llm-evals) 分数更可靠。
+</Accordion>
+<Accordion title="How does it avoid position and verbosity bias?">
+它采用盲评、随机位置、n-成对的 LLM-as-a-Judge 方法。名称与顺序都会被隐藏和打乱，裁判无法偏向先出现或更长的输出。
+</Accordion>
+<Accordion title="Why is there no score or threshold on ArenaGEval?">
+它做的是排名而不是达标线，因此与 `GEval` 不同，没有 `threshold` 与 `strict_mode`。请读取 `metric.winner` 与 `metric.reason`，而不是数值 `score`。
+</Accordion>
+<Accordion title="How do I run a comparison across many contestants at once?">
+构建一个带 `Contestant` 列表的 [ArenaTestCase](/docs/evaluation-arena-test-cases)（每个包装一个 `LLMTestCase` 与 `hyperparameters`），然后传给 `compare()`。一次性运行用 `measure()`。
+</Accordion>
+</AccordionGroup>

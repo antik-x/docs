@@ -1,0 +1,543 @@
+---
+title: "'Do it yourself' Metrics"
+---
+
+**标签**：自定义
+
+在 `deepeval` 中，任何人都可以轻松构建自己的自定义 LLM 评估指标，并自动集成进 `deepeval` 的生态，包括：
+
+- 在 **CI/CD 流水线**中运行你的自定义指标。
+- 利用 `deepeval` 的**指标缓存与多进程**等能力。
+- 把自定义指标结果**自动发送到 Confident AI**。
+
+以下是你可能想自建 LLM 评估指标的几个原因：
+
+- **你想要对所用评估标准有更大控制权**（而且你觉得 [`GEval`](/docs/metrics-llm-evals) 或 [`DAG`](/docs/metrics-dag) 不够用）。
+- 你**不想用 LLM** 做评估（因为 `deepeval` 的所有指标都由 LLM 驱动）。
+- 你**想组合多个 `deepeval` 指标**（例如，一个同时检查答案相关性与忠实度的指标就很有意义）。
+
+<Info>
+实现 LLM 评估指标的方式有很多。这里有一篇[关于 LLM 评估指标打分所需了解的一切的好文章](https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation)。
+</Info>
+
+## Rules To Follow When Creating A Custom Metric
+
+### 1. Inherit the `BaseMetric` class
+
+首先，创建一个继承自 `deepeval` 的 `BaseMetric` 类的类：
+
+<Tabs>
+<Tab title="单轮">
+
+```python
+from deepeval.metrics import BaseMetric
+
+class CustomMetric(BaseMetric):
+    ...
+```
+
+这一点很重要，因为 `BaseMetric` 类会让 `deepeval` 在评估期间把你的自定义指标识别为单轮指标。
+
+</Tab>
+<Tab title="多轮">
+
+```python
+from deepeval.metrics import BaseConversationalMetric
+
+class CustomConversationalMetric(BaseConversationalMetric):
+    ...
+```
+
+这一点很重要，因为 `BaseConversationalMetric` 类会让 `deepeval` 在评估期间把你的自定义指标识别为多轮指标。
+
+</Tab>
+</Tabs>
+
+### 2. Implement the `__init__()` method
+
+`BaseMetric` / `BaseConversationalMetric` 类为你的自定义指标提供了一些可配置的属性，评估后会在本地或 Confident AI 上展示。
+
+例如 `threshold` 属性，它决定被评估的 `LLMTestCase` 是否通过。虽然**要让自定义指标可用，`threshold` 属性就足够了**，但这里还有一些属性供想要更多自定义能力的人使用：
+
+- `evaluation_model`：`str`，指定所用评估模型的名称。
+- `include_reason`：`bool`，指定是否在指标分数旁附带理由。如果你不打算用 LLM 做评估则不需要它。
+- `strict_mode`：`bool`，指定是否只有满分才通过指标。
+- `async_mode`：`bool`，指定是否异步执行指标。
+
+<Tip>
+暂时不必深究这些高级属性，本指南后面的章节会介绍它们的用处。
+</Tip>
+
+`__init__()` 方法是设置这些属性的好地方：
+
+<Tabs>
+<Tab title="单轮">
+
+```python
+from deepeval.metrics import BaseMetric
+
+class CustomMetric(BaseMetric):
+    def __init__(
+        self,
+        threshold: float = 0.5,
+        # Optional
+        evaluation_model: str,
+        include_reason: bool = True,
+        strict_mode: bool = True,
+        async_mode: bool = True
+    ):
+        self.threshold = threshold
+        # Optional
+        self.evaluation_model = evaluation_model
+        self.include_reason = include_reason
+        self.strict_mode = strict_mode
+        self.async_mode = async_mode
+```
+
+</Tab>
+<Tab title="多轮">
+
+```python
+from deepeval.metrics import BaseConversationalMetric
+
+class CustomConversationalMetric(BaseConversationalMetric):
+    def __init__(
+        self,
+        threshold: float = 0.5,
+        # Optional
+        evaluation_model: str,
+        include_reason: bool = True,
+        strict_mode: bool = True,
+        async_mode: bool = True
+    ):
+        self.threshold = threshold
+        # Optional
+        self.evaluation_model = evaluation_model
+        self.include_reason = include_reason
+        self.strict_mode = strict_mode
+        self.async_mode = async_mode
+```
+
+</Tab>
+</Tabs>
+
+### 3. Implement the `measure()` and `a_measure()` methods
+
+`measure()` 与 `a_measure()` 方法是所有评估发生的地方。在 `deepeval` 中，评估就是把指标应用到一个 `LLMTestCase` 上，依据打分算法生成分数以及（如果你使用 LLM）可选的分数理由。
+
+`a_measure()` 方法就是 `measure()` 方法的异步实现，因此两者应使用同一套打分算法。
+
+<Info>
+`a_measure()` 方法让 `deepeval` 能异步运行你的自定义指标。以 `assert_test` 函数为例：
+
+```python
+from deepeval import assert_test
+
+def test_multiple_metrics():
+    ...
+    assert_test(test_case, [metric1, metric2], run_async=True)
+```
+
+当你以 `run_async=True`（默认行为）运行 `assert_test()` 时，`deepeval` 会调用 `a_measure()` 方法，让所有指标以非阻塞方式并发运行。
+</Info>
+
+`measure()` 与 `a_measure()` 都**必须**：
+
+- 接受一个 `LLMTestCase` 作为参数
+- 设置 `self.score`
+- 设置 `self.success`
+
+你还可以选择在 measure 方法中设置 `self.reason`（如果你使用 LLM 做评估），或把整体包进 `try` 块捕获异常并赋给 `self.error`。下面是一个假想示例：
+
+<Tabs>
+<Tab title="单轮">
+
+```python
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import BaseMetric
+
+class CustomMetric(BaseMetric):
+    ...
+
+    def measure(self, test_case: LLMTestCase) -> float:
+        # Although not required, we recommend catching errors
+        # in a try block
+        try:
+            self.score = generate_hypothetical_score(test_case)
+            if self.include_reason:
+                self.reason = generate_hypothetical_reason(test_case)
+            self.success = self.score >= self.threshold
+            return self.score
+        except Exception as e:
+            # set metric error and re-raise it
+            self.error = str(e)
+            raise
+
+    async def a_measure(self, test_case: LLMTestCase) -> float:
+        # Although not required, we recommend catching errors
+        # in a try block
+        try:
+            self.score = await async_generate_hypothetical_score(test_case)
+            if self.include_reason:
+                self.reason = await async_generate_hypothetical_reason(test_case)
+            self.success = self.score >= self.threshold
+            return self.score
+        except Exception as e:
+            # set metric error and re-raise it
+            self.error = str(e)
+            raise
+```
+
+</Tab>
+<Tab title="多轮">
+
+```python
+from deepeval.metrics import BaseConversationalMetric
+from deepeval.test_case import ConversationalTestCase
+
+class CustomConversationalMetric(BaseConversationalMetric):
+    ...
+
+    def measure(self, test_case: ConversationalTestCase) -> float:
+        # Although not required, we recommend catching errors
+        # in a try block
+        try:
+            self.score = generate_hypothetical_score(test_case)
+            if self.include_reason:
+                self.reason = generate_hypothetical_reason(test_case)
+            self.success = self.score >= self.threshold
+            return self.score
+        except Exception as e:
+            # set metric error and re-raise it
+            self.error = str(e)
+            raise
+
+    async def a_measure(self, test_case: ConversationalTestCase) -> float:
+        # Although not required, we recommend catching errors
+        # in a try block
+        try:
+            self.score = await async_generate_hypothetical_score(test_case)
+            if self.include_reason:
+                self.reason = await async_generate_hypothetical_reason(test_case)
+            self.success = self.score >= self.threshold
+            return self.score
+        except Exception as e:
+            # set metric error and re-raise it
+            self.error = str(e)
+            raise
+```
+
+</Tab>
+</Tabs>
+
+<Tip>
+
+通常，LLM 评估指标中造成阻塞的部分来自对 LLM 提供商 API 的调用（例如 OpenAI 的 API 端点），因此你最终要确保 LLM 推理确实可以异步进行。
+
+如果你尝试了所有办法后发现 LLM 调用没有异步实现（例如你用的是 Hugging Face `transformers` 库中的开源模型），直接**在 `a_measure()` 中复用 `measure` 方法**即可：
+
+```python
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import BaseMetric
+
+class CustomMetric(BaseMetric):
+    ...
+
+    async def a_measure(self, test_case: LLMTestCase) -> float:
+        return self.measure(test_case)
+```
+
+你也可以[点击这里查看把 LLM 推理卸载到单独线程的示例](/docs/metrics-introduction#mistral-7b-example)作为变通，尽管它不一定适用于所有用例。
+</Tip>
+
+### 4. Implement the `is_successful()` method
+
+在底层，`deepeval` 会调用 `is_successful()` 方法来判断你的指标对给定 `LLMTestCase` 的状态。我们建议直接复制粘贴下面的代码作为你的 `is_successful()` 实现：
+
+<Tabs>
+<Tab title="单轮">
+
+```python
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import BaseMetric
+
+class CustomMetric(BaseMetric):
+    ...
+
+    def is_successful(self) -> bool:
+        if self.error is not None:
+            self.success = False
+        else:
+            try:
+                self.success = self.score >= self.threshold
+            except TypeError:
+                self.success = False
+        return self.success
+```
+
+</Tab>
+<Tab title="多轮">
+
+```python
+from deepeval.metrics import BaseConversationalMetric
+from deepeval.test_case import ConversationalTestCase
+
+class CustomConversationalMetric(BaseConversationalMetric):
+    ...
+
+    def is_successful(self) -> bool:
+        if self.error is not None:
+            self.success = False
+        else:
+            try:
+                self.success = self.score >= self.threshold
+            except TypeError:
+                self.success = False
+        return self.success
+```
+
+</Tab>
+</Tabs>
+
+### 5. Name Your Custom Metric
+
+可能是最简单的一步——剩下的就是为你的自定义指标命名：
+
+<Tabs>
+<Tab title="单轮">
+
+```python
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import BaseMetric
+
+class CustomMetric(BaseMetric):
+    ...
+
+    @property
+    def __name__(self):
+        return "My Custom Metric"
+```
+
+</Tab>
+<Tab title="多轮">
+
+```python
+from deepeval.metrics import BaseConversationalMetric
+from deepeval.test_case import ConversationalTestCase
+
+class CustomConversationalMetric(BaseConversationalMetric):
+    ...
+
+    @property
+    def __name__(self):
+        return "My Custom Metric"
+```
+
+</Tab>
+</Tabs>
+
+**恭喜 🎉！**你刚刚学会了如何构建一个与 `deepeval` 生态 100% 集成的自定义指标。接下来的部分我们会过几个真实示例。
+
+## More Examples
+
+### Non-LLM Evals
+
+LLM-Eval 是用 LLM 打分的 LLM 评估指标，因此非 LLM 评估就是不用 LLM 打分的指标。本例演示如何改用 [rouge 分数](https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation)：
+
+```python
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import BaseMetric
+from deepeval.scorer import Scorer
+
+class RougeMetric(BaseMetric):
+    def __init__(self, threshold: float = 0.5):
+        self.threshold = threshold
+        self.scorer = Scorer()
+
+    def measure(self, test_case: LLMTestCase):
+        self.score = self.scorer.rouge_score(
+            prediction=test_case.actual_output,
+            target=test_case.expected_output,
+            score_type="rouge1"
+        )
+        self.success = self.score >= self.threshold
+        return self.score
+
+    # Async implementation of measure(). If async version for
+    # scoring method does not exist, just reuse the measure method.
+    async def a_measure(self, test_case: LLMTestCase):
+        return self.measure(test_case)
+
+    def is_successful(self):
+        return self.success
+
+    @property
+    def __name__(self):
+        return "Rouge Metric"
+```
+
+<Note>
+虽然你可以自行实现 rouge 打分器，但你会注意到 `deepeval` 还额外提供了 `scorer` 模块（未写入文档），支持更传统的 NLP 打分方法，见[这里](https://github.com/confident-ai/deepeval/blob/main/deepeval/scorer/scorer.py)。
+
+如果你的环境中尚未安装 `rouge-score`，请先运行 `pip install rouge-score`。
+</Note>
+
+现在你只需几行代码就能把这个自定义指标作为独立指标运行：
+
+```python
+...
+
+#####################
+### Example Usage ###
+#####################
+test_case = LLMTestCase(input="...", actual_output="...", expected_output="...")
+metric = RougeMetric()
+
+metric.measure(test_case)
+print(metric.is_successful())
+```
+
+### Composite Metrics
+
+本例中我们将把两个 `deepeval` 默认指标组合成自定义指标，因此我们称之为「复合」指标。
+
+我们将组合 `AnswerRelevancyMetric` 与 `FaithfulnessMetric`，因为很少有用户只关心其中之一。
+
+```python
+from deepeval.metrics import BaseMetric, AnswerRelevancyMetric, FaithfulnessMetric
+from deepeval.test_case import LLMTestCase
+
+class FaithfulRelevancyMetric(BaseMetric):
+    def __init__(
+        self,
+        threshold: float = 0.5,
+        evaluation_model: Optional[str] = "gpt-4-turbo",
+        include_reason: bool = True,
+        async_mode: bool = True,
+        strict_mode: bool = False,
+    ):
+        self.threshold = 1 if strict_mode else threshold
+        self.evaluation_model = evaluation_model
+        self.include_reason = include_reason
+        self.async_mode = async_mode
+        self.strict_mode = strict_mode
+
+    def measure(self, test_case: LLMTestCase):
+        try:
+            relevancy_metric, faithfulness_metric = initialize_metrics()
+            # Remember, deepeval's default metrics follow the same pattern as your custom metric!
+            relevancy_metric.measure(test_case)
+            faithfulness_metric.measure(test_case)
+
+            # Custom logic to set score, reason, and success
+            set_score_reason_success(relevancy_metric, faithfulness_metric)
+            return self.score
+        except Exception as e:
+            # Set and re-raise error
+            self.error = str(e)
+            raise
+
+    async def a_measure(self, test_case: LLMTestCase):
+        try:
+            relevancy_metric, faithfulness_metric = initialize_metrics()
+            # Here, we use the a_measure() method instead so both metrics can run concurrently
+            await relevancy_metric.a_measure(test_case)
+            await faithfulness_metric.a_measure(test_case)
+
+            # Custom logic to set score, reason, and success
+            set_score_reason_success(relevancy_metric, faithfulness_metric)
+            return self.score
+        except Exception as e:
+            # Set and re-raise error
+            self.error = str(e)
+            raise
+
+    def is_successful(self) -> bool:
+        if self.error is not None:
+            self.success = False
+        else:
+            return self.success
+
+    @property
+    def __name__(self):
+        return "Composite Relevancy Faithfulness Metric"
+
+    ######################
+    ### Helper methods ###
+    ######################
+    def initialize_metrics(self):
+        relevancy_metric = AnswerRelevancyMetric(
+            threshold=self.threshold,
+            model=self.evaluation_model,
+            include_reason=self.include_reason,
+            async_mode=self.async_mode,
+            strict_mode=self.strict_mode
+        )
+        faithfulness_metric = FaithfulnessMetric(
+            threshold=self.threshold,
+            model=self.evaluation_model,
+            include_reason=self.include_reason,
+            async_mode=self.async_mode,
+            strict_mode=self.strict_mode
+        )
+        return relevancy_metric, faithfulness_metric
+
+    def set_score_reason_success(
+        self,
+        relevancy_metric: BaseMetric,
+        faithfulness_metric: BaseMetric
+    ):
+        # Get scores and reasons for both
+        relevancy_score = relevancy_metric.score
+        relevancy_reason = relevancy_metric.reason
+        faithfulness_score = faithfulness_metric.score
+        faithfulness_reason = faithfulness_reason.reason
+
+        # Custom logic to set score
+        composite_score = min(relevancy_score, faithfulness_score)
+        self.score = 0 if self.strict_mode and composite_score < self.threshold else composite_score
+
+        # Custom logic to set reason
+        if include_reason:
+            self.reason = relevancy_reason + "\n" + faithfulness_reason
+
+        # Custom logic to set success
+        self.success = self.score >= self.threshold
+```
+
+现在动手用一用它：
+
+```python title="test_llm.py"
+from deepeval.test_case import LLMTestCase
+from deepeval import assert_test
+...
+
+def test_llm():
+    metric = FaithfulRelevancyMetric()
+    test_case = LLMTestCase(...)
+    assert_test(test_case, [metric])
+```
+
+```bash
+deepeval test run test_llm.py
+```
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="When should I build my own BaseMetric instead of using GEval or DAG?">
+当 [GEval](/docs/metrics-llm-evals) 与 [DAG](/docs/metrics-dag) 不够用时——你需要完全控制打分、完全不想用 LLM（例如 ROUGE 或正则），或想把多个 `deepeval` 指标合成一个分数。
+</Accordion>
+<Accordion title="What exactly must my measure() and a_measure() set?">
+`self.score` and `self.success` (typically `self.success = self.score &gt;= self.threshold` ). Set `self.reason` only with an LLM, and wrap the body in a `try` that assigns `self.error` and re-raises.
+</Accordion>
+<Accordion title="How do I make my metric async-safe if scoring has no async path?">
+复用同步方法：`async def a_measure(self, test_case): return self.measure(test_case)`。对阻塞库没问题；要在 `run_async=True` 下获得真并发，应在 `a_measure()` 内 `await` 真正的异步 LLM 调用。
+</Accordion>
+<Accordion title="Can a custom metric work without an LLM?">
+Yes. The `RougeMetric` example uses `deepeval` 's `Scorer` module. Drop `include_reason` and `evaluation_model` — there's no LLM to generate a reason.
+</Accordion>
+<Accordion title="Single-turn or multi-turn — which base class do I inherit?">
+`BaseMetric` for single-turn (takes an `LLMTestCase` ), `BaseConversationalMetric` for multi-turn (takes a `ConversationalTestCase` ). The base class tells `deepeval` which test case to route.
+</Accordion>
+</AccordionGroup>

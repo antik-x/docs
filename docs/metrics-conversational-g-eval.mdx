@@ -1,0 +1,291 @@
+---
+title: Conversational G-Eval
+---
+
+**标签**：LLM-as-a-judge · 自定义 · 多轮 · 聊天机器人 · 多模态
+
+对话式 G-Eval 是 `deepeval` 广受欢迎的 [`GEval` 指标](/docs/metrics-llm-evals)的改编版本，用于评估整段对话。
+
+它是在 `deepeval` 中定义自定义标准来评估多轮对话的最佳方式。通过定义自定义 `ConversationalGEval`，你可以轻松判断你的 LLM 聊天机器人能否**在整个对话过程中**持续生成符合你自定义标准的回复。
+
+## Required Arguments
+
+要使用 `ConversationalGEval` 指标，你需要在创建 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases) 时提供以下参数：
+
+- `turns`
+
+如果你的评估标准依赖这些参数，还需要在 `turns` 中提供 `retrieval_context`、`tools_called` 等额外参数。
+
+## Usage
+
+要创建评估整段 LLM 对话的自定义指标，只需实例化一个 `ConversationalGEval` 类并用日常语言定义评估标准：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, MultiTurnParams, ConversationalTestCase
+from deepeval.metrics import ConversationalGEval
+from deepeval import evaluate
+
+convo_test_case = ConversationalTestCase(
+    turns=[Turn(role="...", content="..."), Turn(role="...", content="...")]
+)
+metric = ConversationalGEval(
+    name="Professionalism",
+    criteria="Determine whether the assistant has acted professionally based on the content."
+)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import {
+  Turn,
+  MultiTurnParams,
+  ConversationalTestCase,
+} from "deepeval/test-case";
+import { ConversationalGEval } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const convoTestCase = new ConversationalTestCase({
+  turns: [new Turn({ role: "user", content: "..." }), new Turn({ role: "assistant", content: "..." })],
+});
+const metric = new ConversationalGEval({
+  name: "Professionalism",
+  criteria: "Determine whether the assistant has acted professionally based on the content.",
+  evaluationParams: [MultiTurnParams.CONTENT],
+});
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+实例化 `ConversationalGEval` 类需要**三个**必填参数和**七个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+实例化 `ConversationalGEval` 类需要**三个**必填参数和**六个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- `name`：指标名称。它**不会**影响评估。
+- `criteria`：描述每个测试用例的具体评估方面的说明。
+- [可选] `evaluation_params`：类型为 `MultiTurnParams` 的列表，只纳入与评估相关的参数。默认为 `[MultiTurnParams.CONTENT]`。
+- [可选] `evaluation_steps`：字符串列表，列出 LLM 评估应采取的确切步骤。若未提供 `evaluation_steps`，`ConversationalGEval` 会根据给定的 `criteria` 替你生成一系列 `evaluation_steps`。`evaluation_steps` 与 `criteria` 只能二选一。
+- [Optional] `threshold`: the passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `evaluation_template`：类型为 `ConversationalGEvalTemplate` 的类，允许你[覆盖](#customize-your-template)用于计算 `ConversationalGEval` 分数的默认提示词。默认为 `deepeval` 的 `ConversationalGEvalTemplate`。
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+<Danger>
+为获得准确且有效的结果，`evaluation_params` 中只应包含 `criteria`/`evaluation_steps` 中提及的轮次参数。
+</Danger>
+
+<Tip>
+你可以把你的 `ConversationalGEval` 指标上传到 [Confident AI](https://app.confident-ai.com/) 作为自定义评估指标使用。上传指标只需调用 `ConversationalGEval` 指标实例的 `upload` 方法：
+
+```python
+...
+
+metric = ConversationalGEval(...)
+metric.upload()
+```
+
+</Tip>
+
+### 独立运行
+
+你还可以把 `ConversationalGEval` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`ConversationalGEval` 是 [`GEval`](/docs/metrics-llm-evals) 的改编版本，因此与 `GEval` 一样，`ConversationalGEval` 指标是一个两步算法：先基于给定的 `criteria` 用思维链（CoT）生成一系列 `evaluation_steps`，再用生成的 `evaluation_steps` 结合每个轮次中呈现的 `evaluation_params` 决定最终分数。
+
+不过与普通的 `GEval` 不同，`ConversationalGEval` 在评估时会把整段对话历史纳入考量。
+
+<Tip>
+与最初的 [G-Eval 论文](https://arxiv.org/abs/2303.16634)类似，`ConversationalGEval` 指标利用 LLM 输出 token 的概率，通过计算加权求和来归一化分数。论文引入这一步是为了减少 LLM 打分的偏差，`deepeval` 会自动处理（除非你使用自定义 LLM）。
+</Tip>
+
+## Customize Your Template
+
+由于 `deepeval` 的 `ConversationalGEval` 由 LLM-as-a-judge 评估，你可以通过[覆盖 `deepeval` 的默认提示词模板](/docs/metrics-introduction#customize-metric-prompts)来提升指标准确性。这在以下情况特别有帮助：
+
+- 你在使用[自定义评估 LLM](/guides/guides-using-custom-llms)，尤其是指令遵循能力较弱的更小模型。
+- 你想自定义默认 `ConversationalGEvalTemplate` 中使用的示例，使其更符合你的预期。
+
+<Tip>
+默认 `ConversationalGEvalTemplate` 的样子可以在 [GitHub 这里](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/conversational_g_eval/template.py)查看，并请阅读上方的 [How Is It Calculated](#how-is-it-calculated) 一节，了解如何按需裁剪。
+</Tip>
+
+下面是一个快速示例，展示如何覆盖 `ConversationalGEval` 算法中抽取声明的过程：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics.conversational_g_eval import ConversationalGEvalTemplate
+from deepeval.metrics import ConversationalGEval
+import textwrap
+
+
+class CustomConvoGEvalTemplate(ConversationalGEvalTemplate):
+    @staticmethod
+    def generate_evaluation_steps(parameters: str, criteria: str):
+        return textwrap.dedent(
+            f"""
+            You are given criteria for evaluating a conversation based on the following parameters: {parameters}.
+            Write 3-4 clear and concise evaluation steps that describe how to judge the quality of each turn and the conversation overall.
+
+            Criteria:
+            {criteria}
+
+            Return JSON only in the format:
+            {{
+                "steps": [
+                    "Step 1",
+                    "Step 2",
+                    "Step 3"
+                ]
+            }}
+
+            JSON:
+            """
+        )
+
+# Inject custom template to metric
+metric = ConversationalGEval(evaluation_template=CustomConvoGEvalTemplate)
+metric.measure(...)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { MultiTurnParams } from "deepeval/test-case";
+import { ConversationalGEval } from "deepeval/metrics";
+
+// Inject custom template to metric
+const metric = new ConversationalGEval({
+  name: "Politeness",
+  criteria: "...",
+  evaluationParams: [MultiTurnParams.CONTENT],
+  evaluationTemplate: {
+    generateEvaluationSteps: ({ parameters, criteria }) =>
+      `You are given criteria for evaluating a conversation based on the following parameters: ${parameters}.
+Write 3-4 clear and concise evaluation steps that describe how to judge the quality of each turn and the conversation overall.
+
+Criteria:
+${criteria}
+
+Return JSON only in the format:
+{
+    "steps": [
+        "Step 1",
+        "Step 2",
+        "Step 3"
+    ]
+}
+
+JSON:
+`,
+  },
+});
+await metric.measure(convoTestCase);
+```
+
+每个覆盖函数都会收到模板变量作为第一个参数、默认渲染器作为第二个参数，因此你可以在替换之外扩展提示词：
+
+```typescript
+const metric = new ConversationalGEval({
+  name: "Politeness",
+  criteria: "...",
+  evaluationParams: [MultiTurnParams.CONTENT],
+  evaluationTemplate: {
+    generateEvaluationSteps: (vars, renderDefault) =>
+      `${renderDefault(vars)}\n\nWeigh the assistant's final turn most heavily.`,
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="When should I use ConversationalGEval instead of single-turn GEval?">
+当你的标准跨越整个 `ConversationalTestCase` 时——语气一致性、对早前上下文的记忆、糟糕一轮之后的恢复——就应使用它。普通的 [GEval](/docs/metrics-llm-evals) 只能看到一对 `input` / `actual_output`，无法跨轮次推理。
+</Accordion>
+<Accordion title="Does it score each turn separately or the whole conversation?">
+The whole conversation. It considers the entire `turns` history and returns a single score and reason, not one per turn.
+</Accordion>
+<Accordion title="Which turn parameters should I put in evaluation params?">
+Only the parameters you want evaluated. Include just the fields your `criteria` / `evaluation_steps` reference (e.g. `MultiTurnParams.TOOLS_CALLED` if it depends on tool usage) — unused params add noise.
+</Accordion>
+<Accordion title="Can I pass an LLMTestCase to ConversationalGEval?">
+No. It operates on a [ConversationalTestCase](/docs/evaluation-multiturn-test-cases) built from `turns` . For single-turn data, use [GEval](/docs/metrics-llm-evals) with an `LLMTestCase` .
+</Accordion>
+</AccordionGroup>

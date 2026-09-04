@@ -120,6 +120,8 @@ def check_pair(src_path, dst_path, label):
             content = re.sub(r"^\s*[-*+]\s*", "", ln)
             if not re.search(r"[A-Za-z0-9\u4e00-\u9fff]", content):
                 continue
+            if re.match(r"^<Only\b", content) or re.match(r"^</Only>", content):
+                continue  # Only 包裹行会被解包，源多出的这一行不计
             n += 1
         return n
     la = count_list(na)

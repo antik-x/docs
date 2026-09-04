@@ -57,6 +57,12 @@
     "(rag)/metrics-faithfulness": "忠实度",
     "(rag)/metrics-contextual-precision": "上下文精确率",
     "(rag)/metrics-contextual-recall": "上下文召回率",
-    "(rag)/metrics-contextual-relevancy": "上下文相关性"
+    "(rag)/metrics-contextual-relevancy": "上下文相关性",
+    "(custom)/metrics-llm-evals": "G-Eval",
+    "(custom)/metrics-dag": "DAG",
+    "(custom)/metrics-conversational-g-eval": "对话式 G-Eval",
+    "(custom)/metrics-conversational-dag": "对话式 DAG",
+    "(custom)/metrics-arena-g-eval": "竞技场 G-Eval",
+    "(custom)/metrics-custom": "自定义指标"
   }
 }

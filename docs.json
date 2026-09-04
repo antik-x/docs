@@ -186,19 +186,19 @@
           },
           {
             "page": "docs/(custom)/metrics-conversational-g-eval",
-            "title": "Conversational G-Eval"
+            "title": "对话式 G-Eval"
           },
           {
             "page": "docs/(custom)/metrics-conversational-dag",
-            "title": "Conversational DAG"
+            "title": "对话式 DAG"
           },
           {
             "page": "docs/(custom)/metrics-arena-g-eval",
-            "title": "Arena G-Eval"
+            "title": "竞技场 G-Eval"
           },
           {
             "page": "docs/(custom)/metrics-custom",
-            "title": "Do it yourself"
+            "title": "自定义指标"
           }
         ]
       },
