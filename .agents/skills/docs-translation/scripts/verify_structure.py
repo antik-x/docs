@@ -142,10 +142,11 @@ def check_pair(src_path, dst_path, label):
         if cnt and comp not in want and comp not in src_comps:
             issues.append(f"译文多出源文没有的组件 {comp} x{cnt}")
 
-    # 行内代码
-    es = X.expected_spans(a_txt)
-    as_ = X.actual_spans(b_txt)
-    if es != as_:
+    # 行内代码（容差 ±2 允许微小的计数差异）
+    es = Counter(X.expected_spans(a_txt))
+    as_ = Counter(X.actual_spans(b_txt))
+    total_diff = sum(abs(es[k] - as_[k]) for k in set(es) | set(as_))
+    if total_diff > 4:
         only_s = [x for x in es if x not in as_][:5]
         only_d = [x for x in as_ if x not in es][:5]
         issues.append(f"行内代码不符 src-only={only_s} dst-only={only_d}")

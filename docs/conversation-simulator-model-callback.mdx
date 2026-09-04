@@ -5,7 +5,7 @@ title: 模型回调
 `model_callback` 是模拟器与你的 LLM 应用之间的桥梁。它接收模拟的用户输入并返回你的聊天机器人的助手轮次。
 
 <Note>
-Simulating a **voice agent** instead of a text chatbot? In [voice mode](/docs/conversation-simulator-voice-mode), `voice_config` replaces `model_callback` — the simulator talks to your agent over a live audio connection rather than a Python callback, and providing both raises an error.
+要模拟的是**语音智能体**而不是文本聊天机器人？在[语音模式](/docs/conversation-simulator-voice-mode)下，`voice_config` 替代 `model_callback`——模拟器通过实时音频连接与你的智能体对话而非 Python 回调，同时提供两者会引发错误。
 </Note>
 
 定义 `model_callback` 时 `input` 参数是必需的，但 `deepeval` 也可以按名称传入你定义的可选参数。
