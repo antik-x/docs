@@ -368,15 +368,15 @@
           },
           {
             "page": "docs/(safety)/metrics-non-advice",
-            "title": "Non-Advice"
+            "title": "非建议"
           },
           {
             "page": "docs/(safety)/metrics-misuse",
-            "title": "Misuse"
+            "title": "滥用"
           },
           {
             "page": "docs/(safety)/metrics-pii-leakage",
-            "title": "PII Leakage"
+            "title": "PII 泄露"
           },
           {
             "page": "docs/(safety)/metrics-role-violation",

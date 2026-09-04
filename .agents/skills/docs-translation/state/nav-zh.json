@@ -89,6 +89,9 @@
     "(mcp)/metrics-mcp-task-completion": "MCP 任务完成",
     "(safety)/metrics-bias": "偏见",
     "(safety)/metrics-toxicity": "毒性",
-    "(safety)/metrics-role-violation": "角色违规"
+    "(safety)/metrics-role-violation": "角色违规",
+    "(safety)/metrics-pii-leakage": "PII 泄露",
+    "(safety)/metrics-misuse": "滥用",
+    "(safety)/metrics-non-advice": "非建议"
   }
 }
