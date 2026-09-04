@@ -236,23 +236,23 @@
         "pages": [
           {
             "page": "docs/(rag)/metrics-answer-relevancy",
-            "title": "Answer Relevancy"
+            "title": "答案相关性"
           },
           {
             "page": "docs/(rag)/metrics-faithfulness",
-            "title": "Faithfulness"
+            "title": "忠实度"
           },
           {
             "page": "docs/(rag)/metrics-contextual-precision",
-            "title": "Contextual Precision"
+            "title": "上下文精确率"
           },
           {
             "page": "docs/(rag)/metrics-contextual-recall",
-            "title": "Contextual Recall"
+            "title": "上下文召回率"
           },
           {
             "page": "docs/(rag)/metrics-contextual-relevancy",
-            "title": "Contextual Relevancy"
+            "title": "上下文相关性"
           }
         ]
       },

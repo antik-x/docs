@@ -4,10 +4,10 @@ title: Contextual Relevancy
 
 **标签**：LLM-as-a-judge · 单轮 · 无参考 · RAG · 多模态
 
-The contextual relevancy metric uses LLM-as-a-judge to measure the quality of your RAG pipeline's retriever by evaluating the overall relevance of the information presented in your `retrieval_context` for a given `input`. `deepeval`'s contextual relevancy metric is a self-explaining LLM-Eval, meaning it outputs a reason for its metric score.
+上下文相关性（contextual relevancy）指标使用 LLM-as-a-judge，通过评估 `retrieval_context` 中呈现的信息对给定 `input` 的整体相关性，来衡量你的 RAG 流水线检索器的质量。`deepeval` 的上下文相关性指标是会自我解释的 LLM-Eval，会输出指标分数的理由。
 
 <Info>
-Not sure if the `ContextualRelevancyMetric` is suitable for your use case? Run the follow command to find out:
+不确定 `ContextualRelevancyMetric` 是否适合你的用例？运行以下命令一探究竟：
 
 ```bash
 deepeval recommend metrics
@@ -17,21 +17,21 @@ deepeval recommend metrics
 
 ## Required Arguments
 
-To use the `ContextualRelevancyMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+要使用 `ContextualRelevancyMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
 
 - `input`
 - `actual_output`
 - `retrieval_context`
 
 <Note>
-Similar to `ContextualPrecisionMetric`, the `ContextualRelevancyMetric` uses `retrieval_context` from your RAG pipeline for evaluation.
+与 `ContextualPrecisionMetric` 类似，`ContextualRelevancyMetric` 使用你的 RAG 流水线的 `retrieval_context` 进行评估。
 </Note>
 
 Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
 
 ## Usage
 
-The `ContextualRelevancyMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation of text-based and multimodal test cases:
+`ContextualRelevancyMetric()` 可用于文本与多模态测试用例的[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
 
 <Tabs>
 <Tab title="Text Based">
@@ -186,32 +186,31 @@ await evaluate([testCase], [metric]);
 
 <Tab title="Python">
 
-There are **EIGHT** optional parameters when creating a `ContextualRelevancyMetricMetric`:
+创建 `ContextualRelevancyMetricMetric` 时有**八个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SEVEN** optional parameters when creating a `ContextualRelevancyMetricMetric`:
+创建 `ContextualRelevancyMetricMetric` 时有**七个**可选参数：
 
 </Tab>
 
 </Tabs>
 
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `model`: a string specifying which of OpenAI's GPT models to use, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-- 
-    [Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `evaluation_template`: a class of type `ContextualRelevancyTemplate`, which allows you to override the default prompt templates used to compute the `ContextualRelevancyMetric` score. You can learn what the default prompts looks like [here](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_relevancy/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section below to understand how you can tailor it to your needs. Defaulted to `deepeval`'s `ContextualRelevancyTemplate`.
+- [可选] `evaluation_template`：类型为 `ContextualRelevancyTemplate` 的类，允许你覆盖用于计算 `ContextualRelevancyMetric` 分数的默认提示词模板。默认提示词的样子可以在[这里](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_relevancy/template.py)查看，并请阅读下方的 [How Is It Calculated](#how-is-it-calculated) 一节了解如何按需裁剪。默认为 `deepeval` 的 `ContextualRelevancyTemplate`。
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
-### Within components
+### 在组件内
 
-You can also run the `ContextualRelevancyMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+你还可以在嵌套组件内运行 `ContextualRelevancyMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
 
 <Tabs>
 
@@ -275,9 +274,9 @@ for await (const golden of dataset.evalsIterator()) {
 
 </Tabs>
 
-### As a standalone
+### 独立运行
 
-You can also run the `ContextualRelevancyMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `ContextualRelevancyMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -306,31 +305,31 @@ console.log(metric.score, metric.reason);
 </Tabs>
 
 <Warning>
-This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports, Confident AI platform) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
 </Warning>
 
 ## How Is It Calculated?
 
-The `ContextualRelevancyMetric` score is calculated according to the following equation:
+`ContextualRelevancyMetric` 的分数按以下公式计算：
 
 $$
 \text{Contextual Relevancy} = \frac{\text{Number of Relevant Statements}}{\text{Total Number of Statements}}
 $$
 
-Although similar to how the `AnswerRelevancyMetric` is calculated, the `ContextualRelevancyMetric` first uses an LLM to extract all statements made in the `retrieval_context` instead, before using the same LLM to classify whether each statement is relevant to the `input`.
+虽然计算方式与 `AnswerRelevancyMetric` 相似，但 `ContextualRelevancyMetric` 首先用 LLM 抽取的是 `retrieval_context` 中做出的所有陈述，再用同一个 LLM 判断每条陈述是否与 `input` 相关。
 
 ## Customize Your Template
 
-Since `deepeval`'s `ContextualRelevancyMetric` is evaluated by LLM-as-a-judge, you can likely improve your metric accuracy by [overriding `deepeval`'s default prompt templates](/docs/metrics-introduction#customizing-metric-prompts). This is especially helpful if:
+由于 `deepeval` 的 `ContextualRelevancyMetric` 由 LLM-as-a-judge 评估，你可以通过[覆盖 `deepeval` 的默认提示词模板](/docs/metrics-introduction#customizing-metric-prompts)来提升指标准确性。这在以下情况特别有帮助：
 
-- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
-- You want to customize the examples used in the default `ContextualRelevancyTemplate` to better align with your expectations.
+- 你在使用[自定义评估 LLM](/guides/guides-using-custom-llms)，尤其是指令遵循能力较弱的更小模型。
+- 你想自定义默认 `ContextualRelevancyTemplate` 中使用的示例，使其更符合你的预期。
 
 <Tip>
-You can learn what the default `ContextualRelevancyTemplate` looks like [here on GitHub](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_relevancy/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section above to understand how you can tailor it to your needs.
+默认 `ContextualRelevancyTemplate` 的样子可以在 [GitHub 这里](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_relevancy/template.py)查看，并请阅读上方的 [How Is It Calculated](#how-is-it-calculated) 一节，了解如何按需裁剪。
 </Tip>
 
-Here's a quick example of how you can override the relevancy classification step of the `ContextualRelevancyMetric` algorithm:
+下面是一个快速示例，展示如何覆盖 `ContextualRelevancyMetric` 算法中相关性分类的步骤：
 
 <Tabs>
 
@@ -408,7 +407,7 @@ JSON:
 await metric.measure(testCase);
 ```
 
-Each override receives the template's variables as its first argument, and the default renderer as its second, so you can extend a prompt instead of replacing it:
+每个覆盖函数都会收到模板变量作为第一个参数、默认渲染器作为第二个参数，因此你可以在替换之外扩展提示词：
 
 ```typescript
 const metric = new ContextualRelevancyMetric({
@@ -427,13 +426,13 @@ const metric = new ContextualRelevancyMetric({
 
 <AccordionGroup>
 <Accordion title="Why is my contextual relevancy low even though the right answer was retrieved?">
-It measures signal-to-noise, not just presence. It scores the fraction of statements in `retrieval_context` relevant to the `input` , so the right passage buried in irrelevant text still scores low. The fix is usually less noisy context.
+它度量的是信噪比，而不只是「有没有」。它为 `retrieval_context` 中与 `input` 相关的陈述占比打分，因此正确的段落被埋在不相关文本里依然得低分。解决办法通常是减少上下文噪声。
 </Accordion>
 <Accordion title="What does a low contextual relevancy score tell me to change?">
-Too much irrelevant material in your `retrieval_context` . Lower top-K to return fewer marginal chunks and shrink chunk size for more focused nodes — the most direct ways to raise the relevant ratio.
+`retrieval_context` 里混入了太多无关内容。调低 top-K 以返回更少的边缘文本块、缩小文本块大小以获得更聚焦的节点——这是提高相关占比最直接的方式。
 </Accordion>
 <Accordion title="How is Contextual Relevancy different from Answer Relevancy?">
-Opposite ends of the pipeline. Contextual relevancy grades your retriever via `retrieval_context` , while [Answer Relevancy](/docs/metrics-answer-relevancy) grades your generator via `actual_output` . Clean context with an off-topic answer points to the generator; noisy context to the retriever.
+流水线的两端。上下文相关性通过 `retrieval_context` 评判你的检索器，而[答案相关性](/docs/metrics-answer-relevancy)通过 `actual_output` 评判你的生成器。上下文干净但答案跑题指向生成器；上下文嘈杂指向检索器。
 </Accordion>
 <Accordion title="Do I need a ground-truth answer to run it?">
 No. It's referenceless — judging `retrieval_context` purely against the `input` with no `expected_output` , unlike reference-based [Contextual Recall](/docs/metrics-contextual-recall) . That makes it usable on live traffic without labeled data.

@@ -175,7 +175,7 @@ await evaluate([testCase], [metric]);
 - [可选] `evaluation_template`：类型为 `AnswerRelevancyTemplate`（TypeScript 中为 `AnswerRelevancyTemplateOverride`），允许你[覆盖](#customize-your-template)用于计算 `AnswerRelevancyMetric` 分数的默认提示词。默认为 `deepeval` 的默认提示词。
 - [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
 
-### Within components
+### 在组件内
 
 你还可以在嵌套组件内运行 `AnswerRelevancyMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
 
@@ -243,7 +243,7 @@ for await (const golden of dataset.evalsIterator()) {
 
 </Tabs>
 
-### As a standalone
+### 独立运行
 
 你还可以把 `AnswerRelevancyMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
@@ -322,7 +322,7 @@ await metric.measure(testCase);
 
 由于 `deepeval` 的 `AnswerRelevancyMetric` 由 LLM-as-a-judge 评估，你可以通过[覆盖 `deepeval` 的默认提示词模板](/docs/metrics-introduction#customizing-metric-prompts)来提升指标准确性。这在以下情况特别有帮助：
 
-- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
+- 你在使用[自定义评估 LLM](/guides/guides-using-custom-llms)，尤其是指令遵循能力较弱的更小模型。
 - 你想自定义默认提示词中使用的示例，使其更符合你的预期。
 
 <Tip>

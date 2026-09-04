@@ -4,10 +4,10 @@ title: Contextual Recall
 
 **标签**：LLM-as-a-judge · 单轮 · 有参考 · RAG · 多模态
 
-The contextual recall metric uses LLM-as-a-judge to measure the quality of your RAG pipeline's retriever by evaluating the extent of which the `retrieval_context` aligns with the `expected_output`. `deepeval`'s contextual recall metric is a self-explaining LLM-Eval, meaning it outputs a reason for its metric score.
+上下文召回率（contextual recall）指标使用 LLM-as-a-judge，通过评估 `retrieval_context` 与 `expected_output` 的契合程度，来衡量你的 RAG 流水线检索器的质量。`deepeval` 的上下文召回率指标是会自我解释的 LLM-Eval，会输出指标分数的理由。
 
 <Info>
-Not sure if the `ContextualRecallMetric` is suitable for your use case? Run the follow command to find out:
+不确定 `ContextualRecallMetric` 是否适合你的用例？运行以下命令一探究竟：
 
 ```bash
 deepeval recommend metrics
@@ -17,7 +17,7 @@ deepeval recommend metrics
 
 ## Required Arguments
 
-To use the `ContextualRecallMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+要使用 `ContextualRecallMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
 
 - `input`
 - `actual_output`
@@ -28,7 +28,7 @@ Read the [How Is It Calculated](#how-is-it-calculated) section below to learn ho
 
 ## Usage
 
-The `ContextualRecallMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation of text-based and multimodal test cases:
+`ContextualRecallMetric()` 可用于文本与多模态测试用例的[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
 
 <Tabs>
 <Tab title="Text Based">
@@ -193,32 +193,31 @@ await evaluate([testCase], [metric]);
 
 <Tab title="Python">
 
-There are **EIGHT** optional parameters when creating a `ContextualRecallMetric`:
+创建 `ContextualRecallMetric` 时有**八个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SEVEN** optional parameters when creating a `ContextualRecallMetric`:
+创建 `ContextualRecallMetric` 时有**七个**可选参数：
 
 </Tab>
 
 </Tabs>
 
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `model`: a string specifying which of OpenAI's GPT models to use, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-- 
-    [Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `evaluation_template`: a class of type `ContextualRecallTemplate`, which allows you to [override the default prompts](#customize-your-template) used to compute the `ContextualRecallMetric` score. Defaulted to `deepeval`'s `ContextualRecallTemplate`.
+- [可选] `evaluation_template`：类型为 `ContextualRecallTemplate` 的类，允许你[覆盖](#customize-your-template)用于计算 `ContextualRecallMetric` 分数的默认提示词。默认为 `deepeval` 的 `ContextualRecallTemplate`。
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
-### Within components
+### 在组件内
 
-You can also run the `ContextualRecallMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+你还可以在嵌套组件内运行 `ContextualRecallMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
 
 <Tabs>
 
@@ -282,9 +281,9 @@ for await (const golden of dataset.evalsIterator()) {
 
 </Tabs>
 
-### As a standalone
+### 独立运行
 
-You can also run the `ContextualRecallMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `ContextualRecallMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -313,37 +312,37 @@ console.log(metric.score, metric.reason);
 </Tabs>
 
 <Warning>
-This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports, Confident AI platform) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
 </Warning>
 
 ## How Is It Calculated?
 
-The `ContextualRecallMetric` score is calculated according to the following equation:
+`ContextualRecallMetric` 的分数按以下公式计算：
 
 $$
 \text{Contextual Recall} = \frac{\text{Number of Attributable Statements}}{\text{Total Number of Statements}}
 $$
 
-The `ContextualRecallMetric` first uses an LLM to extract all **statements made in the `expected_output`**, before using the same LLM to classify whether each statement can be attributed to nodes in the `retrieval_context`.
+`ContextualRecallMetric` 首先用 LLM 抽取**`expected_output` 中做出的所有陈述**，再用同一个 LLM 判断每条陈述是否可以归因于 `retrieval_context` 中的节点。
 
 <Info>
-We use the `expected_output` instead of the `actual_output` because we're measuring the quality of the RAG retriever for a given ideal output.
+我们使用 `expected_output` 而不是 `actual_output`，因为我们衡量的是在给定理想输出的情况下 RAG 检索器的质量。
 </Info>
 
-A higher contextual recall score represents a greater ability of the retrieval system to capture all relevant information from the total available relevant set within your knowledge base.
+上下文召回率分数越高，代表检索系统从知识库的全部相关内容中捕获所有相关信息的能力越强。
 
 ## Customize Your Template
 
-Since `deepeval`'s `ContextualRecallMetric` is evaluated by LLM-as-a-judge, you can likely improve your metric accuracy by [overriding `deepeval`'s default prompt templates](/docs/metrics-introduction#customizing-metric-prompts). This is especially helpful if:
+由于 `deepeval` 的 `ContextualRecallMetric` 由 LLM-as-a-judge 评估，你可以通过[覆盖 `deepeval` 的默认提示词模板](/docs/metrics-introduction#customizing-metric-prompts)来提升指标准确性。这在以下情况特别有帮助：
 
-- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
-- You want to customize the examples used in the default `ContextualRecallTemplate` to better align with your expectations.
+- 你在使用[自定义评估 LLM](/guides/guides-using-custom-llms)，尤其是指令遵循能力较弱的更小模型。
+- 你想自定义默认 `ContextualRecallTemplate` 中使用的示例，使其更符合你的预期。
 
 <Tip>
-You can learn what the default `ContextualRecallTemplate` looks like [here on GitHub](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_recall/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section above to understand how you can tailor it to your needs.
+默认 `ContextualRecallTemplate` 的样子可以在 [GitHub 这里](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_recall/template.py)查看，并请阅读上方的 [How Is It Calculated](#how-is-it-calculated) 一节，了解如何按需裁剪。
 </Tip>
 
-Here's a quick example of how you can override the relevancy classification step of the `ContextualRecallMetric` algorithm:
+下面是一个快速示例，展示如何覆盖 `ContextualRecallMetric` 算法中相关性分类的步骤：
 
 <Tabs>
 
@@ -419,7 +418,7 @@ JSON:
 await metric.measure(testCase);
 ```
 
-Each override receives the template's variables as its first argument, and the default renderer as its second, so you can extend a prompt instead of replacing it:
+每个覆盖函数都会收到模板变量作为第一个参数、默认渲染器作为第二个参数，因此你可以在替换之外扩展提示词：
 
 ```typescript
 const metric = new ContextualRecallMetric({
@@ -438,15 +437,15 @@ const metric = new ContextualRecallMetric({
 
 <AccordionGroup>
 <Accordion title="Does contextual recall tell me if I'm missing relevant chunks?">
-Yes — exactly what it measures. It breaks `expected_output` into statements and checks how many trace back to a node in `retrieval_context` . Any statement that can't signals information your retriever failed to surface.
+是的——这正是它度量的东西。它把 `expected_output` 拆成一条条陈述，检查其中多少能追溯到 `retrieval_context` 的某个节点。无法追溯的陈述即代表你的检索器未能呈现的信息。
 </Accordion>
 <Accordion title="My contextual recall is low — which retriever knobs should I tune?">
-Needed information never made it into the `retrieval_context` . Usual levers: increase top-K, adjust chunk size so facts aren't split, and swap in a stronger embedding model so relevant passages rank within your cutoff.
+需要的信息根本没有进入 `retrieval_context`。常用的调节手段：增大 top-K、调整文本块大小以免事实被切碎、换用更强的嵌入模型让相关段落排进截断范围内。
 </Accordion>
 <Accordion title="Why does it use expected output instead of actual output?">
-Recall measures whether the retriever fetched everything needed for the ideal answer, so it attributes `expected_output` (ground truth) to the `retrieval_context` . Using `actual_output` would let a bad answer unfairly drag down a good retriever.
+召回率衡量检索器是否取回了理想答案所需的一切，因此它把 `expected_output`（基准真值）归因到 `retrieval_context`。若用 `actual_output`，糟糕的回答会不公平地拖累好的检索器。
 </Accordion>
 <Accordion title="How is Contextual Recall different from Contextual Precision?">
-Recall is completeness — did the retriever pull in all relevant information? [Contextual Precision](/docs/metrics-contextual-precision) is ordering — are relevant chunks ranked above irrelevant ones? Want both high.
+召回率是完整性——检索器是否取回了所有相关信息？[上下文精确率](/docs/metrics-contextual-precision)是排序——相关块是否排在无关块之上？两者都要高。
 </Accordion>
 </AccordionGroup>

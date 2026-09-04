@@ -52,6 +52,11 @@
     "evaluation-flags-and-configs": "开关与配置",
     "evaluation-end-to-end-single-turn": "单轮端到端评估",
     "evaluation-end-to-end-multi-turn": "多轮端到端评估",
-    "metrics-introduction": "指标简介"
+    "metrics-introduction": "指标简介",
+    "(rag)/metrics-answer-relevancy": "答案相关性",
+    "(rag)/metrics-faithfulness": "忠实度",
+    "(rag)/metrics-contextual-precision": "上下文精确率",
+    "(rag)/metrics-contextual-recall": "上下文召回率",
+    "(rag)/metrics-contextual-relevancy": "上下文相关性"
   }
 }

@@ -4,17 +4,17 @@ title: Contextual Precision
 
 **标签**：LLM-as-a-judge · 单轮 · 有参考 · RAG · 多模态
 
-The contextual precision metric uses LLM-as-a-judge to measure your RAG pipeline's retriever by evaluating whether nodes in your `retrieval_context` that are relevant to the given `input` are ranked higher than irrelevant ones. `deepeval`'s contextual precision metric is a self-explaining LLM-Eval, meaning it outputs a reason for its metric score.
+上下文精确率（contextual precision）指标使用 LLM-as-a-judge，通过评估 `retrieval_context` 中与给定 `input` 相关的节点是否排在无关节点之前，来衡量你的 RAG 流水线检索器的质量。`deepeval` 的上下文精确率指标是会自我解释的 LLM-Eval，会输出指标分数的理由。
 
 <Info>
 
-The `ContextualPrecisionMetric` focuses on evaluating the re-ranker of your RAG pipeline's retriever by assessing the ranking order of the text chunks in the `retrieval_context`.
+`ContextualPrecisionMetric` 专注于通过评估 `retrieval_context` 中文本块的排序顺序，来评估 RAG 流水线检索器的重排序器（re-ranker）。
 
 </Info>
 
 ## Required Arguments
 
-To use the `ContextualPrecisionMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+要使用 `ContextualPrecisionMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
 
 - `input`
 - `actual_output`
@@ -25,7 +25,7 @@ Read the [How Is It Calculated](#how-is-it-calculated) section below to learn ho
 
 ## Usage
 
-The `ContextualPrecisionMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation of text-based and multimodal test cases:
+`ContextualPrecisionMetric()` 可用于文本与多模态测试用例的[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
 
 <Tabs>
 <Tab title="Text Based">
@@ -190,32 +190,30 @@ await evaluate([testCase], [metric]);
 
 <Tab title="Python">
 
-There are **EIGHT** optional parameters when creating a `ContextualPrecisionMetric`:
+创建 `ContextualPrecisionMetric` 时有**八个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SEVEN** optional parameters when creating a `ContextualPrecisionMetric`:
+创建 `ContextualPrecisionMetric` 时有**七个**可选参数：
 
 </Tab>
 
 </Tabs>
 
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `model`: a string specifying which of OpenAI's GPT models to use, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
-- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
-- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-- 
-    [Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
-  
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [可选] `include_reason`：布尔值，设为 `True`（TypeScript 中为 `true`）时，会为评估分数附带理由。默认为 `True`（TypeScript 中为 `true`）。
+- [可选] `strict_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把指标分数强制为二元：完美为 1，否则为 0。它还会覆盖当前阈值并将其设为 1。默认为 `False`（TypeScript 中为 `false`）。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `evaluation_template`: a class of type `ContextualPrecisionTemplate`, which allows you to [override the default prompts](#customize-your-template) used to compute the `ContextualPrecisionMetric` score. Defaulted to `deepeval`'s `ContextualPrecisionTemplate`.
-- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `evaluation_template`：类型为 `ContextualPrecisionTemplate` 的类，允许你[覆盖](#customize-your-template)用于计算 `ContextualPrecisionMetric` 分数的默认提示词。默认为 `deepeval` 的 `ContextualPrecisionTemplate`。
+- [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
 
-### Within components
+### 在组件内
 
-You can also run the `ContextualPrecisionMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+你还可以在嵌套组件内运行 `ContextualPrecisionMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
 
 <Tabs>
 
@@ -279,9 +277,9 @@ for await (const golden of dataset.evalsIterator()) {
 
 </Tabs>
 
-### As a standalone
+### 独立运行
 
-You can also run the `ContextualPrecisionMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `ContextualPrecisionMetric` 作为独立的一次性执行，运行在单个测试用例上。
 
 <Tabs>
 
@@ -310,12 +308,12 @@ console.log(metric.score, metric.reason);
 </Tabs>
 
 <Warning>
-This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports, Confident AI platform) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
 </Warning>
 
 ## How Is It Calculated?
 
-The `ContextualPrecisionMetric` score is calculated according to the following equation:
+`ContextualPrecisionMetric` 的分数按以下公式计算：
 
 $$
 \text{Contextual Precision} = \frac{1}{\text{Number of Relevant Nodes}} \sum_{k=1}^{n} \left( \frac{\text{Number of Relevant Nodes Up to Position } k}{k} \times r_{k} \right)
@@ -323,31 +321,31 @@ $$
 
 <Info>
 
-- **_k_** is the (i+1)<sup>th</sup> node in the `retrieval_context` (nodes with the same `source` are grouped together as a single node if `RetrievedContextData` is used)
-- **_n_** is the length of the `retrieval_context` (after grouping by `source`)
-- **_r<sub>k</sub>_** is the binary relevance for the k<sup>th</sup> node in the `retrieval_context`. _r<sub>k</sub>_ = 1 for nodes that are relevant, 0 if not.
+- **_k_** 是 `retrieval_context` 中的第 (i+1) 个节点（若使用 `RetrievedContextData`，相同 `source` 的节点会被合并为一个节点）
+- **_n_** 是 `retrieval_context` 的长度（按 `source` 分组后）
+- **_r<sub>k</sub>_** 是 `retrieval_context` 中第 k 个节点的二元相关性。相关节点 _r<sub>k</sub>_ = 1，否则为 0。
 
 </Info>
 
-The `ContextualPrecisionMetric` first uses an LLM to determine for each node in the `retrieval_context` whether it is relevant to the `input` based on information in the `expected_output`, before calculating the **weighted cumulative precision** as the contextual precision score. The weighted cumulative precision (WCP) is used because it:
+`ContextualPrecisionMetric` 首先用 LLM 依据 `expected_output` 中的信息，判断 `retrieval_context` 中每个节点是否与 `input` 相关，然后计算**加权累积精确率**作为上下文精确率分数。使用加权累积精确率（WCP）是因为它：
 
-- **Emphasizes on Top Results**: WCP places a stronger emphasis on the relevance of top-ranked results. This emphasis is important because LLMs tend to give more attention to earlier nodes in the `retrieval_context` (which may cause downstream hallucination if nodes are ranked incorrectly).
-- **Rewards Relevant Ordering**: WCP can handle varying degrees of relevance (e.g., "highly relevant", "somewhat relevant", "not relevant"). This is in contrast to metrics like precision, which treats all retrieved nodes as equally important.
+- **强调头部结果**：WCP 更强调排名靠前结果的相关性。这一强调很重要，因为 LLM 往往更关注 `retrieval_context` 中较早的节点（若节点排序不当，可能在下游引发幻觉）。
+- **奖励相关排序**：WCP 可以处理不同程度的相关性（例如「高度相关」「 somewhat 相关」「不相关」）。这与把所有检索节点视为同等重要的精确率类指标形成对比。
 
-A higher contextual precision score represents a greater ability of the retrieval system to correctly rank relevant nodes higher in the `retrieval_context`.
+上下文精确率分数越高，代表检索系统把相关节点排在 `retrieval_context` 更靠前位置的能力越强。
 
 ## Customize Your Template
 
-Since `deepeval`'s `ContextualPrecisionMetric` is evaluated by LLM-as-a-judge, you can likely improve your metric accuracy by [overriding `deepeval`'s default prompt templates](/docs/metrics-introduction#customizing-metric-prompts). This is especially helpful if:
+由于 `deepeval` 的 `ContextualPrecisionMetric` 由 LLM-as-a-judge 评估，你可以通过[覆盖 `deepeval` 的默认提示词模板](/docs/metrics-introduction#customizing-metric-prompts)来提升指标准确性。这在以下情况特别有帮助：
 
-- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
-- You want to customize the examples used in the default `ContextualPrecisionTemplate` to better align with your expectations.
+- 你在使用[自定义评估 LLM](/guides/guides-using-custom-llms)，尤其是指令遵循能力较弱的更小模型。
+- 你想自定义默认 `ContextualPrecisionTemplate` 中使用的示例，使其更符合你的预期。
 
 <Tip>
-You can learn what the default `ContextualPrecisionTemplate` looks like [here on GitHub](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_precision/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section above to understand how you can tailor it to your needs.
+默认 `ContextualPrecisionTemplate` 的样子可以在 [GitHub 这里](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_precision/template.py)查看，并请阅读上方的 [How Is It Calculated](#how-is-it-calculated) 一节，了解如何按需裁剪。
 </Tip>
 
-Here's a quick example of how you can override the statement generation step of the `ContextualPrecisionMetric` algorithm:
+下面是一个快速示例，展示如何覆盖 `ContextualPrecisionMetric` 算法中生成陈述的步骤：
 
 <Tabs>
 
@@ -435,7 +433,7 @@ JSON:
 await metric.measure(testCase);
 ```
 
-Each override receives the template's variables as its first argument, and the default renderer as its second, so you can extend a prompt instead of replacing it:
+每个覆盖函数都会收到模板变量作为第一个参数、默认渲染器作为第二个参数，因此你可以在替换之外扩展提示词：
 
 ```typescript
 const metric = new ContextualPrecisionMetric({
@@ -454,15 +452,15 @@ const metric = new ContextualPrecisionMetric({
 
 <AccordionGroup>
 <Accordion title="Does contextual precision care about the order of my retrieved chunks?">
-Yes — ranking is the whole point. A weighted cumulative precision rewards relevant nodes appearing early in the `retrieval_context` and penalizes irrelevant ones ranked ahead. The same chunks in a different order score differently, which is why this metric targets your re-ranker.
+是的——排序正是它的全部意义。加权累积精确率奖励相关节点在 `retrieval_context` 中排在前列，惩罚排在前面却无关的节点。同样的文本块换一种顺序得分就不同，这正是它面向你的重排序器的原因。
 </Accordion>
 <Accordion title="My retrieved chunks are all relevant but precision is still low — why?">
-It asks whether relevant chunks are ranked above irrelevant ones, not just present. Relevant nodes buried beneath noise in the `retrieval_context` drop the score even when everything was retrieved — implicating your re-ranker or top-K ordering.
+它问的是相关文本块是否排在无关块之上，而不只是「存在」。相关节点被埋在 `retrieval_context` 的噪声之下会拉低分数，即使所有内容都被检索到了——问题指向你的重排序器或 top-K 排序。
 </Accordion>
 <Accordion title="Should I use Contextual Precision or Contextual Recall?">
-Use both. Precision asks "are relevant chunks ranked high enough?" (ordering), while [Contextual Recall](/docs/metrics-contextual-recall) asks "did I retrieve everything I needed?" (completeness). High recall with low precision means right chunks, poor ranking.
+两者都用。精确率问「相关块排名够不够高？」（排序问题），而[上下文召回率](/docs/metrics-contextual-recall)问「我需要的是否都检索到了？」（完整性问题）。高召回低精确意味着块找对了但排序差。
 </Accordion>
 <Accordion title="Why does it require an expected output?">
-It's reference-based: the LLM judges each node against the ideal `expected_output` , not the generator's `actual_output` , keeping ranking evaluation honest even when the generator answered poorly. See the [test case docs](/docs/evaluation-test-cases#llm-test-case) .
+它是基于参考的：LLM 依据理想的 `expected_output` 而非生成器的 `actual_output` 来评判每个节点，即使生成器答得不好，排序评估依然保持诚实。见[测试用例文档](/docs/evaluation-test-cases#llm-test-case)。
 </Accordion>
 </AccordionGroup>
