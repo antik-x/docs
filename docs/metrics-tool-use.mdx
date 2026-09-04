@@ -4,19 +4,19 @@ title: Tool Use
 
 **标签**：LLM-as-a-judge · 多轮 · 无参考 · 智能体 · 多模态
 
-The Tool Use metric is a multi-turn agentic metric that evaluates your LLM agent's **tool selection and argument generation** capabilities. It is a self-explaining eval, which means it outputs a reason for its metric score.
+工具使用（tool use）指标是一个多轮智能体指标，评估你的 LLM 智能体的**工具选择与参数生成**能力。它是会自我解释的评估，会输出指标分数的理由。
 
 ## Required Arguments
 
-To use the `ToolUseMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](https://www.deepeval.com/docs/evaluation-multiturn-test-cases):
+要使用 `ToolUseMetric`，你需要在创建 [`ConversationalTestCase`](https://www.deepeval.com/docs/evaluation-multiturn-test-cases) 时提供以下参数：
 
 - `turns`
 
-You can learn more about how it is calculated [here](#how-is-it-calculated).
+其计算方式的更多信息见[这里](#how-is-it-calculated)。
 
 ## Usage
 
-The `ToolUseMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluations of agents.
+`ToolUseMetric()` 可用于智能体的[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
 
 <Tabs>
 
@@ -77,31 +77,31 @@ await evaluate([convoTestCase], [metric]);
 
 <Tab title="Python">
 
-There is **ONE** mandatory and **SEVEN** optional parameters when creating a `ToolUseMetric`:
+创建 `ToolUseMetric` 时有**一个**必填参数和**七个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There is **ONE** mandatory and **SIX** optional parameters when creating a `ToolUseMetric`:
+创建 `ToolUseMetric` 时有**一个**必填参数和**六个**可选参数：
 
 </Tab>
 
 </Tabs>
 
-- `available_tools`: a list of `ToolCall`s that give context on all the tools that were available to your LLM agent. This list is used to evaluate your agent's tool selection capability.
+- `available_tools`：`ToolCall` 列表，提供你的 LLM 智能体可用的全部工具的上下文。该列表用于评估智能体的工具选择能力。
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-a-metric-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 独立运行
 
-You can also run the `ToolUseMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `ToolUseMetric` 作为独立的一次性执行，运行在单个测试用例上：
 
 <Tabs>
 
@@ -130,36 +130,36 @@ console.log(metric.score, metric.reason);
 </Tabs>
 
 <Warning>
-This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告）与全部优化（速度、缓存、计算）。
 </Warning>
 
 ## How Is It Calculated
 
-The `ToolUseMetric` score is determined through the following process:
+`ToolUseMetric` 的分数通过以下流程确定：
 
-1. Compute the **Tool Selection Score** for each unit interaction.
-2. Compute the **Argument Correctness Score** for all unit interactions that include tool calls.
+1. 为每个单元交互计算**工具选择分数**。
+2. 为所有包含工具调用的单元交互计算**参数正确性分数**。
 
 $$
 \text{Tool Use Score} = \min(\text{ToolSelectionScore}, \text{ArgumentCorrectnessScore})
 $$
 
-- The **Tool Selection Score** evaluates whether the agent chose the most appropriate tool for the task among all the available tools.
-- The **Argument Correctness Score** assesses whether the arguments provided in the tool call were accurate and suitable for the task. This score is only considered when a tool call has been made.
+- **工具选择分数**评估智能体是否在所有可用工具中为任务选择了最合适的工具。
+- **参数正确性分数**评估工具调用中提供的参数是否准确、是否适合该任务。只有发生工具调用时才计入该分数。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="How do I check whether my agent called the right tools across a conversation?">
-`ToolUseMetric` evaluates each interaction's tool selection and then the arguments passed, flagging both wrong-tool turns and right-tool-but-wrong-arguments turns.
+`ToolUseMetric` 会评估每次交互的工具选择与传入的参数，同时标出「选错工具」和「工具对但参数错」的轮次。
 </Accordion>
 <Accordion title="Why do I have to pass available tools if the agent already called tools?">
 `available_tools` is the full menu of `ToolCall` s the agent could have used. Without the alternatives, the metric can't tell whether a better tool existed or whether a tool should have been called at all.
 </Accordion>
 <Accordion title="My agent picked the right tool but with wrong arguments — does that fail?">
-Yes. The final score is `min(ToolSelectionScore, ArgumentCorrectnessScore)` , so a perfect tool choice with bad arguments still drags it down. The argument score only applies to turns where a tool was called.
+会。最终分数是 `min(ToolSelectionScore, ArgumentCorrectnessScore)`，因此完美的工具选择配上糟糕的参数依然会拉低分数。参数分数只适用于发生工具调用的轮次。
 </Accordion>
 <Accordion title="Does it catch unnecessary or missing tool calls?">
-Both hurt the **Tool Selection Score**: calling an unneeded tool or skipping a needed one scores as poor selection against `available_tools` . Use `verbose_mode` for per-interaction reasoning.
+两者都会损害**工具选择分数**：调用不需要的工具或漏掉需要的工具，都会被记为对照 `available_tools` 的糟糕选择。用 `verbose_mode` 可查看逐交互的推理。
 </Accordion>
 </AccordionGroup>

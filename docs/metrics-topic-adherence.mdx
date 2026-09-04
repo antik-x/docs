@@ -4,19 +4,19 @@ title: Topic Adherence
 
 **标签**：LLM-as-a-judge · 多轮 · 无参考 · 智能体 · 多模态
 
-The Topic Adherence metric is a multi-turn agentic metric that evaluates whether your **agent has answered questions only if they adhere to relevant topics**. It is a self-explaining eval, which means it outputs a reason for its metric score.
+主题遵循（topic adherence）指标是一个多轮智能体指标，评估你的**智能体是否只回答符合相关主题的问题**。它是会自我解释的评估，会输出指标分数的理由。
 
 ## Required Arguments
 
-To use the `TopicAdherenceMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](https://www.deepeval.com/docs/evaluation-multiturn-test-cases):
+要使用 `TopicAdherenceMetric`，你需要在创建 [`ConversationalTestCase`](https://www.deepeval.com/docs/evaluation-multiturn-test-cases) 时提供以下参数：
 
 - `turns`
 
-You can learn more about how it is calculated [here](#how-is-it-calculated).
+其计算方式的更多信息见[这里](#how-is-it-calculated)。
 
 ## Usage
 
-The `TopicAdherenceMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluations of agents.
+`TopicAdherenceMetric()` 可用于智能体的[端到端](/docs/evaluation-end-to-end-llm-evals)多轮评估：
 
 <Tabs>
 
@@ -74,31 +74,31 @@ await evaluate([convoTestCase], [metric]);
 
 <Tab title="Python">
 
-There is **ONE** mandatory and **SEVEN** optional parameters when creating a `TopicAdherenceMetric`:
+创建 `TopicAdherenceMetric` 时有**一个**必填参数和**七个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There is **ONE** mandatory and **SIX** optional parameters when creating a `TopicAdherenceMetric`:
+创建 `TopicAdherenceMetric` 时有**一个**必填参数和**六个**可选参数：
 
 </Tab>
 
 </Tabs>
 
-- `relevant_topics`: a list of strings that define what topics your LLM agent can answer. Any answers that don't adhere to this topic will penalise the score this metric.
+- `relevant_topics`：字符串列表，定义你的 LLM 智能体可以回答哪些主题。任何偏离这些主题的回答都会惩罚该指标的分数。
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
 - [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-a-metric-in-async) Defaulted to `True`.
+[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
   
 - [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
 - [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
 
 ### 独立运行
 
-You can also run the `TopicAdherenceMetric` on a single test case as a standalone, one-off execution.
+你还可以把 `TopicAdherenceMetric` 作为独立的一次性执行，运行在单个测试用例上：
 
 <Tabs>
 
@@ -127,41 +127,41 @@ console.log(metric.score, metric.reason);
 </Tabs>
 
 <Warning>
-This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告）与全部优化（速度、缓存、计算）。
 </Warning>
 
 ## How Is It Calculated
 
-The `TopicAdherenceMetric` score is calculated through the following process:
+`TopicAdherenceMetric` 的分数通过以下流程计算：
 
-- Find question-answer pairs from the entire conversation, where question is taken from user and answered by the LLM agent.
-- Find the truth table values for all the question-answer pairs.
-    - **True Positives**: Question is relevant and the response correctly answers it.
-    - **True Negatives**: Question is NOT relevant, and the assistant correctly refused to answer.
-    - **False Positives**: Question is NOT relevant, but the assistant still gave an answer.
-    - **False Negatives**: Question is relevant, but the assistant refused or gave an irrelevant response.
+- 从整段对话中找出问答对：问题来自用户，回答来自 LLM 智能体。
+- 为所有问答对求出真值表取值。
+- **真阳性**：问题相关且回答正确。
+- **真阴性**：问题不相关，助手正确拒绝回答。
+- **假阳性**：问题不相关，但助手仍然作答。
+- **假阴性**：问题相关，但助手拒绝回答或给出了无关的回复。
 
-Now, the metric uses the following formula to find the final score:
+随后，指标使用以下公式计算最终分数：
 
 $$
 \text{Topic Adherence Score} = \frac{\text{Number of True Positives and True Negatives}}{\text{Total Number of QA Pairs}}
 $$
 
-The `TopicAdherenceMetric` converts turns into individual unit interactions and iterates over each interaction to find the question-answer pairs separately, which are also evaluated individually for more accurate results.
+`TopicAdherenceMetric` 把轮次转成独立的单元交互，并逐个交互分别找出问答对，同时分别评估每对以获得更准确的结果。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="How do I stop my support bot from drifting off-topic?">
-Define allowed topics in `relevant_topics` and run `TopicAdherenceMetric` . Any turn answering a question outside those topics is penalized, pinpointing where the bot wandered off-script.
+在 `relevant_topics` 中定义允许的主题并运行 `TopicAdherenceMetric`。任何回答主题之外问题的轮次都会被惩罚，精确定位机器人跑偏的位置。
 </Accordion>
 <Accordion title="How are off-topic turns actually scored?">
-Each user question is paired with the agent's answer: answering an off-topic question is a *false positive* (bad), refusing one is a *true negative* (good). The score is the share of true positives and true negatives across all QA pairs.
+每个用户问题与智能体的回答配对：回答离题问题是*假阳性*（坏），拒绝回答是*真阴性*（好）。分数是真阳性与真阴性占全部问答对的比例。
 </Accordion>
 <Accordion title="Will my agent be penalized for refusing irrelevant questions?">
-No — refusing a question outside `relevant_topics` is a true negative that *helps* the score. You're only penalized for answering off-topic questions or refusing on-topic ones.
+不会——拒绝 `relevant_topics` 之外的问题是真阴性，反而*有助*分数。只有回答离题问题、或拒绝相关问题时才会被惩罚。
 </Accordion>
 <Accordion title="What should I put in relevant topics?">
-A list of strings describing the subject areas your agent covers (for example, `"billing"` or `"shipping"` ). Keep them specific but not so narrow that legitimate questions get flagged.
+一组字符串，描述你的智能体覆盖的主题领域（例如 `"billing"` 或 `"shipping"`）。保持具体，但别窄到把合理的问题也标记出来。
 </Accordion>
 </AccordionGroup>

@@ -277,15 +277,15 @@
           },
           {
             "page": "docs/(multi-turn)/metrics-goal-accuracy",
-            "title": "Goal Accuracy"
+            "title": "目标准确率"
           },
           {
             "page": "docs/(multi-turn)/metrics-tool-use",
-            "title": "Tool Use"
+            "title": "工具使用"
           },
           {
             "page": "docs/(multi-turn)/metrics-topic-adherence",
-            "title": "Topic Adherence"
+            "title": "主题遵循"
           },
           {
             "page": "docs/(multi-turn)/metrics-turn-faithfulness",

@@ -69,6 +69,9 @@
     "(agentic)/metrics-plan-quality": "计划质量",
     "(agentic)/metrics-plan-adherence": "计划遵循",
     "(agentic)/metrics-tool-correctness": "工具正确性",
-    "(agentic)/metrics-argument-correctness": "参数正确性"
+    "(agentic)/metrics-argument-correctness": "参数正确性",
+    "(multi-turn)/metrics-goal-accuracy": "目标准确率",
+    "(multi-turn)/metrics-tool-use": "工具使用",
+    "(multi-turn)/metrics-topic-adherence": "主题遵循"
   }
 }

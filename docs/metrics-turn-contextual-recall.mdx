@@ -1,0 +1,183 @@
+---
+title: Turn Contextual Recall
+---
+
+**标签**：LLM-as-a-judge · 多轮 · RAG · 聊天机器人 · 多模态
+
+The turn contextual recall metric is a conversational metric that evaluates whether the retrieval context contains sufficient information to support the expected outcome **throughout a conversation**.
+
+## Required Arguments
+
+To use the `TurnContextualRecallMetric`, you'll have to provide the following arguments when creating a [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases):
+
+- `turns`
+- `expected_outcome`
+
+You must provide the `role`, `content`, and `retrieval_context` for evaluation to happen. Read the [How Is It Calculated](#how-is-it-calculated) section below to learn more.
+
+## Usage
+
+The `TurnContextualRecallMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) multi-turn evaluation:
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import Turn, ConversationalTestCase
+from deepeval.metrics import TurnContextualRecallMetric
+from deepeval import evaluate
+
+content = "We offer a 30-day full refund at no extra cost."
+retrieval_context = [
+    "All customers are eligible for a 30 day full refund at no extra cost."
+]
+
+convo_test_case = ConversationalTestCase(
+    turns=[
+        Turn(role="user", content="What if these shoes don't fit?"),
+        Turn(role="assistant", content=content, retrieval_context=retrieval_context)
+    ],
+    expected_outcome="The chatbot must explain the store policies like refunds, discounts, ..etc.",
+)
+
+metric = TurnContextualRecallMetric(threshold=0.5)
+
+# To run metric as a standalone
+# metric.measure(convo_test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[convo_test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { Turn, ConversationalTestCase } from "deepeval/test-case";
+import { TurnContextualRecallMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const content = "We offer a 30-day full refund at no extra cost.";
+const retrievalContext = [
+  "All customers are eligible for a 30 day full refund at no extra cost.",
+];
+
+const convoTestCase = new ConversationalTestCase({
+  turns: [
+    new Turn({ role: "user", content: "What if these shoes don't fit?" }),
+    new Turn({ role: "assistant", content, retrievalContext }),
+  ],
+  expectedOutcome: "The chatbot must explain the store policies like refunds, discounts, ..etc.",
+});
+
+const metric = new TurnContextualRecallMetric({ threshold: 0.5 });
+
+// To run metric as a standalone
+// await metric.measure(convoTestCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([convoTestCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+There are **EIGHT** optional parameters when creating a `TurnContextualRecallMetric`:
+
+</Tab>
+
+<Tab title="TypeScript">
+
+There are **SEVEN** optional parameters when creating a `TurnContextualRecallMetric`:
+
+</Tab>
+
+</Tabs>
+
+- [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
+[Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+  
+- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [Optional] `window_size`: an integer which defines the size of the sliding window of turns used during evaluation. Defaulted to `10`.
+- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+
+### 独立运行
+
+You can also run the `TurnContextualRecallMetric` on a single test case as a standalone, one-off execution.
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(convo_test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+...
+
+await metric.measure(convoTestCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+The `TurnContextualRecallMetric` score is calculated according to the following equation:
+
+$$
+\text{Turn Contextual Recall} = \frac{\sum \text{Turn Contextual Recall Scores}}{\text{Total Number of Assistant Turns}}
+$$
+
+The `TurnContextualRecallMetric` first constructs a sliding windows of turns. For each window, it:
+
+1. **Breaks down the expected outcome** into individual sentences or statements
+2. **Evaluates each sentence** to determine if it can be attributed to any node in the retrieval context
+3. **Calculates the interaction score** as the ratio of attributable sentences to total sentences
+
+$$
+\text{Contextual Recall} = \frac{\text{Number of Attributable Statements}}{\text{Total Number of Statements}}
+$$
+
+The final score is the average of all recall scores across the conversation. This measures whether your retrieval system is providing sufficient information to generate the expected responses.
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="When should I use TurnContextualRecallMetric instead of the single-turn version?">
+When retrieval feeds a multi-turn `ConversationalTestCase` and you want to confirm each turn retrieved everything needed for the `expected_outcome` . The single-turn [ContextualRecallMetric](/docs/metrics-contextual-recall) checks one query/context pair only.
+</Accordion>
+<Accordion title="Why does recall require expected outcome when relevancy doesn't?">
+Recall is measured against a reference: it breaks the `expected_outcome` into statements and checks how many map to a node in the `retrieval_context` . Without it there's nothing to test completeness against, which is why [relevancy](/docs/metrics-turn-contextual-relevancy) (referenceless) doesn't need it.
+</Accordion>
+<Accordion title="How is recall different from relevancy and precision?">
+Recall measures completeness, [relevancy](/docs/metrics-turn-contextual-relevancy) measures signal vs noise, and [precision](/docs/metrics-turn-contextual-precision) measures ranking.
+</Accordion>
+<Accordion title="My bot missed a detail the user needed — does a low recall confirm it's a retriever problem?">
+Largely, yes. Low recall means the `retrieval_context` never contained the info the `expected_outcome` needed, so the generator never had it. Fix the retriever (chunking, embeddings, top-k) before blaming the LLM.
+</Accordion>
+</AccordionGroup>
