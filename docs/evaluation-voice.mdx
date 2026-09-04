@@ -119,12 +119,12 @@ STT 模型把语音变成文本。在语音模拟中，**STT 模型是 `deepeval
 
 `deepeval` 目前提供以下连接器：
 
-| Connector                | Use it when your agent is...                     | What you provide                                                |
+| 连接器                | 当你的代理是...                     | 你需要提供                                                |
 | ------------------------ | ------------------------------------------------ | --------------------------------------------------------------- |
-| `ElevenLabsConnector`    | an ElevenLabs conversational agent               | Its agent ID and, for a private agent, an API key               |
-| `LiveKitConnector`       | running in a LiveKit room                        | A LiveKit URL, API key, API secret, and optional agent dispatch |
-| `WebSocketConnector`     | exposed through a compatible raw-audio WebSocket | The URL and your message schema                                 |
-| `CallbackVoiceConnector` | callable directly from the same Python process   | A callable that accepts user audio and returns the agent reply  |
+| `ElevenLabsConnector`    | ElevenLabs 会话代理               | 其 agent ID；私有代理还需 API key               |
+| `LiveKitConnector`       | 运行在 LiveKit 房间中                        | LiveKit URL、API key、API secret，以及可选的代理派发 |
+| `WebSocketConnector`     | 通过兼容的原始音频 WebSocket 暴露 | URL 和你的消息结构                                 |
+| `CallbackVoiceConnector` | 可在同一 Python 进程内直接调用   | 接受用户音频并返回代理回复的可调用对象  |
 
 前两个是提供商集成。`WebSocketConnector` 基于配置，因此自定义的 WebSocket 智能体通常不需要新的包装类。`CallbackVoiceConnector` 是进程内选项，在构建或测试流水线时很有用。只有传输方式或消息生命周期不同的智能体才需要自定义 `BaseVoiceConnector`。
 
@@ -132,7 +132,7 @@ STT 模型把语音变成文本。在语音模拟中，**STT 模型是 `deepeval
 
 一个连接器为整段模拟对话持有一个智能体会话。在半双工模式下，它一次一个完整交换地驱动该会话：
 
-| Method            | Responsibility                                                                                                         |
+| 方法            | 职责                                                                                                         |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `connect()`       | 打开并保持一个可用的智能体会话：加入房间或打开套接字、完成认证，并等待音频可以流动。 |
 | `exchange_turn()` | 把用户音频播放给智能体，等待其语音回复，并测量时间。                                           |

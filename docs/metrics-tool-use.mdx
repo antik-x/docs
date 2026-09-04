@@ -154,7 +154,7 @@ $$
 `ToolUseMetric` 会评估每次交互的工具选择与传入的参数，同时标出「选错工具」和「工具对但参数错」的轮次。
 </Accordion>
 <Accordion title="Why do I have to pass available tools if the agent already called tools?">
-`available_tools` is the full menu of `ToolCall` s the agent could have used. Without the alternatives, the metric can't tell whether a better tool existed or whether a tool should have been called at all.
+`available_tools` 是智能体本可以使用的 `ToolCall` 全集。没有这些备选项，指标就无法判断是否存在更好的工具、或某个工具本是否应该被调用。
 </Accordion>
 <Accordion title="My agent picked the right tool but with wrong arguments — does that fail?">
 会。最终分数是 `min(ToolSelectionScore, ArgumentCorrectnessScore)`，因此完美的工具选择配上糟糕的参数依然会拉低分数。参数分数只适用于发生工具调用的轮次。

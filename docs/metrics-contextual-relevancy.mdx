@@ -27,7 +27,7 @@ deepeval recommend metrics
 与 `ContextualPrecisionMetric` 类似，`ContextualRelevancyMetric` 使用你的 RAG 流水线的 `retrieval_context` 进行评估。
 </Note>
 
-Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+请阅读下文 [How Is It Calculated](#how-is-it-calculated) 一节，了解测试用例参数如何用于指标计算。
 
 ## Usage
 
@@ -435,6 +435,6 @@ const metric = new ContextualRelevancyMetric({
 流水线的两端。上下文相关性通过 `retrieval_context` 评判你的检索器，而[答案相关性](/docs/metrics-answer-relevancy)通过 `actual_output` 评判你的生成器。上下文干净但答案跑题指向生成器；上下文嘈杂指向检索器。
 </Accordion>
 <Accordion title="Do I need a ground-truth answer to run it?">
-No. It's referenceless — judging `retrieval_context` purely against the `input` with no `expected_output` , unlike reference-based [Contextual Recall](/docs/metrics-contextual-recall) . That makes it usable on live traffic without labeled data.
+不会。它是无参考的——纯粹基于 `input` 评判 `retrieval_context` ，不需要 `expected_output` ，这与基于参考的 [Contextual Recall](/docs/metrics-contextual-recall) 不同。因此可以在没有标注数据的线上流量上使用。
 </Accordion>
 </AccordionGroup>

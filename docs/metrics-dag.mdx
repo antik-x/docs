@@ -20,13 +20,13 @@ title: DAG (Deep Acyclic Graph)
 
 |                                | `DAGMetric`                                                        | `GEval`                                             |
 | ------------------------------ | ------------------------------------------------------------------ | --------------------------------------------------- |
-| **Rubric structure**           | Explicit tasks, branches, and outcomes                             | One holistic criterion or sequence of steps         |
-| **Score assignment**           | You assign scores to terminal outcomes                             | The evaluation model generates the score            |
-| **Best for**                   | Conditional rules, gates, and known scoring paths                  | Subjective quality that is difficult to enumerate   |
-| **Setup**                      | More involved; requires defining and wiring nodes                  | Simpler; requires criteria or evaluation steps      |
-| **Evaluation model calls**     | One or more focused calls as the graph executes                    | A single metric workflow                            |
-| **Control over score mapping** | High                                                               | Lower                                               |
-| **Decision variability**       | Branch decisions remain LLM-based, but score mapping is controlled | Both the qualitative judgement and score are judged |
+| **评分结构**           | 显式的任务、分支与结果                             | 单一整体标准或步骤序列         |
+| **分数分配**           | 由你为终态结果分配分数                             | 由评估模型生成分数            |
+| **最适用场景**                   | 条件规则、门槛和已知的打分路径                  | 难以逐一列举的主观质量   |
+| **搭建成本**                      | 更复杂；需要定义并连接节点                  | 更简单；只需标准或评估步骤      |
+| **评估模型调用**     | 图执行过程中的一次或多次聚焦调用                    | 单一指标工作流                            |
+| **分数映射控制** | 高                                                               | 较低                                               |
+| **判定波动性**       | 分支判定仍由 LLM 完成，但分数映射是受控的 | 定性判断与分数都交给模型评审 |
 
 当你能把评分规则表达为「缺一项要求立即判负；否则继续评估质量」这类规则时，使用 DAG。当一次整体判断就足够时，使用 `GEval`。
 
@@ -126,10 +126,10 @@ await evaluate([testCase], [metric]);
 
 创建 `DAGMetric` 时有**两个**必填参数和**七个**可选参数：
 
-- `name`: a string representing the metric's name.
-- `dag`: the `DeepAcyclicGraph` to execute.
+- `name`：表示指标名称的字符串。
+- `dag`：要执行的 `DeepAcyclicGraph`。
 - [可选] `threshold`：最低通过分数。也可设为 `None`，以[仅分数模式](/docs/metrics-introduction#metric-thresholds)运行指标。默认为 `0.5`。
-- [Optional] `model`: an OpenAI model name or a [custom evaluation model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+- [可选] `model`：OpenAI 模型名称，或 `DeepEvalBaseLLM` 类型的[自定义评估模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [可选] `include_reason`：是否为最终分数生成理由。默认为 `True`。
 - [可选] `strict_mode`：为 `True` 时把阈值设为 `1`。默认为 `False`。
 - [可选] `async_mode`：`measure()` 是否异步执行图。默认为 `True`。
@@ -143,10 +143,10 @@ await evaluate([testCase], [metric]);
 
 创建 `DAGMetric` 时有**两个**必填参数和**六个**可选参数：
 
-- `name`: a string representing the metric's name.
-- `dag`: the `DeepAcyclicGraph` to execute.
+- `name`：表示指标名称的字符串。
+- `dag`：要执行的 `DeepAcyclicGraph`。
 - [可选] `threshold`：最低通过分数。默认为 `0.5`。
-- [Optional] `model`: an OpenAI model name or a [custom evaluation model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+- [可选] `model`：OpenAI 模型名称，或 `DeepEvalBaseLLM` 类型的[自定义评估模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
 - [可选] `includeReason`：是否为最终分数生成理由。默认为 `true`。
 - [可选] `strictMode`：为 `true` 时把阈值设为 `1`。默认为 `false`。
 - [可选] `verboseMode`：是否打印用于计算分数的节点与结果。默认为 `false`。
@@ -475,7 +475,7 @@ const task = new TaskNode({
 - `instructions`：处理可用输入的指示。
 - `output_label`：向子节点呈现该节点输出时使用的名称。
 - [可选] `evaluation_params`：该节点可用的测试用例参数。
-- [Optional] `label`: a name displayed in verbose logs.
+- [可选] `label`：在详细日志中显示的名称。
 
 两个节点都初始化后，用 `add_node` 把一个任务连接到另一个任务或判断节点。这会添加一条出边，但不定义结果。`TaskNode` 自己无法结束图——只有判断节点定义结果。
 
@@ -540,8 +540,8 @@ const judgement = new BinaryJudgementNode({
 创建 `BinaryJudgementNode` 时有**一个**必填参数和**两个**可选参数：
 
 - `criteria`：评估模型必须回答的是/否问题。
-- [Optional] `evaluation_params`: additional test-case parameters available to the node.
-- [Optional] `label`: a name displayed in verbose logs.
+- [可选] `evaluation_params`：该节点可用的额外测试用例参数。
+- [可选] `label`：在详细日志中显示的名称。
 
 The constructor does not define the branches. Add exactly one `True`（TypeScript 中为 `true`） verdict and one `False`（TypeScript 中为 `false`） verdict afterward:
 
@@ -610,8 +610,8 @@ const judgement = new NonBinaryJudgementNode({
 创建 `NonBinaryJudgementNode` 时有**一个**必填参数和**两个**可选参数：
 
 - `criteria`：评估模型必须回答的分类问题。
-- [Optional] `evaluation_params`: additional test-case parameters available to the node.
-- [Optional] `label`: a name displayed in verbose logs.
+- [可选] `evaluation_params`：该节点可用的额外测试用例参数。
+- [可选] `label`：在详细日志中显示的名称。
 
 构造函数不定义可能的结果。之后至少添加一个唯一字符串判定：
 
@@ -811,7 +811,7 @@ const dag = new DeepAcyclicGraph({ rootNodes: [extract] });
 
 </Tabs>
 
-For a complete runnable example, see the [single-turn walkthrough in the Building a DAG Metric guide](/guides/guides-dag-metric#single-turn-walkthrough).
+完整的可运行示例见[构建 DAG 指标指南中的单轮实战](/guides/guides-dag-metric#single-turn-walkthrough)。
 
 ## FAQs
 

@@ -529,15 +529,15 @@ deepeval test run test_llm.py
 当 [GEval](/docs/metrics-llm-evals) 与 [DAG](/docs/metrics-dag) 不够用时——你需要完全控制打分、完全不想用 LLM（例如 ROUGE 或正则），或想把多个 `deepeval` 指标合成一个分数。
 </Accordion>
 <Accordion title="What exactly must my measure() and a_measure() set?">
-`self.score` and `self.success` (typically `self.success = self.score &gt;= self.threshold` ). Set `self.reason` only with an LLM, and wrap the body in a `try` that assigns `self.error` and re-raises.
+`self.score` 和 `self.success`（通常 `self.success = self.score &gt;= self.threshold` ）。只有使用 LLM 时才设置 `self.reason`，并把函数体包进一个赋值 `self.error` 后重新抛出的 `try`。
 </Accordion>
 <Accordion title="How do I make my metric async-safe if scoring has no async path?">
 复用同步方法：`async def a_measure(self, test_case): return self.measure(test_case)`。对阻塞库没问题；要在 `run_async=True` 下获得真并发，应在 `a_measure()` 内 `await` 真正的异步 LLM 调用。
 </Accordion>
 <Accordion title="Can a custom metric work without an LLM?">
-Yes. The `RougeMetric` example uses `deepeval` 's `Scorer` module. Drop `include_reason` and `evaluation_model` — there's no LLM to generate a reason.
+可以。`RougeMetric` 示例使用了 `deepeval` 的 `Scorer` 模块。去掉 `include_reason` 和 `evaluation_model` 即可——没有 LLM 来生成理由。
 </Accordion>
 <Accordion title="Single-turn or multi-turn — which base class do I inherit?">
-`BaseMetric` for single-turn (takes an `LLMTestCase` ), `BaseConversationalMetric` for multi-turn (takes a `ConversationalTestCase` ). The base class tells `deepeval` which test case to route.
+单轮用 `BaseMetric`（接受 `LLMTestCase` ），多轮用 `BaseConversationalMetric`（接受 `ConversationalTestCase` ）。基类告诉 `deepeval` 应路由哪种测试用例。
 </Accordion>
 </AccordionGroup>

@@ -12,7 +12,7 @@ title: Step Efficiency
 
 ## Usage
 
-To begin, [set up tracing](/docs/evaluation-llm-tracing) and simply supply the `StepEfficiencyMetric()` to your agent's `@observe` tag or in the `evals_iterator` method.
+开始之前，先[设置追踪](/docs/evaluation-llm-tracing)，然后把 `StepEfficiencyMetric()` 提供给你的智能体的 `@observe` 标签或 `evals_iterator` 方法。
 
 <Tabs>
 
@@ -159,7 +159,7 @@ $$
 效率只有对整次运行才有意义，因此它只能用于追踪。你**必须**把 `StepEfficiencyMetric()` 挂到一条追踪上——通过[设置追踪](/docs/evaluation-llm-tracing)或通过 LangChain、OpenAI 等[框架集成](/integrations)。
 </Accordion>
 <Accordion title="Step Efficiency vs Task Completion — doesn't an efficient agent always finish the task?">
-Not necessarily. [Task Completion](/docs/metrics-task-completion) asks if the **outcome** was achieved; Step Efficiency asks if the **path** was lean. An agent can finish via a bloated route or take a tight path that misses the goal — run both.
+不一定。[Task Completion](/docs/metrics-task-completion) 问的是**结果**是否达成；Step Efficiency 问的是**路径**是否精简。智能体可能通过一条臃肿的路线完成任务，也可能走了精简路径却没达成目标——两个都跑。
 </Accordion>
 <Accordion title="Do I define the task for Step Efficiency?">
 不需要——**任务**会自动从追踪中抽取，然后针对它为执行步骤打分。它是无参考的，没有需要标注的预期路径。

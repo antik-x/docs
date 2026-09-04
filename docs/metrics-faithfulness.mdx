@@ -18,7 +18,7 @@ faithfulness（忠实度）指标使用 LLM-as-a-judge，通过评估 `actual_ou
 - `actual_output`
 - `retrieval_context`
 
-Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+请阅读下文 [How Is It Calculated](#how-is-it-calculated) 一节，了解测试用例参数如何用于指标计算。
 
 ## Usage
 
@@ -301,7 +301,7 @@ console.log(metric.score, metric.reason);
 
 ## How Is It Calculated?
 
-The `FaithfulnessMetric` score is calculated according to the following equation:
+`FaithfulnessMetric` 的分数按以下公式计算：
 
 $$
 \text{Faithfulness} = \frac{\text{Number of Truthful Claims}}{\text{Total Number of Claims}}

@@ -280,12 +280,12 @@ const metric = new ConversationalGEval({
 当你的标准跨越整个 `ConversationalTestCase` 时——语气一致性、对早前上下文的记忆、糟糕一轮之后的恢复——就应使用它。普通的 [GEval](/docs/metrics-llm-evals) 只能看到一对 `input` / `actual_output`，无法跨轮次推理。
 </Accordion>
 <Accordion title="Does it score each turn separately or the whole conversation?">
-The whole conversation. It considers the entire `turns` history and returns a single score and reason, not one per turn.
+整段对话。它会考虑完整的 `turns` 历史，返回单一分数和理由，而不是每轮一个。
 </Accordion>
 <Accordion title="Which turn parameters should I put in evaluation params?">
-Only the parameters you want evaluated. Include just the fields your `criteria` / `evaluation_steps` reference (e.g. `MultiTurnParams.TOOLS_CALLED` if it depends on tool usage) — unused params add noise.
+只包含你想评估的参数。只列出 `criteria` / `evaluation_steps` 引用到的字段（例如依赖工具使用时加 `MultiTurnParams.TOOLS_CALLED`）——用不到的参数只会添乱。
 </Accordion>
 <Accordion title="Can I pass an LLMTestCase to ConversationalGEval?">
-No. It operates on a [ConversationalTestCase](/docs/evaluation-multiturn-test-cases) built from `turns` . For single-turn data, use [GEval](/docs/metrics-llm-evals) with an `LLMTestCase` .
+不行。它作用于由 `turns` 构成的 [ConversationalTestCase](/docs/evaluation-multiturn-test-cases) 。单轮数据请使用配合 `LLMTestCase` 的 [GEval](/docs/metrics-llm-evals) 。
 </Accordion>
 </AccordionGroup>

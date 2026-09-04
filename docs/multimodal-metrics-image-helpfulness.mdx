@@ -18,10 +18,10 @@ title: Image Helpfulness
 - `actual_output`
 
 <Note>
-Remember that the `actual_output` of an `LLMTestCase` is a list of strings and `Image` objects. If multiple images are provided in the actual output, The final score will be the average of each image's helpfulness score.
+记住 `LLMTestCase` 的 `actual_output` 是字符串和 `Image` 对象的列表。如果实际输出中提供了多张图片，最终分数将是各图片有帮助度分数的平均值。
 </Note>
 
-The `input` and `actual_output` are required to create an `LLMTestCase` (and hence required by all metrics) even though they might not be used for metric calculation. Read the [How Is It Calculated](#how-is-it-calculated) section below to learn more.
+`input` 和 `actual_output` 是创建 `LLMTestCase` 所必需的（因此也是所有指标必需的），即使它们可能不用于指标计算。更多信息请阅读下文 [How Is It Calculated](#how-is-it-calculated) 一节。
 
 ## Usage
 
@@ -90,7 +90,7 @@ await evaluate([mTestCase], [metric]);
 
 <Tab title="Python">
 
-There are **SIX** optional parameters when creating a `ImageHelpfulnessMetric`:
+创建 `ImageHelpfulnessMetric` 时有**六个**可选参数：
 
 </Tab>
 

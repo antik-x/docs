@@ -19,7 +19,7 @@ title: Agent Loop Detection
 
 ## Usage
 
-To begin, [set up tracing](/docs/evaluation-llm-tracing) and supply the `AgentLoopDetectionMetric()` to your `evals_iterator`.
+开始之前，先[设置追踪](/docs/evaluation-llm-tracing)，并把 `AgentLoopDetectionMetric()` 提供给你的 `evals_iterator`。
 
 ```python
 from deepeval.tracing import observe, update_current_trace
@@ -138,7 +138,7 @@ $$
 
 该子信号把每次工具调用哈希为 `(tool_name, sorted_args)`，并统计每个唯一调用在追踪中出现的次数。只有**完全相同**的名称与参数才计为重复——参数不同的调用（例如改进后的搜索查询）被视为不同调用，永不被惩罚。
 
-| Condition | Score |
+| 条件 | 分数 |
 |---|---|
 | 最大重复次数 < `repetition_threshold` | **1.0** —— 在可接受范围内 |
 | 最大重复次数 ≥ `repetition_threshold` | **0.5** —— 轻微重复循环 |
@@ -153,7 +153,7 @@ $$
 
 取最大值确保无论智能体是逐字重复还是仅仅调换措辞，都能标记停滞。
 
-| Condition | Score |
+| 条件 | 分数 |
 |---|---|
 | 最大相似度 < `similarity_threshold` | **1.0** —— 无停滞 |
 | 最大相似度 ≥ `similarity_threshold` | **0.5** —— 重叠度高，可能正在停滞 |
@@ -167,28 +167,28 @@ $$
 兄弟位置上出现同一工具的顺序重复在这里被刻意**不**标记——那是上文工具调用重复子信号的职责。
 </Note>
 
-| Condition | Score |
+| 条件 | 分数 |
 |---|---|
 | 调用树中无回边 | **1.0** —— 执行图干净 |
 | 发现至少一条回边 | **0.0** —— 检测到环；理由中包含完整的环路径 |
 
 ## Score Interpretation
 
-| Score range | Interpretation |
+| 分数范围 | 解读 |
 |---|---|
 | `1.0` | 执行干净 —— 未检测到循环模式 |
 | `0.5–1.0` | 轻微问题 —— 存在一些重复或重叠；智能体大概率能自行恢复 |
 | `0.0–0.5` | 严重循环 —— 智能体很可能卡住了；建议人工复查 |
 | `0.0` | 关键循环 —— 完全相同的重复调用或真正的调用图环 |
 
-**Example: clean agent**
+**示例：正常智能体**
 ```
 Agent Loop Detection
 Score:  1.0
 Reason: No loop patterns detected.
 ```
 
-**Example: looping agent**
+**示例：循环智能体**
 ```
 Agent Loop Detection
 Score:  0.25
@@ -242,11 +242,11 @@ metric = AgentLoopDetectionMetric(
 
 ### Why no `model` parameter?
 
-This metric is **fully deterministic by design**. Every sub-signal is computed with hashing, set operations, and sequence comparison algorithms — no LLM is needed. This means:
+该指标**设计上完全确定性**。每个子信号都用哈希、集合运算和序列比较算法计算——不需要 LLM。这意味着：
 
-- **Zero cost** — runs in production without API keys or network calls.
-- **Deterministic** — identical traces always produce identical scores (critical for CI/CD gates).
-- **Zero latency** — no LLM round-trip; the metric completes in milliseconds.
+- **零成本** —— 在生产环境运行，无需 API key 或网络调用。
+- **确定性** —— 相同的追踪总是产生相同的分数（对 CI/CD 门禁至关重要）。
+- **零延迟** —— 没有 LLM 往返；指标在毫秒级完成。
 
 未来的 `model` 参数可以为推理停滞子信号启用 LLM-as-judge 模式，捕捉措辞差异巨大但语义相同的输出。这已作为潜在的后续增强被记录。
 
@@ -264,7 +264,7 @@ This metric is **fully deterministic by design**. Every sub-signal is computed w
 
 推理停滞刻意使用**两个**互补信号并取最大值：
 
-| Signal | Catches | Misses |
+| 信号 | 能捕捉 | 会漏掉 |
 |---|---|---|
 | Bigram Jaccard | 字面重复、共享短语模式 | 语序调换 |
 | `SequenceMatcher` 比率 | 语序调换但相似的文本、插入/删除 | 词汇不同但语义相同的文本 |
@@ -275,7 +275,7 @@ This metric is **fully deterministic by design**. Every sub-signal is computed w
 
 <Note>
 
-**Community Metric**
+**社区指标**
 
 `AgentLoopDetectionMetric` 由 [AGeval](https://pypi.org/project/ageval/)（一个面向 LangGraph 智能体的情景式评估框架）的作者 [Jeel Thummar](https://github.com/Jeel3011) 贡献。这里的循环检测模式直接来自 ReAct 与 LangGraph 智能体的生产经验。原始提案与设计讨论见 [issue #2643](https://github.com/confident-ai/deepeval/issues/2643)。
 </Note>

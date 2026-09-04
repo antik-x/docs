@@ -147,6 +147,6 @@ $$
 相关性是对照先前轮次的滑动窗口来判断的，而不只看最后一条消息。一条无视几轮之前建立的上下文的回复会被判为不相关。用 `verbose_mode` 可以看到是哪个窗口拖低了分数。
 </Accordion>
 <Accordion title="What does window size control and when should I change it?">
-`window_size` (default `10` ) sets how many recent turns are bundled per judgment. Lower it when only recent exchanges matter; raise it when older context still counts.
+`window_size`（默认 `10` ）设定每次评判打包多少条最近的轮次。只关心最近的交互时调低它；较早的上下文仍然重要时调高它。
 </Accordion>
 </AccordionGroup>

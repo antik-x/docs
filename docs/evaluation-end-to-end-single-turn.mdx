@@ -8,7 +8,7 @@ title: 单轮端到端评估
 
 运行单轮端到端测试有两种方式：
 
-| Approach                                                                                                                    | When to choose it                                                                                                                                                                             |
+| 方法                                                                                                                    | 何时选择                                                                                                                                                                             |
 | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`dataset.evals_iterator()` 带追踪** **—— 推荐**                        | 你的应用已经（或可以）用[追踪](/docs/evaluation-llm-tracing)埋点。测试用例从追踪自动构建，你在 Confident AI 上免费获得每个测试用例的追踪。 |
 | **`evaluate()`**                                                                                                            | 你无法（或不想）为应用埋点——例如评估已部署系统的 QA 工程师。你预先构建 `LLMTestCase` 并交给 `evaluate()`。                          |
@@ -1824,6 +1824,6 @@ npx deepeval test run llm_app.test.ts
 它们让你随测试运行记录任意设置（如模型名称、提示词模板、temperature），方便你比较哪种配置产出了最好的分数。
 </Accordion>
 <Accordion title="Can my team keep these test runs on the cloud and review results in a UI?">
-End-to-end runs are local-first. When you're logged into [Confident AI](https://www.confident-ai.com) (the platform built by the `deepeval` team), the same run produces a sharable cloud [testing report](https://www.confident-ai.com/docs/llm-evaluation/dashboards/testing-reports) your team can review together, with hyperparameter comparisons and regression tracking over time — no code changes required, and fully optional.
+端到端运行以本地为先。当你登录了 [Confident AI](https://www.confident-ai.com)（`deepeval` 团队打造的平台）后，同一次运行还会生成可分享的云端[测试报告](https://www.confident-ai.com/docs/llm-evaluation/dashboards/testing-reports)，供团队一起评审，支持超参数对比和随时间的回归追踪——无需改代码，且完全可选。
 </Accordion>
 </AccordionGroup>

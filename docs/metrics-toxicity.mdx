@@ -20,11 +20,11 @@ title: Toxicity
 - `input`
 - `actual_output`
 
-Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+请阅读下文 [How Is It Calculated](#how-is-it-calculated) 一节，了解测试用例参数如何用于指标计算。
 
 ## Usage
 
-The `ToxicityMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation:
+可以用 `ToxicityMetric()` 进行[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
 
 <Tabs>
 
@@ -80,13 +80,13 @@ await evaluate([testCase], [metric]);
 
 <Tab title="Python">
 
-There are **SEVEN** optional parameters when creating a `ToxicityMetric`:
+创建 `ToxicityMetric` 时有**七个**可选参数：
 
 </Tab>
 
 <Tab title="TypeScript">
 
-There are **SIX** optional parameters when creating a `ToxicityMetric`:
+创建 `ToxicityMetric` 时有**六个**可选参数：
 
 </Tab>
 
@@ -102,7 +102,7 @@ There are **SIX** optional parameters when creating a `ToxicityMetric`:
 - [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
 
 <Note>
-The score is the share of opinions that are **not** toxic, so 1 means nothing toxic was found and the `threshold` is a minimum, as it is for every other `deepeval` metric.
+分数是**非**有毒观点所占的比例，因此 1 表示没有发现任何有毒内容，`threshold` 是最低要求——与其他所有 `deepeval` 指标一致。
 </Note>
 
 ### 在组件内

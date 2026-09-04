@@ -51,15 +51,15 @@ title: 端到端 LLM 评估
 
 选择与你的应用匹配的分支：
 
-|                             | Single-Turn                                                                    | Multi-Turn                                                                                                                            |
+|                             | 单轮                                                                    | 多轮                                                                                                                            |
 | --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Test case**               | [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases)                    | [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases)                                                                     |
-| **Dataset entry**           | [`Golden`](/docs/evaluation-datasets#what-are-goldens)                         | [`ConversationalGolden`](/docs/evaluation-datasets#what-are-goldens)                                                                  |
+| **测试用例**               | [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-cases)                    | [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases)                                                                     |
+| **数据集条目**           | [`Golden`](/docs/evaluation-datasets#what-are-goldens)                         | [`ConversationalGolden`](/docs/evaluation-datasets#what-are-goldens)                                                                  |
 | **评估什么**                | 一个输入 → 一个输出                                                             | 一段完整对话（`Turn` 序列）                                                                                            |
 | **测试用例如何产生** | 你在每个金标上调用你的应用，并从结果构建测试用例     | [`ConversationSimulator`](/docs/conversation-simulator) 驱动一个合成用户与你的聊天机器人对话，直到场景演绎完毕 |
 | **典型应用**            | 当作黑盒的智能体、RAG / 问答、摘要、分类器、写作助手 | 聊天机器人、客服智能体、多轮助手                                                                                       |
-| **Metric base class**       | `BaseMetric`                                                                   | `BaseConversationalMetric`                                                                                                            |
-| **Walkthrough**             | [Single-Turn E2E Evals →](/docs/evaluation-end-to-end-single-turn)             | [Multi-Turn E2E Evals →](/docs/evaluation-end-to-end-multi-turn)                                                                      |
+| **指标基类**       | `BaseMetric`                                                                   | `BaseConversationalMetric`                                                                                                            |
+| **实战讲解**             | [单轮端到端评估 →](/docs/evaluation-end-to-end-single-turn)             | [多轮端到端评估 →](/docs/evaluation-end-to-end-multi-turn)                                                                      |
 
 两种分支存在于**不同的测试用例类**上，因为评估单元确实不同（一次交换 vs 多次交换），`deepeval` 会拒绝在同一次测试运行中混用它们。
 
@@ -73,7 +73,7 @@ title: 端到端 LLM 评估
 - **基于轨迹** —— 单元是智能体完整的有序执行路径，评估其内部步骤如何协同。
 - **Component-level** — the unit is each `@observe`（TypeScript 中为 `observe()`）'d span. Many test cases per run of your app — one per span you've chosen to grade — each scoring the input → output of _that_ span.
 
-|                              | End-to-End                                                                   | [Trajectory-Based](/docs/evaluation-trajectory-based-llm-evals)                     | [Component-Level](/docs/evaluation-component-level-llm-evals)                              |
+|                              | 端到端                                                                   | [基于轨迹](/docs/evaluation-trajectory-based-llm-evals)                     | [组件级](/docs/evaluation-component-level-llm-evals)                              |
 | ---------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | **你打分的对象**           | 最终的用户可见输出（把系统当作一个黑盒组件）        | 完整有序的决策、工具调用与中间步骤链         | 单个内部 span（检索器、工具调用、子智能体等）                          |
 | **How metrics are attached** | To a test case or as black-box metrics on the trace                          | To the complete trace through `evals_iterator()`     | To each span, via `@observe(metrics=[...])`（TypeScript 中为 `observe({ metrics: [...] })`）    |
@@ -85,7 +85,7 @@ You don't have to choose just one. With the [recommended evals iterator path](/d
 <details>
 <summary><strong>When should you choose end-to-end?</strong></summary>
 
-Choose end-to-end evaluation when:
+在以下情况选择端到端评估：
 
 - 你的 LLM 应用是「扁平」架构，自然适配单个 `LLMTestCase`（当作黑盒的智能体、RAG / 问答、摘要、单次分类器、写作助手等）。
 - 你的应用是多轮的（聊天机器人、客服智能体），而你想为整段对话打分而不是每一步。
@@ -99,7 +99,7 @@ Choose end-to-end evaluation when:
 
 单轮（以及 `evaluate()` 的多轮）都给你两种等价的代码路径：
 
-| Approach                                                                                                                       | What it looks like                                                                                                                                                                             | When to choose it                                                                                                                                          |
+| 方法                                                                                                                       | 具体形态                                                                                                                                                                             | 何时选择                                                                                                                                          |
 | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`evaluate()`**                                                                                                               | 预先构建 `LLMTestCase`（或 `ConversationalTestCase`）列表，交给单次 `evaluate()` 调用。                                       | 你想要一个不依赖追踪的自包含脚本。                                                                                               |
 | **`dataset.evals_iterator()` with tracing** **— recommended (single-turn only)** | Instrument your app with `@observe`（TypeScript 中为 `observe()`）, then loop over goldens with the iterator, passing `metrics=[...]`（TypeScript 中为 `metrics: [...]`）. `deepeval` builds the test cases from the captured trace. | Your app is (or will be) instrumented with [tracing](/docs/evaluation-llm-tracing). You also get a full per-test-case trace view on Confident AI for free. |

@@ -575,7 +575,7 @@ const llmApp = observe({
 
 `update_current_trace` 与 `update_current_span` 接受同一组 `LLMTestCase` 参数，以关键字参数的形式展开。名称与 [`LLMTestCase`](/docs/evaluation-test-cases) 一一对应——唯一改名的是 `actual_output`，在追踪/span 上变为简单的 `output`（仍是同一个字段，只是更短）。
 
-| `LLMTestCase` parameter | `update_current_trace` / `update_current_span` |
+| `LLMTestCase` 参数 | `update_current_trace` / `update_current_span` |
 | ----------------------- | ---------------------------------------------- |
 | `input`                 | `input`                                        |
 | `actual_output`         | `output`                                       |
@@ -644,13 +644,13 @@ Span 名称默认为它装饰的函数名，通常已足够描述——但当函
 
 有四种内置类型外加一个自定义回退。每种类型接受几个类型专属的关键字参数：
 
-| `type`                  | Purpose                              | Type-specific kwargs                                                                                                                  |
+| `type`                  | 用途                              | 类型专属 kwargs                                                                                                                  |
 | ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `"llm"`                 | A call to a language model           | `model`, `cost_per_input_token`, `cost_per_output_token` (decorator); `input_token_count`, `output_token_count` via `update_llm_span` |
-| `"retriever"`           | Fetches chunks from a vector store   | `embedder` (decorator); `top_k`, `chunk_size` via `update_retriever_span`                                                             |
-| `"tool"`                | A function the LLM/agent invokes     | `description`                                                                                                                         |
-| `"agent"`               | An autonomous decision-making step   | `available_tools`, `handoff_agents`                                                                                                   |
-| anything else (default) | Custom — grouping or general-purpose | —                                                                                                                                     |
+| `"llm"`                 | 对语言模型的一次调用           | `model`、`cost_per_input_token`、`cost_per_output_token`（装饰器）；通过 `update_llm_span` 传入 `input_token_count`、`output_token_count` |
+| `"retriever"`           | 从向量存储获取分块   | `embedder`（装饰器）；通过 `update_retriever_span` 传入 `top_k`、`chunk_size`                                                             |
+| `"tool"`                | LLM/智能体调用的函数     | `description`                                                                                                                         |
+| `"agent"`               | 自主决策步骤   | `available_tools`、`handoff_agents`                                                                                                   |
+| 其他任何值（默认） | 自定义——分组或通用用途 | —                                                                                                                                     |
 
 <Tabs>
 

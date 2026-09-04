@@ -143,9 +143,9 @@ DeepEval 的三个特性使它成为编码智能体 uniquely 出色的信号源�
 
 构建阶段的好提示词：
 
-- _"Run `deepeval test run tests/evals/` and fix the lowest-scoring metric. Don't change thresholds. Re-run to confirm."_
-- _"The Faithfulness metric is failing on cases 3, 7, and 12. Open the retriever span for each, find the common pattern, and patch the retriever — not the metric."_
-- _"Run 5 rounds of the iteration loop. Each round: run evals, pick one failing metric, edit the smallest thing that could fix it, re-run, summarize what changed."_
+- _"运行 `deepeval test run tests/evals/`，修复得分最低的指标。不要改阈值。重新运行确认。"_
+- _"Faithfulness 指标在第 3、7、12 个用例上失败了。逐个打开它们的检索器 span，找出共同模式，然后修补检索器——而不是改指标。"_
+- _"运行 5 轮迭代循环。每轮：跑评估，选一个失败的指标，改那个最可能修复它的最小地方，重新运行，总结变化。"_
 
 最后一条提示词与 skill 强制执行的迭代循环直接对应。装好 skill 后，_"Use DeepEval to fix the refund agent — run 5 rounds"_ 就够了。
 

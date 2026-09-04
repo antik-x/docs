@@ -40,11 +40,11 @@ evaluate(test_cases=test_cases, metrics=[metric])
 
 创建 `VoiceConsistencyMetric` 时有**五个**可选参数：
 
-- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
-- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
-- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
-- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+- [可选] `threshold`：表示最低通过分数的数值。设为 `None` 可让指标以[仅分数模式](/docs/metrics-introduction#metric-thresholds)运行。默认为 `0.5`。
+- [可选] `include_reason`：布尔值，设为 `True` 时在结果中包含评估分数摘要。默认为 `True`。
+- [可选] `strict_mode`：布尔值，设为 `True` 时要求满分。任何低于 1 的分数都记为 0，且阈值被设为 1。默认为 `False`。
+- [可选] `verbose_mode`：布尔值，设为 `True` 时在详细指标日志中包含分数分解。默认为 `False`。
+- [可选] `flaky`：布尔值，设为 `True` 时[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`。
 
 每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
 

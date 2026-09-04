@@ -166,6 +166,6 @@ $$
 忠实度奖励的是以 `retrieval_context` 为依据的声明，而不是碰巧为真的声明——正确但未出现在检索内容中的事实也算不忠实。用 `verbose_mode` 检查逐声明的判定，并尝试 `penalize_ambiguous_claims` 处理含糊声明。
 </Accordion>
 <Accordion title="How do window size and truths extraction limit affect long conversations?">
-`window_size` (default `10` ) groups turns per evaluation; `truths_extraction_limit` caps truths pulled from each document. Tune them together when long conversations make scoring slow or noisy.
+`window_size`（默认 `10` ）控制每次评估聚合多少轮；`truths_extraction_limit` 限制从每份文档抽取的真相数。当长对话让打分变慢或变噪时，把两者放在一起调。
 </Accordion>
 </AccordionGroup>

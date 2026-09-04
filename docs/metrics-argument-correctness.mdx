@@ -18,7 +18,7 @@ title: Argument Correctness
 - `actual_output`
 - `tools_called`
 
-Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+请阅读下文 [How Is It Calculated](#how-is-it-calculated) 一节，了解测试用例参数如何用于指标计算。
 
 ## Usage
 
@@ -284,7 +284,7 @@ await metric.measure(testCase);
 不需要——它是无参考的。在 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 上只需提供 `input`、`actual_output` 与 `tools_called`。由 LLM 判断每次调用的参数是否符合输入。
 </Accordion>
 <Accordion title="Tool Correctness vs Argument Correctness — right tool vs right inputs?">
-Exactly. [Tool Correctness](/docs/metrics-tool-correctness) checks "right tools?" deterministically against `expected_tools` ; Argument Correctness checks "right inputs?" via an LLM. Use both to verify selection and arguments.
+正是。[Tool Correctness](/docs/metrics-tool-correctness) 基于 `expected_tools` 确定性地检查"工具选对了吗？"；Argument Correctness 通过 LLM 检查"参数传对了吗？"。两者结合使用，同时验证工具选择与参数。
 </Accordion>
 <Accordion title="Is Argument Correctness deterministic or LLM-judged?">
 由 LLM 评判：正确输入参数数 ÷ 工具调用总数，正确与否由 LLM 决定。要对照预期输入做确定性比较，请使用带 `ToolCallParams.INPUT_PARAMETERS` 的[工具正确性](/docs/metrics-tool-correctness)。

@@ -168,7 +168,7 @@ evaluate(
 
 ### How do I continuously evaluate my LLM app in production?
 
-Set up [LLM tracing](/docs/evaluation-llm-tracing) with `deepeval`'s `@observe` decorator (or one-line integrations) and connect to [Confident AI](https://www.confident-ai.com/docs/llm-tracing/introduction). Once instrumented, every trace, span, and thread flowing through your app can be **automatically evaluated against your chosen metrics in real-time** — no manual test runs needed.
+用 `deepeval` 的 `@observe` 装饰器（或一行式集成）设置 [LLM 追踪](/docs/evaluation-llm-tracing)，并连接到 [Confident AI](https://www.confident-ai.com/docs/llm-tracing/introduction)。完成插桩后，流经你应用的每条追踪、span 和线程都可以**实时地自动用你选择的指标进行评估**——无需手动运行测试。
 
 这意味着你可以在生产中即时发现回归、幻觉与质量退化，而不是事后才发现。Confident AI 支持在三个层级进行评估：
 
@@ -188,7 +188,7 @@ Set up [LLM tracing](/docs/evaluation-llm-tracing) with `deepeval`'s `@observe` 
 
 入门很简单。Confident AI 为你已在使用的框架提供**一行集成**——OpenAI、LangChain、LangGraph、Pydantic AI、Vercel AI SDK 等，并为任何语言（Python、TypeScript、Go、Ruby、C#）提供完整的 **OpenTelemetry（OTEL）支持**。你不需要重写任何东西：
 
-| Approach                  | Best For                                                                       |
+| 方法                  | 最适合                                                                       |
 | ------------------------- | ------------------------------------------------------------------------------ |
 | **`@observe` 装饰器** | 完全控制 span、属性和追踪结构 |
 | **一行集成** | 自动埋点 OpenAI、LangChain、LangGraph、Pydantic AI、Vercel AI SDK 等 |
@@ -368,7 +368,7 @@ metric = AnswerRelevancyMetric(evaluation_template=MyTemplate)
 
 ### What is Confident AI and how does it relate to `deepeval`?
 
-[Confident AI](https://confident-ai.com) is an AI quality platform with observability, evals, and monitoring. `deepeval` and [DeepTeam](https://trydeepteam.com) are standalone open-source frameworks that **integrate natively with Confident AI** via APIs, so that evaluation results, red teaming assessments, and traces can flow into the platform if you want them to.
+[Confident AI](https://confident-ai.com) 是一个集可观测性、评估和监控于一体的 AI 质量平台。`deepeval` 和 [DeepTeam](https://trydeepteam.com) 是独立的开源框架，通过 API **与 Confident AI 原生集成**，如果你愿意，评估结果、红队评估和追踪都可以流入该平台。
 
 但 Confident AI **不仅限于这些开源包**。它还有自己的 TypeScript SDK、OpenTelemetry 支持、第三方集成和独立 API。你可以完全脱离 `deepeval` 或 `deepteam` 使用 Confident AI，也可以脱离 Confident AI 使用 `deepeval` 或 `deepteam`。
 
@@ -406,7 +406,7 @@ export CONFIDENT_API_KEY="confident_us_..."
 
 ### What is DeepTeam?
 
-[DeepTeam](https://www.trydeepteam.com/docs/getting-started) is an open-source framework for **red teaming LLM systems**. While `deepeval` focuses on evaluation (correctness, relevancy, faithfulness, etc.), DeepTeam is dedicated to **security and safety testing**. Like `deepeval`, it also serves as an SDK for Confident AI — red teaming results are automatically uploaded to the platform.
+[DeepTeam](https://www.trydeepteam.com/docs/getting-started) 是一个用于 **LLM 系统红队测试**的开源框架。`deepeval` 专注于评估（正确性、相关性、忠实度等），而 DeepTeam 专注于**安全与稳健性测试**。与 `deepeval` 一样，它也可以作为 Confident AI 的 SDK——红队测试结果会自动上传到平台。
 
 DeepTeam 让你可以：
 
@@ -433,9 +433,9 @@ red_team(
 
 可以这样理解：
 
-- **[Confident AI](https://confident-ai.com)** is the AI quality platform — observability, evals, monitoring, red teaming, and collaboration all live here.
-- **[`deepeval`](https://github.com/confident-ai/deepeval)** is a standalone open-source LLM evaluation framework that integrates natively with Confident AI.
-- **[DeepTeam](https://trydeepteam.com)** is a standalone open-source LLM red teaming framework that also integrates natively with Confident AI.
+- **[Confident AI](https://confident-ai.com)** 是 AI 质量平台——可观测性、评估、监控、红队测试和协作都在这里。
+- **[`deepeval`](https://github.com/confident-ai/deepeval)** 是一个独立的开源 LLM 评估框架，与 Confident AI 原生集成。
+- **[DeepTeam](https://trydeepteam.com)** 是一个独立的开源 LLM 红队测试框架，同样与 Confident AI 原生集成。
 
 每个都可以独立使用——你可以完全在本地使用 `deepeval` 或 DeepTeam 而不碰 Confident AI。但连接后，一切都会汇入同一个平台。你也可以通过 TypeScript SDK、OpenTelemetry 或直接 API 集成单独使用 Confident AI，而不需要任何开源包。
 
