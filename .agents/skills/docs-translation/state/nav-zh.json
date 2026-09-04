@@ -76,6 +76,13 @@
     "(multi-turn)/metrics-turn-faithfulness": "轮次忠实度",
     "(multi-turn)/metrics-turn-contextual-precision": "轮次上下文精确率",
     "(multi-turn)/metrics-turn-contextual-recall": "轮次上下文召回率",
-    "(multi-turn)/metrics-turn-contextual-relevancy": "轮次上下文相关性"
+    "(multi-turn)/metrics-turn-contextual-relevancy": "轮次上下文相关性",
+    "(voice)/metrics-voice-naturalness": "语音自然度",
+    "(voice)/metrics-speech-intelligibility": "语音可懂度",
+    "(voice)/metrics-voice-consistency": "语音一致性",
+    "(voice)/metrics-audio-integrity": "音频完整性",
+    "(voice)/metrics-voice-reliability": "语音可靠性",
+    "(voice)/metrics-turn-taking-naturalness": "轮次切换自然度",
+    "(voice)/metrics-agent-responsiveness": "智能体响应性"
   }
 }

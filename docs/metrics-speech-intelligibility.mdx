@@ -1,0 +1,116 @@
+---
+title: Speech Intelligibility
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+语音可懂度（speech intelligibility）指标衡量你的语音智能体被**听清与听懂**的难易程度。它分析每条助手轮次的音频，返回 0 到 1 之间的分数，分数越高代表语音更干净、更响亮、更好听。
+
+<Note>
+`SpeechIntelligibilityMetric` 评的是信号，不是词语。它回答「听真能否听清？」——而不是「回复是否正确？」。请把它与 `TurnRelevancyMetric` 等转写指标搭配，覆盖同一轮次的内容侧。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import SpeechIntelligibilityMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user asks for the store's opening hours on a public holiday.",
+    expected_outcome="The agent states the holiday opening hours.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = SpeechIntelligibilityMetric(threshold=0.7)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `SpeechIntelligibilityMetric` 时有**五个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
+- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
+- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
+- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+
+Every voice metric records what it measured on `score_breakdown`. Read it after a standalone `measure()` call, or turn on `verbose_mode` to have it printed during an `evaluate()` run:
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.86
+print(metric.score_breakdown)
+```
+
+For `SpeechIntelligibilityMetric` the breakdown is one entry per assistant turn:
+
+```python
+{
+    "eligible_turns": 2,
+    "turns": [
+        {
+            "turn": 1,
+            "score": 0.86,
+            "estimated_snr_db": 24.1,
+            "rms_dbfs": -21.4,
+            "clipping_fraction": 0.0,
+            "dropout_events": 0,
+        }
+    ],
+}
+```
+
+`turn` counts assistant turns, so `1` is your agent's first reply.
+
+## How Is It Calculated?
+
+`SpeechIntelligibilityMetric` 只评估助手轮次。对每段可解码的助手音频，它把片段解码为单声道 PCM 采样，并将四个加权分量合成为轮次分数：
+
+$$
+\text{Speech Intelligibility} = 0.4 \times \text{SNR} + 0.25 \times \text{Volume} + 0.2 \times \text{Clipping} + 0.15 \times \text{Dropouts}
+$$
+
+每个分量本身也被限制在 0 到 1 之间：
+
+- **信噪比**：从估计信噪比 3 dB 时的 0 升到 25 dB 时的 1。
+- **音量**：在片段平均 -20 dBFS 时达到峰值，向两侧递减——过轻和过爆都会被罚。
+- **削波**：一旦约 3.3% 的采样被削波即降为 0。
+- **掉字**：每出现一次语音中段短暂静默扣 0.12，约九次后归 0。
+
+对话分数是所有符合条件的助手轮次分数的均值。
+
+若某条助手轮次没有音频，指标会跳过该轮次。若没有任何助手轮次包含可解码音频，指标不返回分数并把评估标记为跳过。
+
+<Tip>
+分数低而信噪比正常，几乎一定是音量问题：先看明细中的 `rms_dbfs`，再去排查智能体的 TTS 设置。
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="它与语音自然度有何不同？">
+可懂度问语音是否*听得见*——信号电平、噪声、削波、掉字。自然度问它听起来是否*像人*——节奏、音高变化、音频重复。一个机械但完全干净的语音在本指标得分高，而在[语音自然度](/docs/metrics-voice-naturalness)上得分低。
+</Accordion>
+<Accordion title="该指标会调用 LLM 或外部语音模型吗？">
+不会。打分是确定性的，在本地对音频采样运行，没有模型或 token 成本。
+</Accordion>
+<Accordion title="需要转写文本吗？">
+不需要。只分析音频，因此即使轮次的 `content` 为空，本指标也能工作。
+</Accordion>
+<Accordion title="该指标会评估用户音频吗？">
+不会。只有 `role` 为 `"assistant"` 的轮次会计入分数。模拟来电者的音频来自你自己的 TTS 模型，为它打分测的是你的测试装置而不是智能体。
+</Accordion>
+</AccordionGroup>

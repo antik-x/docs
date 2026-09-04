@@ -1,0 +1,115 @@
+---
+title: Voice Consistency
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+语音一致性（voice consistency）指标衡量你的语音智能体**在整个通话中听起来是否像同一位说话者**。它跨轮次比较助手音频，返回 0 到 1 之间的分数，分数越高代表声音越稳定。
+
+<Note>
+这是唯一一个天然面向多轮的语音指标：它不评价任何单个片段，只评价片段之间的差异。它至少需要两段可解码的助手音频才能产出分数。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import VoiceConsistencyMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user books a table, then changes the party size twice.",
+    expected_outcome="The agent confirms the final party size.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = VoiceConsistencyMetric(threshold=0.7)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `VoiceConsistencyMetric` 时有**五个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
+- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
+- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
+- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+
+每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.91
+print(metric.score_breakdown)
+```
+
+对 `VoiceConsistencyMetric` 而言，明细包含三个分量分数以及计算它们所用的逐轮测量值：
+
+```python
+{
+    "eligible_turns": 3,
+    "pitch_consistency": 0.94,
+    "loudness_consistency": 0.88,
+    "spectral_consistency": 0.91,
+    "turns": [
+        {
+            "turn": 1,
+            "rms_dbfs": -21.4,
+            "pitch_mean_hz": 118.2,
+            "zero_crossing_rate": 0.061,
+        }
+    ],
+}
+```
+
+其中 `turn` 是该轮次在对话中从零开始的位置（也计入用户轮次）——不是助手回复的序号。
+
+## How Is It Calculated?
+
+`VoiceConsistencyMetric` 在每段可解码的助手音频上测量三个属性——平均音高、响度（`rms_dbfs`）与音色（过零率），并为三者跨通话的变化程度打分：
+
+$$
+\text{Voice Consistency} = 0.4 \times \text{Pitch} + 0.35 \times \text{Loudness} + 0.25 \times \text{Timbre}
+$$
+
+每个分量都是以总体标准差度量的离散程度，转化为分数并限制在 0 到 1 之间：
+
+- **音高**与**音色**以自身均值为参照打分，因此与量纲无关。
+- **响度**对照固定的 12 dB 离散度打分，因此回复之间相差 12 dB 或以上的通话在该分量得 0 分。
+
+当可用音高估计少于两个轮次时，`pitch_consistency` 为 `None`，其余两个分量按 0.6 响度 / 0.4 音色重新加权。
+
+当包含可解码音频的助手轮次少于两段时，指标不返回分数并把评估标记为跳过。
+
+<Tip>
+这里分数骤降通常意味着通话中途发生了变化而非渐变：TTS 出错后启用了备用声音、某轮由不同模型处理，或移交给另一个智能体。比较逐轮的 `rms_dbfs` 与 `pitch_mean_hz` 值即可定位。
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="为什么指标跳过了我的测试用例？">
+它至少需要两段带可解码音频的助手轮次。单次交换的通话、只有一条回复带音频的通话都会被跳过而不打分——单个样本谈不上一致性测量。
+</Accordion>
+<Accordion title="情感丰富的智能体因改变声音而被扣分吗？">
+会一些，而且是故意的。该指标无法区分有意的变化与不稳定的声音。如果你的智能体被设计为会切换语气，请把它当作针对自身基线的回归信号，而不是期待接近满分的分数。
+</Accordion>
+<Accordion title="该指标会调用 LLM 或外部语音模型吗？">
+不会。打分是确定性的，在本地对音频采样运行，没有模型或 token 成本。
+</Accordion>
+<Accordion title="它会与参考声音比较吗？">
+不会。它是无参考的——轮次之间相互比较，而不是对照目标声音，因此整段通话一致使用错误声音的智能体依然会得高分。
+</Accordion>
+</AccordionGroup>

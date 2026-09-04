@@ -310,31 +310,31 @@
         "pages": [
           {
             "page": "docs/(voice)/metrics-voice-naturalness",
-            "title": "Voice Naturalness"
+            "title": "语音自然度"
           },
           {
             "page": "docs/(voice)/metrics-speech-intelligibility",
-            "title": "Speech Intelligibility"
+            "title": "语音可懂度"
           },
           {
             "page": "docs/(voice)/metrics-voice-consistency",
-            "title": "Voice Consistency"
+            "title": "语音一致性"
           },
           {
             "page": "docs/(voice)/metrics-turn-taking-naturalness",
-            "title": "Turn-Taking Naturalness"
+            "title": "轮次切换自然度"
           },
           {
             "page": "docs/(voice)/metrics-agent-responsiveness",
-            "title": "Agent Responsiveness"
+            "title": "智能体响应性"
           },
           {
             "page": "docs/(voice)/metrics-audio-integrity",
-            "title": "Audio Integrity"
+            "title": "音频完整性"
           },
           {
             "page": "docs/(voice)/metrics-voice-reliability",
-            "title": "Voice Reliability"
+            "title": "语音可靠性"
           }
         ]
       },

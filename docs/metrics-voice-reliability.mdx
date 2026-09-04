@@ -1,0 +1,109 @@
+---
+title: Voice Reliability
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+语音可靠性（voice reliability）指标是一次通话的**运维摘要**：智能体是否应答、音频是否完好送达。它把[智能体响应性](/docs/metrics-agent-responsiveness)与[音频完整性](/docs/metrics-audio-integrity)合成为 0 到 1 之间的单一分数。
+
+<Note>
+把它作为 CI 运行把关的唯一数字。它回答的是「这通电话能不能用？」而不是「这通电话好不好？」——质量请看[语音自然度](/docs/metrics-voice-naturalness)、[语音可懂度](/docs/metrics-speech-intelligibility)和你常用的多轮指标。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import VoiceReliabilityMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user calls to cancel an appointment and reschedule it.",
+    expected_outcome="The agent cancels the old appointment and books a new one.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = VoiceReliabilityMetric(threshold=0.9)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `VoiceReliabilityMetric` 时有**五个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
+- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
+- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
+- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+
+每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.94
+print(metric.score_breakdown)
+```
+
+对 `VoiceReliabilityMetric` 而言，明细嵌套了两半内容，各自带有分数、严重标志与事件列表，因此无需重跑单个指标即可追溯故障：
+
+```python
+{
+    "critical_failure": False,
+    "responsiveness": {
+        "score": 1.0,
+        "critical_failure": False,
+        "events": [],
+    },
+    "audio_integrity": {
+        "score": 0.88,
+        "critical_failure": False,
+        "events": [
+            {"type": "abrupt_cutoff", "turn": 3, "critical": False},
+        ],
+    },
+}
+```
+
+## How Is It Calculated?
+
+`VoiceReliabilityMetric` 运行响应性与音频完整性检查并对二者平均：
+
+$$
+\text{Voice Reliability} = 0.5 \times \text{Responsiveness} + 0.5 \times \text{Audio Integrity}
+$$
+
+**任何一侧出现严重故障都会把分数强制归零**，无论另一半表现多好。缺少智能体音频、无法解码的片段、严重循环的缓冲、从未到来的回复，或以挂断、错误、空闲超时结束的通话，都是灾难性的——把它们与干净的另一半平均，恰恰会掩盖本指标要暴露的故障。
+
+两半内容与 `AgentResponsivenessMetric`、`AudioIntegrityMetric` 使用的检测器完全相同，因此各事件含义与代价由那些页面记录。
+
+<Tip>
+请把本指标与一个质量指标（如 [`VoiceNaturalnessMetric`](/docs/metrics-voice-naturalness) 或 [`SpeechIntelligibilityMetric`](/docs/metrics-speech-intelligibility)）搭配运行，而不是替代它。这里的 1 分只表示每条回复都带着可用音频送达——它不说明这些回复是否有用、自然或正确。
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="为什么我的分数是精确的 0 而不是介于中间？">
+检测到了严重故障。查看明细两半的 `critical_failure` 确定来自哪一侧，再读取该侧的 `events` 列表查看具体故障。
+</Accordion>
+<Accordion title="我需要在运行它的同时也运行它组合的那两个指标吗？">
+通常不必都跑。以本指标把关，失败时读取嵌套明细——它报告的事件与单个指标给出的完全一致。想对两半设置不同阈值时再分开运行。
+</Accordion>
+<Accordion title="该指标会调用 LLM 或外部语音模型吗？">
+不会。两半都是本地运行的确定性检测器，没有模型或 token 成本。
+</Accordion>
+<Accordion title="会因为缺少可用音频而跳过本指标吗？">
+不会。它总是返回分数——一段完全没有助手轮次的对话属于严重的音频完整性故障，得 0 分，而不是作为不可评估被跳过。只有 [VoiceNaturalnessMetric](/docs/metrics-voice-naturalness)、[SpeechIntelligibilityMetric](/docs/metrics-speech-intelligibility)、[VoiceConsistencyMetric](/docs/metrics-voice-consistency) 与 [TurnTakingNaturalnessMetric](/docs/metrics-turn-taking-naturalness) 会跳过测试用例，且仅当其中没有任何可测内容时。
+</Accordion>
+</AccordionGroup>

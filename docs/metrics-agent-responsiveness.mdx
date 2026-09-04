@@ -1,0 +1,109 @@
+---
+title: Agent Responsiveness
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+智能体响应性（agent responsiveness）指标检查你的语音智能体**在被搭话时是否应答**。它按顺序遍历对话，寻找来电者不得不重复的轮次、从未到来的回复，以及结束得很糟的通话，返回 0 到 1 之间的分数。
+
+<Note>
+这是唯一读取对话形态而非音频内容的语音指标。来电者不得不问「喂？你还在吗？」正是它要捕捉的故障——基于转写的指标会把这种对话评为完美相关的交流。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import AgentResponsivenessMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user asks a question that requires the agent to look up an account.",
+    expected_outcome="The agent answers without the user having to repeat themselves.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = AgentResponsivenessMetric(threshold=0.8)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `AgentResponsivenessMetric` 时有**五个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
+- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
+- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
+- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+
+每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.75
+print(metric.score_breakdown)
+```
+
+对 `AgentResponsivenessMetric` 而言，明细是检测到的事件列表：
+
+```python
+{
+    "critical_failure": False,
+    "events": [
+        {"type": "user_reprompted", "turn": 2, "critical": False},
+    ],
+}
+```
+
+`turn` 是问题轮次在对话中从零开始的位置。`events` 列表为空表示每次被搭话智能体都应答了。
+
+## How Is It Calculated?
+
+`AgentResponsivenessMetric` 查看每条**欠一次回复**的用户轮次，并检查接下来发生了什么。读起来像告别的用户轮次——以 "bye"、"goodbye"、"thanks"、"thank you" 或 "that's all" 结尾——不欠任何回复，因此以寒暄结束的通话不会被记为失败。
+
+其余每个用户轮次都会产生以下结果之一：
+
+| Event                     | Detected when                                                  | Critical |
+| ------------------------- | --------------------------------------------------------------- | -------- |
+| `agent_failed_to_respond` | 用户轮次是这通电话的最后一轮。                     | 是 |
+| `assistant_audio_missing` | 智能体回复了，但该轮次没有音频。                   | 是 |
+| `user_reprompted`         | 下一轮又是用户轮次——来电者说了两次。               | 否 |
+| `unexpected_end`          | 通话的 `end_reason` 元数据是挂断、错误或超时。     | 是 |
+
+任何严重事件都会把分数强制归 0。否则每次重复提示扣 0.25，单通电话出现四次重复提示就归 0：
+
+$$
+\text{Agent Responsiveness} = \max \left( 0,\ 1 - 0.25 \times \text{reprompts} \right)
+$$
+
+<Tip>
+`unexpected_end` 从测试用例的 `metadata` 中读取（字段为 `end_reason` 或 `endReason`），在 `AGENT_HANGUP`、`ERROR` 与 `IDLE_TIMEOUT` 时触发。如果你用生产通话组装测试用例、且平台会报告通话结束原因，请自行设置该字段。
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="该指标衡量的是响应延迟吗？">
+不——它衡量的是到底有没有响应。延迟由 [TurnTakingNaturalnessMetric](/docs/metrics-turn-taking-naturalness) 打分（它读取每段音频的时间）；原始数值在每个助手轮次的 `latency_ms` 上。
+</Accordion>
+<Accordion title="我的智能体停下来调用工具，却被标记为无响应。">
+那是轮次结束检测把回复截断了，不是指标误读。在连接器上使用 `turn_detection="patient"`，让模拟器等待回复中段的停顿，而不是收回话语权并重新提示。
+</Accordion>
+<Accordion title="该指标会调用 LLM 或外部语音模型吗？">
+不会。检测是确定性的，只读取有序轮次，没有模型或 token 成本。
+</Accordion>
+<Accordion title="它到底需不需要音频？">
+需要。重复提示与缺失回复是从轮次顺序和内容读取的，但没有音频的助手轮次本身就是严重故障——因此在纯文本对话上运行本指标会得 0 分，而不是为它的轮次切换打分。
+</Accordion>
+</AccordionGroup>

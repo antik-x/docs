@@ -1,0 +1,126 @@
+---
+title: Turn-Taking Naturalness
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+轮次切换自然度（turn-taking naturalness）指标衡量**通话的节奏**——每个说话者回答前等了多久、彼此抢话了多少。它从每个轮次的音频重建通话时间线，返回 0 到 1 之间的分数，分数越高代表交接越顺畅。
+
+<Note>
+这是唯一评判事情*何时*发生（而非说了什么或听起来如何）的语音指标。它需要每段音频都有 `start_time`，语音模拟会从实时通话时钟填充该值。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import TurnTakingNaturalnessMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user asks three short follow-up questions about a delivery.",
+    expected_outcome="The agent answers each question in turn.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = TurnTakingNaturalnessMetric(threshold=0.6)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `TurnTakingNaturalnessMetric` 时有**五个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
+- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
+- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
+- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+
+每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.78
+print(metric.score_breakdown)
+```
+
+对 `TurnTakingNaturalnessMetric` 而言，明细为每次说话者切换一条记录：
+
+```python
+{
+    "transitions": [
+        {
+            "from_turn": 0,
+            "to_turn": 1,
+            "kind": "gap",
+            "gap_seconds": 0.82,
+            "score": 0.72,
+        },
+        {
+            "from_turn": 1,
+            "to_turn": 2,
+            "kind": "user_barge_in",
+            "gap_seconds": -0.35,
+            "score": 0.84,
+        },
+    ],
+}
+```
+
+`gap_seconds` 为负表示重叠：下一个说话者在上一个结束前就开始了。
+
+## How Is It Calculated?
+
+`TurnTakingNaturalnessMetric` 使用 `Audio.start_time` 与 `Audio.duration` 把每段音频放到通话相对的时间线上，然后为**角色不同**的相邻轮次之间的每次切换打分。同一说话者的切换会被忽略，因此智能体分两段说的回复不会被当作一次交接。
+
+每次转换从零延迟时的满分 1 开始指数衰减，对话分数是它们的均值：
+
+$$
+\text{Turn-Taking Naturalness} = \frac{1}{T} \sum_{t=1}^{T} e^{-|\Delta_t| / \tau_t}
+$$
+
+其中 _T_ 是说话者切换次数，Δ 是以秒为单位的间隔或重叠，时间常数 τ 由转换类型决定：
+
+| `kind`          | Transition                                      | τ     |
+| --------------- | ----------------------------------------------- | ----- |
+| `gap`           | 两个轮次之间的静默。                     | 2.5s  |
+| `user_barge_in` | 来电者在智能体说话时插话。               | 2.0s  |
+| `agent_overlap` | 智能体盖过了来电者。                     | 0.6s  |
+
+τ 越小衰减越快。智能体压过来电者是惩罚最重的，因为它最具破坏性：半秒的智能体压话得分 0.43，而半秒的来电者插话仍得 0.78。
+
+没有延迟截断——曲线是连续的，1.7 秒的静默得 0.5 分，4 秒的静默得 0.2 分。请对照自己的基线评判分数，而不是期待自然通话达到 1。
+
+当任何音频轮次缺少 `start_time`、时间线上放置的片段少于两个、或没有任何相邻两轮变换说话者时，指标不返回分数并把评估标记为跳过。
+
+<Warning>
+基于静默的轮次结束检测正是本指标度量的一部分。`turn_detection="patient"` 预设在来电者回复前等待更久，在这里表现为更大的间隔——那是录音里真实的静场，但责任在你的测试装置而非智能体。同理，时间只有在同一 `VoiceProtocol` 内才可比：追踪该分数随时间的变化时请保持连接器不变。
+</Warning>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="为什么我的测试用例被跳过了？">
+几乎都是缺少 `start_time`。每段音频都需要相对于通话的位置；没有它，静默与重叠就只能凭片段顺序猜测，指标拒绝凭空编造时间证据。手工用录音组装的测试用例需要显式设置 `start_time`。
+</Accordion>
+<Accordion title="这与 latency_ms 是一回事吗？">
+相关但不同。`latency_ms` 是每条助手轮次的一个数字——智能体花了多久才开始说话。本指标为双向的每次交接打分，包括来电者的交接，并考虑延迟数字无法表达的重叠。
+</Accordion>
+<Accordion title="打断会损害分数吗？">
+轻微地，这是设计使然。来电者插话是正常的电话行为，因此衰减较慢；智能体不让话则衰减快三倍以上。启用[打断](/docs/conversation-simulator-voice-interruptions)正是让这些转换得以出现的机制。
+</Accordion>
+<Accordion title="该指标会调用 LLM 或外部语音模型吗？">
+不会。打分是确定性的，只读取片段时间，没有模型或 token 成本。
+</Accordion>
+</AccordionGroup>

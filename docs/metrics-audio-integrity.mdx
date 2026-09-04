@@ -1,0 +1,123 @@
+---
+title: Audio Integrity
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+音频完整性（audio integrity）指标检查你的语音智能体的音频是否**完好送达**。它跨整段通话查找缺失、无法解码、循环、掉落、削波或突然被切断的音频，返回 0 到 1 之间的分数，1 表示未发现缺陷。
+
+<Note>
+这是流水线健康检查，而不是质量评判。它捕捉那些让通话无法使用的故障——本该有回复的地方一片静默、缓冲反复循环、回复说到一半戛然而止——而不是智能体听起来好不好。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import AudioIntegrityMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user asks the agent to look up an order by its number.",
+    expected_outcome="The agent reads back the order status.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = AudioIntegrityMetric(threshold=0.8)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `AudioIntegrityMetric` 时有**五个**可选参数：
+
+- [Optional] `threshold`: a number representing the minimum passing score. Set it to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
+- [Optional] `include_reason`: a boolean which, when set to `True`, includes a summary of the evaluation score. Defaulted to `True`.
+- [Optional] `strict_mode`: a boolean which, when set to `True`, requires a perfect score. Any score below 1 becomes 0, and the threshold is set to 1. Defaulted to `False`.
+- [Optional] `verbose_mode`: a boolean which, when set to `True`, includes the score breakdown in verbose metric logs. Defaulted to `False`.
+- [Optional] `flaky`: a boolean which, when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+
+每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.72
+print(metric.score_breakdown)
+```
+
+与逐轮打分的 `VoiceNaturalnessMetric`、`SpeechIntelligibilityMetric` 不同，`AudioIntegrityMetric` 报告它发现的缺陷列表：
+
+```python
+{
+    "critical_failure": False,
+    "events": [
+        {"type": "abrupt_cutoff", "turn": 3, "critical": False},
+        {
+            "type": "audio_dropout",
+            "turn": 3,
+            "count": 2,
+            "severity": 0.16,
+            "critical": False,
+        },
+    ],
+}
+```
+
+`turn` 是该轮次在对话中从零开始的位置。`events` 列表为空表示未检测到任何问题。
+
+## How Is It Calculated?
+
+`AudioIntegrityMetric` 检查每条助手轮次，并为发现的每个缺陷记录一个事件。干净的通话得 1 分；否则分数为 1 减去所有缺陷严重度之和，下限为 0——除非发生了严重事件，此时分数直接为 0：
+
+$$
+\text{Audio Integrity} = \max \left( 0,\ 1 - \sum_{e} \text{severity}(e) \right)
+$$
+
+**严重事件会把分数归零**，因为它们无法被碰巧正常的轮次平均掉：
+
+| 事件                     | 含义                                                       |
+| ------------------------ | ---------------------------------------------------------- |
+| `assistant_turn_missing` | 对话中完全没有任何助手轮次。                              |
+| `audio_missing`          | 某条助手轮次没有附带音频。                                |
+| `audio_undecodable`      | 音频无法解码为 PCM。附有 `reason`。                       |
+| `audio_loop`             | 三个及以上重复窗口——缓冲卡住或循环。                      |
+
+非严重事件扣除有上限的严重度：
+
+| Event           | Detected when                                     | Severity                         |
+| --------------- | ------------------------------------------------- | -------------------------------- |
+| `abrupt_cutoff` | The clip still has energy at its very last frame. | 0.12 flat                        |
+| `audio_loop`    | One or two repeated 0.25s windows.                | 0.15 each                        |
+| `audio_dropout` | 打断连续语音的短暂静默。                  | 每个 0.08，上限 0.35    |
+| `clipping`      | 超过 1% 的采样被削波。                    | 比例的 10 倍，上限 0.35 |
+
+<Warning>
+只要片段在满能量处结束，`abrupt_cutoff` 就会触发——这正是成功的[插话](/docs/conversation-simulator-voice-interruptions)产生的现象。启用打断后，被插话的轮次出现该事件应理解为插话生效的证据，而不是缺陷。
+</Warning>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="只有一个轮次有问题，为什么我的分数是 0？">
+严重事件会把整通电话归零。音频缺失、无法解码或严重循环的缓冲意味着这份录音作为对话记录不可信，给部分得分会产生误导。请查看明细中的 `critical_failure`。
+</Accordion>
+<Accordion title="它与语音可靠性有何不同？">
+[VoiceReliabilityMetric](/docs/metrics-voice-reliability) is this metric averaged with [agent responsiveness](/docs/metrics-agent-responsiveness) into one operational number. Use audio integrity when you want to know *which* half is broken.
+</Accordion>
+<Accordion title="该指标会调用 LLM 或外部语音模型吗？">
+不会。检测是确定性的，在本地对音频采样运行，没有模型或 token 成本。
+</Accordion>
+<Accordion title="它也检查模拟用户的音频吗？">
+不检查。只有助手轮次会被检查。来电者的音频由你自己的 TTS 模型产生，那里的缺陷属于测试装置的问题，与被测智能体无关。
+</Accordion>
+</AccordionGroup>

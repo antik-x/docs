@@ -1,0 +1,121 @@
+---
+title: Voice Naturalness
+---
+
+**标签**：多轮 · 无参考 · 聊天机器人
+
+语音自然度（voice naturalness）指标衡量你的语音智能体在整段对话中说话的自然程度。它分析每条助手轮次的音频，返回 0 到 1 之间的分数，分数越高代表语音越自然。
+
+<Note>
+`VoiceNaturalnessMetric` 是确定性的声学启发式指标，不是人类平均意见分（MOS）。它最适合用来捕捉削波、音频重复、掉字、过长静默或语速不合理等回归问题。
+</Note>
+
+## Usage
+
+语音指标评估[语音模式下的 `ConversationSimulator`](/docs/conversation-simulator-voice-mode) 产生的通话。先建一个 `ConversationalGolden`，模拟一次通话，再把返回结果交给 `evaluate()`：
+
+```python
+from deepeval import evaluate
+from deepeval.dataset import ConversationalGolden
+from deepeval.metrics import VoiceNaturalnessMetric
+from deepeval.simulator import ConversationSimulator
+from deepeval.voice import ElevenLabsConnector, VoiceConfig
+
+
+golden = ConversationalGolden(
+    scenario="The user wants to change a restaurant reservation.",
+    expected_outcome="The agent confirms the new reservation date.",
+)
+
+simulator = ConversationSimulator(
+    voice_config=VoiceConfig(
+        connector=ElevenLabsConnector(agent_id="your-agent-id"),
+    )
+)
+test_cases = simulator.simulate([golden])
+
+metric = VoiceNaturalnessMetric(threshold=0.7)
+evaluate(test_cases=test_cases, metrics=[metric])
+```
+
+创建 `VoiceNaturalnessMetric` 时有**五个**可选参数：
+
+- [可选] `threshold`：表示最低通过分数的数字。设为 `None` 可用[仅分数模式](/docs/metrics-introduction#metric-thresholds)运行指标。默认为 `0.5`。
+- [可选] `include_reason`：布尔值，设为 `True` 时附带评估分数的摘要。默认为 `True`。
+- [可选] `strict_mode`：布尔值，设为 `True` 时要求满分。低于 1 的任何分数都变为 0，阈值被设为 1。默认为 `False`。
+- [可选] `verbose_mode`：布尔值，设为 `True` 时在详细指标日志中包含分数明细。默认为 `False`。
+- [可选] `flaky`：布尔值，设为 `True` 时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`。
+
+每个语音指标都会把它测量到的内容记录在 `score_breakdown` 上。在独立 `measure()` 调用后读取它，或开启 `verbose_mode` 在 `evaluate()` 运行期间打印：
+
+```python
+metric.measure(test_cases[0])
+
+print(metric.score)  # e.g. 0.91
+print(metric.score_breakdown)
+```
+
+对 `VoiceNaturalnessMetric` 而言，明细为每条助手轮次一条记录：
+
+```python
+{
+    "eligible_turns": 1,
+    "turns": [
+        {
+            "turn": 1,
+            "score": 0.91,
+            "speaking_rate_wpm": 154.3,
+            "silence_fraction": 0.08,
+            "pitch_variation_hz": 22.7,
+            "clipping_fraction": 0.0,
+            "dropout_events": 0,
+            "loop_events": 0,
+        }
+    ],
+}
+```
+
+## How Is It Calculated?
+
+`VoiceNaturalnessMetric` 只评估助手轮次。每段可解码的助手音频会被解码为单声道 PCM 采样，从满分 1 起步，每发现一种不自然的声学行为就扣一项有上限的罚分。对话分数是这些轮次分数的均值：
+
+$$
+\text{Voice Naturalness} = \frac{1}{N} \sum_{i=1}^{N} \max \left( 0,\ 1 - \sum_{p} \text{penalty}_p(i) \right)
+$$
+
+其中 _N_ 是符合条件的助手轮次数，_p_ 遍历以下罚分项：
+
+| Penalty         | Applies when                                        | Maximum |
+| --------------- | --------------------------------------------------- | ------- |
+| 削波            | 采样触及格式的上限。                              | 0.35    |
+| 掉字            | 短暂静默打断连续语音。                            | 0.25    |
+| 音频重复        | 同一 0.25 秒窗口反复出现——缓冲卡住。              | 0.2     |
+| 静默过多        | 静默占片段 45% 以上。                             | 0.2     |
+| 信噪比低        | 估计信噪比低于 15 dB。                            | 0.2     |
+| 语速            | 语速低于每分钟 80 词或高于 240 词。                | 0.2     |
+| 音高变化        | 音高变化小于 4 Hz 或大于 90 Hz。                  | 0.1     |
+
+每项罚分按测量超出触发门槛的程度分级，唯独音高变化是固定的 0.1。
+
+若某条助手轮次没有音频，指标会跳过该轮次。若没有任何助手轮次包含可解码音频，指标不返回分数并把评估标记为跳过。
+
+<Tip>
+把总分用于回归阈值，用逐轮明细诊断原因。原始测量值是证据而非通用质量分数；说话风格、语言与用例都会改变「自然」的判断。
+</Tip>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="Does this metric call an LLM or an external speech model?">
+不会。打分是确定性的，在本地对音频采样运行，没有模型或 token 成本。
+</Accordion>
+<Accordion title="Do I need a transcript?">
+需要。助手轮次的 `content` 会与音频时长、检测到的静默一起用于估计语速。
+</Accordion>
+<Accordion title="Does the metric evaluate user audio?">
+不会。只有 `role` 为 `"assistant"` 的轮次会计入分数。
+</Accordion>
+<Accordion title="Is this a replacement for human listening tests?">
+不是。它是针对可测量声学缺陷的快速回归信号。需要感知质量的基准或验证新的声音与说话风格时，请使用有代表性的人类评分。
+</Accordion>
+</AccordionGroup>
