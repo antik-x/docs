@@ -2,9 +2,9 @@
 title: Generate Goldens From Documents
 ---
 
-If your application is a Retrieval-Augmented Generation (RAG) system, generating Goldens from documents can be particularly useful, especially if you already have access to the **documents that make up your knowledge base**.
+如果你的应用是检索增强生成（RAG）系统，从文档生成 Golden 会特别有用，尤其是当你已经拥有**构成知识库的文档**时。
 
-By simply providing these documents, `deepeval`'s Synthesizer will automatically handle generating the relevant contexts needed for synthesizing test Goldens.
+只需提供这些文档，`deepeval` 的 Synthesizer 会自动处理生成合成测试 Golden 所需的相关上下文。
 
 <div
   style={{
@@ -18,17 +18,17 @@ By simply providing these documents, `deepeval`'s Synthesizer will automatically
 
 <Tip>
 
-**DID YOU KNOW?**
+**你知道吗？**
 
-The only difference between the `generate_goldens_from_docs()` and `generate_goldens_from_contexts()` method is `generate_goldens_from_docs()` involves an additional [context construction step.](#how-does-context-construction-work)
+`generate_goldens_from_docs()` 与 `generate_goldens_from_contexts()` 方法的唯一区别是 `generate_goldens_from_docs()` 多了一个[上下文构建步骤。](#how-does-context-construction-work)
 </Tip>
 
 ## 前置条件
 
-Before you begin, you must install additional dependencies when generating from documents:
+开始之前，从文档生成时必须安装额外的依赖：
 
-- `chromadb`: required for chunk storage and retrieval in the context construction pipeline.
-- `langchain-core`, `langchain-community`, `langchain-text-splitters`: required for document parsing and chunking.
+- `chromadb`：上下文构建流水线中分块存储与检索所必需。
+- `langchain-core`、`langchain-community`、`langchain-text-splitters`：文档解析与分块所必需。
 
 ```bash
 pip install chromadb langchain-core langchain-community langchain-text-splitters
@@ -37,10 +37,10 @@ pip install chromadb langchain-core langchain-community langchain-text-splitters
 ## Generate Your Goldens
 
 <Note>
-If you do not have an `OPENAI_API_KEY` and wish to synthesize goldens, you'll need to use [custom embedding models](/guides/guides-using-custom-embedding-models) in addition to custom LLMs.
+如果你没有 `OPENAI_API_KEY` 但希望合成 golden，除了自定义 LLM 之外，你还需要使用[自定义嵌入模型](/guides/guides-using-custom-embedding-models)。
 </Note>
 
-To generate synthetic single or multi-turn goldens from documents, simply provide a list of document paths:
+要从文档生成合成的单轮或多轮 golden，只需提供一组文档路径：
 
 <Tabs>
 <Tab title="单轮">
@@ -54,12 +54,12 @@ goldens = synthesizer.generate_goldens_from_docs(
 )
 ```
 
-There is **ONE** mandatory and **THREE** optional parameters when using the `generate_goldens_from_docs` method:
+使用 `generate_goldens_from_docs` 方法时有**一个**必填参数和**三个**可选参数：
 
-- `document_paths`: a list of strings, representing the path to the documents from which contexts will be extracted from. Supported document types include: `.txt`, `.docx`, `.pdf`, `.md`, `.markdown`, and `.mdx`.
-- [Optional] `include_expected_output`: a boolean which when set to `True`, will additionally generate an `expected_output` for each synthetic `Golden`. Defaulted to `True`.
-- [Optional] `max_goldens_per_context`: the maximum number of goldens to be generated per context. Defaulted to 2.
-- [Optional] `context_construction_config`: an instance of type `ContextConstructionConfig` that allows you to [customize the quality and attributes of contexts constructed](#customize-context-construction) from your documents. Defaulted to the default `ContextConstructionConfig` values.
+- `document_paths`：字符串列表，表示要从中提取上下文的文档路径。支持的文档类型包括：`.txt`、`.docx`、`.pdf`、`.md`、`.markdown` 和 `.mdx`。
+- [可选] `include_expected_output`：布尔值，设为 `True` 时会额外为每个合成 `Golden` 生成一个 `expected_output`。默认为 `True`。
+- [可选] `max_goldens_per_context`：每个上下文可生成的最大 golden 数。默认为 2。
+- [可选] `context_construction_config`：`ContextConstructionConfig` 类型的实例，允许你[自定义从文档构建的上下文的质量和属性](#customize-context-construction)。默认为默认的 `ContextConstructionConfig` 值。
 
 </Tab>
 <Tab title="多轮">
@@ -73,27 +73,27 @@ conversational_goldens = synthesizer.generate_conversational_goldens_from_docs(
 )
 ```
 
-There is **ONE** mandatory and **THREE** optional parameters when using the `generate_conversational_goldens_from_docs` method:
+使用 `generate_conversational_goldens_from_docs` 方法时有**一个**必填参数和**三个**可选参数：
 
-- `document_paths`: a list of strings, representing the path to the documents from which contexts will be extracted from. Supported document types include: `.txt`, `.docx`, `.pdf`, `.md`, `.markdown`, and `.mdx`.
-- [Optional] `include_expected_outcome`: a boolean which when set to `True`, will additionally generate an `expected_outcome` for each synthetic `ConversationalGolden`. Defaulted to `True`.
-- [Optional] `max_goldens_per_context`: the maximum number of goldens to be generated per context. Defaulted to 2.
-- [Optional] `context_construction_config`: an instance of type `ContextConstructionConfig` that allows you to [customize the quality and attributes of contexts constructed](#customize-context-construction) from your documents. Defaulted to the default `ContextConstructionConfig` values.
+- `document_paths`：字符串列表，表示要从中提取上下文的文档路径。支持的文档类型包括：`.txt`、`.docx`、`.pdf`、`.md`、`.markdown` 和 `.mdx`。
+- [可选] `include_expected_outcome`：布尔值，设为 `True` 时会额外为每个合成 `ConversationalGolden` 生成一个 `expected_outcome`。默认为 `True`。
+- [可选] `max_goldens_per_context`：每个上下文可生成的最大 golden 数。默认为 2。
+- [可选] `context_construction_config`：`ContextConstructionConfig` 类型的实例，允许你[自定义从文档构建的上下文的质量和属性](#customize-context-construction)。默认为默认的 `ContextConstructionConfig` 值。
 
 </Tab>
 </Tabs>
 
-**Single-turn generations** produces single-turn `Golden`s, while **multi-turn generations** produces multi-turn `ConversationalGolden`s. To learn more about goldens, [click here.](/docs/evaluation-datasets#what-are-goldens)
+**单轮生成**产出单轮 `Golden`，而**多轮生成**产出多轮 `ConversationalGolden`。更多关于 golden 的内容请[点击这里。](/docs/evaluation-datasets#what-are-goldens)
 
 <Info>
-The final maximum number of goldens to be generated is the `max_goldens_per_context` multiplied by the `max_contexts_per_document` as specified in the `context_construction_config`, and **NOT** simply `max_goldens_per_context`.
+最终生成的 golden 最大数量是 `max_goldens_per_context` 乘以 `context_construction_config` 中指定的 `max_contexts_per_document`，而**不是**简单地等于 `max_goldens_per_context`。
 </Info>
 
 ## Customize Context Construction
 
-You can customize the quality of contexts constructed from documents by providing a `ContextConstructionConfig` instance to the `generate_goldens_from_docs()` method at generation time.
+你可以通过在生成时向 `generate_goldens_from_docs()` 方法提供 `ContextConstructionConfig` 实例，自定义从文档构建的上下文质量。
 
-Below shows an example for single-turn generation (also applicable for multi-turn):
+下面是单轮生成的示例（多轮同样适用）：
 
 ```python
 from deepeval.synthesizer.config import ContextConstructionConfig
@@ -105,75 +105,75 @@ synthesizer.generate_goldens_from_docs(
 )
 ```
 
-There are **SEVEN** optional parameters when creating a `ContextConstructionConfig`:
+创建 `ContextConstructionConfig` 时有**七个**可选参数：
 
-- [Optional] `critic_model`: a string specifying which of OpenAI's GPT models to use to determine context `quality_score`s, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to the **model used in the `Synthesizer`**, else `gpt-5.4` when initialized as a standalone instance.
-- [Optional] `encoding`: the encoding to use to decode plain text–based files (`.txt`, `.md`, `.markdown`, `.mdx`). Defaulted to autodetecting the encoding.
-- [Optional] `max_contexts_per_document`: the maximum number of contexts to be generated per document. Defaulted to 3.
-- [Optional] `min_contexts_per_document`: the minimum number of contexts to be generated per document. Defaulted to 1.
-- [Optional] `max_context_length`: specifies the number of of text chunks to be generated per context (context length). Defaulted to 3.
-- [Optional] `min_context_length`: specifies the minimum number of text chunks to be generated per context (context length). Defaulted to 1.
-- [Optional] `chunk_size`: specifies the size of text chunks (in tokens) to be considered during [document parsing](#synthesizer-generate-from-docs#document-parsing). Defaulted to 1024.
-- [Optional] `chunk_overlap`: an int that determines the overlap size between consecutive text chunks during [document parsing](#synthesizer-generate-from-docs#document-parsing). Defaulted to 0.
-- [Optional] `context_quality_threshold`: a float representing the minimum quality threshold for [context selection](synthesizer-generate-from-docs#context-selection). If the context quality is below threshold, the context will be rejected. Defaulted to `0.5`.
-- [Optional] `context_similarity_threshold`: a float representing the minimum similarity score required for [context grouping](synthesizer-generate-from-docs#context-grouping). Contexts with similarity scores below this threshold will be rejected. Defaulted to `0.5`.
-- [Optional] `max_retries`: an integer that specifies the number of times to retry context selection **OR** grouping if it does not meet the required quality **OR** similarity threshold. Defaulted to `3`.
-- [Optional] `embedder`: a string specifying which of OpenAI's embedding models to during document parsing and context grouping, **OR** [any custom embedding model](/guides/guides-using-custom-embedding-models) of type `DeepEvalBaseEmbeddingModel`. Defaulted to 'text-embedding-3-small'.
+- [可选] `critic_model`：字符串，指定用于判定上下文 `quality_score` 的 OpenAI GPT 模型，**或者** `DeepEvalBaseLLM` 类型的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 **`Synthesizer` 中使用的模型**；作为独立实例初始化时为 `gpt-5.4`。
+- [可选] `encoding`：用于解码纯文本文件（`.txt`、`.md`、`.markdown`、`.mdx`）的编码。默认为自动检测编码。
+- [可选] `max_contexts_per_document`：每个文档可生成的最大上下文数。默认为 3。
+- [可选] `min_contexts_per_document`：每个文档可生成的最少上下文数。默认为 1。
+- [可选] `max_context_length`：指定每个上下文生成的文本块数量上限（上下文长度）。默认为 3。
+- [可选] `min_context_length`：指定每个上下文生成的文本块数量下限（上下文长度）。默认为 1。
+- [可选] `chunk_size`：指定[文档解析](#synthesizer-generate-from-docs#document-parsing)期间考虑的文本块大小（以 token 计）。默认为 1024。
+- [可选] `chunk_overlap`：整数，决定[文档解析](#synthesizer-generate-from-docs#document-parsing)期间相邻文本块之间的重叠大小。默认为 0。
+- [可选] `context_quality_threshold`：浮点数，表示[上下文选择](synthesizer-generate-from-docs#context-selection)的最低质量阈值。上下文质量低于阈值时将被拒绝。默认为 `0.5`。
+- [可选] `context_similarity_threshold`：浮点数，表示[上下文分组](synthesizer-generate-from-docs#context-grouping)所需的最低相似度分数。相似度低于该阈值的上下文将被拒绝。默认为 `0.5`。
+- [可选] `max_retries`：整数，指定上下文选择**或**分组未达到要求质量**或**相似度阈值时的重试次数。默认为 `3`。
+- [可选] `embedder`：字符串，指定文档解析与上下文分组期间使用的 OpenAI 嵌入模型，**或者** `DeepEvalBaseEmbeddingModel` 类型的[任意自定义嵌入模型](/guides/guides-using-custom-embedding-models)。默认为 'text-embedding-3-small'。
 
 <Warning>
-**Unlike other customizations where configurations to your `Synthesizer` generation pipeline is defined at point of instantiating a `Synthesizer`**, customizing context construction happens at the generation level because context construction is unique to the `generate_goldens_from_docs()` method.
+**与其他在实例化 `Synthesizer` 时定义生成流水线配置的定制不同**，上下文构建的定制发生在生成级别，因为上下文构建是 `generate_goldens_from_docs()` 方法独有的。
 
-To learn how to customize all other aspects of your generation pipeline, such as output formats, evolution complexity, [click here.](/docs/golden-synthesizer#customize-your-generations)
+要了解如何定制生成流水线的其他所有方面（例如输出格式、演化复杂度），请[点击这里。](/docs/golden-synthesizer#customize-your-generations)
 </Warning>
 
 ## How Does Context Construction Work?
 
-The `generate_goldens_from_docs()` method has an additional context construction pipeline that precedes the [goldens generation pipeline](/docs/golden-synthesizer#how-does-it-work). This is because to generate goldens grounded in context, we first have to extract and construct groups of contexts found in provided documents.
+`generate_goldens_from_docs()` 方法在 [golden 生成流水线](/docs/golden-synthesizer#how-does-it-work)之前多一个上下文构建流水线。因为要生成扎根于上下文的 golden，我们必须先从提供的文档中提取并构建上下文组。
 
-The context construction pipeline consists of three main steps:
+上下文构建流水线由三个主要步骤组成：
 
-- **Document Parsing**: Split documents into smaller, manageable chunks.
-- **Context Selection**: Select random chunks from the parsed, embedded documents.
-- **Context Grouping**: Group chunks that are similar in semantics (using cosine similarity) to create groups of contexts that are meaningful enough for subsequent generation.
+- **文档解析**：把文档切分成更小、更易管理的块。
+- **上下文选择**：从已解析、已嵌入的文档中随机选择块。
+- **上下文分组**：把语义相似的块分组（使用余弦相似度），创建对后续生成足够有意义的上下文组。
 
-[Click here](#customize-context-construction) To learn how to customize every parameter used for the context construction pipeline.
+[点击这里](#customize-context-construction)了解如何自定义上下文构建流水线使用的每一个参数。
 
 <Info>
-In summary, the documents are first split into chunks and embedded to form a collection of nodes. Random nodes are then selected, and for each selected node, similar nodes are retrieved and grouped together to create contexts. These contexts are then used to generate synthetic goldens as described in previous sections.
+总结一下：文档首先被切分成块并嵌入，形成节点集合。随后随机选择节点，为每个被选中的节点检索相似节点并分组形成上下文。这些上下文随后按前几节所述用于生成合成 golden。
 </Info>
 
 ### Document Parsing
 
-In the initial **document parsing** step, each provided document is parsed using a **token-based text splitter** (`TokenTextSplitter`). This means the `chunk_size` and `chunk_overlap` parameters do not guarantee exact character lengths but instead operate at the token level.
+在初始的**文档解析**步骤中，每个提供的文档都使用**基于 token 的文本切分器**（`TokenTextSplitter`）解析。这意味着 `chunk_size` 和 `chunk_overlap` 参数并不保证精确的字符长度，而是在 token 层面生效。
 
-These text chunks are then embedded by the `embedder` and stored in a vector database for subsequent selection and grouping.
+这些文本块随后由 `embedder` 嵌入并存入向量数据库，供后续选择与分组。
 
 <Warning>
-The synthesizer will raise an error if `chunk_size` is too large to generate n=`max_contexts_per_document` unique contexts.
+如果 `chunk_size` 大到无法生成 n=`max_contexts_per_document` 个不重复上下文，合成器会抛出错误。
 </Warning>
 
 ### Context Selection
 
-In the **context selection** step, random nodes are selected from the vector database that contains the previously indexed nodes. Each time a node is selected, it is subject to filtering. This is because chunked contexts can result in trivial or undesirable content, such as a series of white spaces or unwanted characters from document structures, which is why filtering is important to ensure subsequently generated goldens are meaningful, relevant, and coherent.
+在**上下文选择**步骤中，从包含先前已索引节点的向量数据库中随机选择节点。每次选中一个节点都要接受过滤。因为分块后的上下文可能产生琐碎或不良的内容，例如一连串空白或来自文档结构的无关注字符，所以过滤对确保后续生成的 golden 有意义、相关且连贯非常重要。
 
-Each chunk is quality scored (0-1) by an LLM (the `critic_model`) based based on the following criteria:
+每个块由 LLM（`critic_model`）依据以下标准进行质量打分（0-1）：
 
-- **Clarity**: How clear and understandable the information is.
-- **Depth**: The level of detail and insight provided.
-- **Structure**: How well-organized and logical the content is.
-- **Relevance**: How closely the content relates to the main topic.
+- **清晰度**：信息有多清晰、易懂。
+- **深度**：提供的细节和洞察水平。
+- **结构**：内容的组织与逻辑程度。
+- **相关性**：内容与主题的贴合程度。
 
-If the quality score is still lower than the `context_quality_threshold` after `max_retries`, the context with the highest quality score will be used. Although this means that you might find context that have failed the filtering process being used, but you will be guaranteed to have context to be used for grouping.
+如果 `max_retries` 次重试后质量分数仍低于 `context_quality_threshold`，将使用质量分数最高的上下文。尽管这意味着你可能会看到未通过过滤的上下文被使用，但可以保证一定有上下文可用于分组。
 
 <Note>
-The `critic_model` in the context construction pipeline can be different from the one used in the [`FiltrationConfig` of the generation pipeline](/docs/golden-synthesizer#filteration-quality).
+上下文构建流水线中的 `critic_model` 可以与[生成流水线的 `FiltrationConfig`](/docs/golden-synthesizer#filteration-quality) 中使用的不同。
 </Note>
 
 ### Context Grouping
 
-In the final **context grouping** step, each previously selected nodes are grouped with `max_context_length` other nodes with a cosine similarity score higher than the `context_similarity_threshold`. This ensures that each context is coherent for subsequent generation to happen smoothly.
+在最后的**上下文分组**步骤中，每个先前选中的节点会与 `max_context_length` 个余弦相似度高于 `context_similarity_threshold` 的其他节点分组。这确保每个上下文对后续生成来说足够连贯。
 
-Similar to the context selection step, if the cosine similarity is still lower than the `context_similarity_threshold` after `max_retries`, the context with the highest similarity score will be used. Although this means that you might find context that have failed the filtering process being used, but you will be guaranteed to have context groups to be used for generation.
+与上下文选择步骤类似，如果 `max_retries` 次重试后余弦相似度仍低于 `context_similarity_threshold`，将使用相似度分数最高的上下文。尽管这意味着你可能会看到未通过过滤的上下文被使用，但可以保证一定有上下文组可用于生成。
 
 <div
   style={{
@@ -189,15 +189,15 @@ Similar to the context selection step, if the cosine similarity is still lower t
 
 <AccordionGroup>
 <Accordion title="What document types does generate_goldens_from_docs support?">
-`.txt` , `.docx` , `.pdf` , `.md` , `.markdown` , and `.mdx` files, passed as a list to the `document_paths` parameter.
+`.txt` 、`.docx` 、`.pdf` 、`.md` 、`.markdown` 和 `.mdx` 文件，以列表形式传入 `document_paths` 参数。
 </Accordion>
 <Accordion title="How are contexts constructed from my documents?">
-`deepeval` parses documents into token-based chunks (via `chunk_size` and `chunk_overlap` ), selects and quality-filters chunks, then groups semantically similar chunks by cosine similarity into contexts. Tune this with a `ContextConstructionConfig` .
+`deepeval` 将文档解析为基于 token 的块（通过 `chunk_size` 和 `chunk_overlap` ），选择并做质量过滤，然后按余弦相似度把语义相似的块分组为上下文。用 `ContextConstructionConfig` 调整这一过程。
 </Accordion>
 <Accordion title="When should I use this instead of generate_goldens_from_contexts?">
-Use `generate_goldens_from_docs` when you have raw documents and want `deepeval` to extract contexts for you. If you already control chunking, use [generate_goldens_from_contexts](/docs/synthesizer-generate-from-contexts) instead.
+当你有原始文档并希望 `deepeval` 替你提取上下文时，使用 `generate_goldens_from_docs`。如果你已经自己控制分块，请改用 [generate_goldens_from_contexts](/docs/synthesizer-generate-from-contexts)。
 </Accordion>
 <Accordion title="Can my team generate goldens from our documents without code?">
-Yes. On [Confident AI](https://www.confident-ai.com) you can connect your knowledge bases and run the generation pipeline no-code — tweak filtration, evolutions, and styling, experiment with variations, and collaborate on the resulting dataset as a team.
+可以。在 [Confident AI](https://www.confident-ai.com) 上你可以连接知识库并无代码地运行生成流水线——调整过滤、演化和样式，试验不同变体，并与团队协作处理产生的数据集。
 </Accordion>
 </AccordionGroup>

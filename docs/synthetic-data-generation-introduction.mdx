@@ -2,44 +2,44 @@
 title: Introduction to Synthetic Data Generation
 ---
 
-Synthetic data generation helps you bootstrap evaluation datasets when you do not yet have enough representative examples, but it should complement—not replace—real data.
+当你还没有足够有代表性的示例时，合成数据生成可以帮你启动评估数据集，但它应该是对真实数据的补充——而不是替代。
 
 <Warning>
-It is easy to abuse synthetic data because it is so readily available. It is important to use it sparingly instead of generating goldens you will never take a second look at.
+合成数据很容易被滥用，因为它唾手可得。重要的是克制使用，而不是生成一堆你永远不会再看第二眼的 golden。
 </Warning>
 
 ## Recommended Priority
 
-The best evaluation datasets are grounded in real product behavior. We recommend choosing data sources in this order:
+最好的评估数据集扎根于真实的产品行为。我们建议按以下顺序选择数据来源：
 
-1. **Use a reasonably curated dataset.** Start with human-reviewed examples when you have them, especially examples that reflect important user journeys, failures, and edge cases.
-2. **Use production traffic.** If you do not have a curated dataset, sample real conversations or requests from production, then review and clean them before using them for evals.
-3. **Use synthetic data.** If you do not have enough curated or production data, generate synthetic examples to create initial coverage and uncover obvious regressions.
+1. **使用经过认真整理的数据集。** 如果有人工审核过的示例，从这里开始，尤其是反映重要用户旅程、失败和边界情况的示例。
+2. **使用生产流量。** 如果没有整理好的数据集，就从生产环境中采样真实对话或请求，评估前先审阅和清理。
+3. **使用合成数据。** 如果整理好的数据和生产数据都不够，就生成合成示例来建立初始覆盖并暴露明显的回归。
 
 <Tip>
-[Confident AI](https://www.confident-ai.com) automates the trace -> annotate -> dataset loop, so your team can turn real production behavior into curated evaluation data. All you need to do is ingest traces with `deepeval`, then review and promote the right examples into datasets.
+[Confident AI](https://www.confident-ai.com) 把"追踪 → 标注 → 数据集"的循环自动化，让你的团队可以把真实生产行为变成经过整理的评估数据。你只需用 `deepeval` 摄入追踪数据，然后审阅并把合适的样本提升进数据集。
 </Tip>
 
-Synthetic data is most useful when it gives you a starting point faster. For high-stakes workflows, you should still review, edit, and enrich generated examples before treating them as ground truth.
+合成数据最大的价值是让你更快获得起点。对于高风险的工作流，在把生成的示例当作真值之前，仍然应当审阅、编辑和充实它们。
 
 ## Best Practices On Synthetic Data Quality
 
-Not all synthetic data is equally reliable. Prefer grounded and reviewed sources before fully open-ended generation:
+并非所有合成数据都同样可靠。在完全开放式的生成之前，优先使用扎根且经过审阅的来源：
 
-1. **Generate from documents.** This is the strongest default because generated goldens are grounded in your knowledge base.
-2. **Generate from existing goldens.** This works well when the seed goldens are already reasonably curated and human-reviewed.
-3. **Generate from scratch.** This is the least grounded option, and is not recommended unless the use case is simple or you only need rough initial coverage.
+1. **从文档生成。** 这是最强的默认选择，因为生成的 golden 扎根于你的知识库。
+2. **从既有 golden 生成。** 当种子 golden 已经经过认真整理和人工审核时，这种方式效果很好。
+3. **从零生成。** 这是扎根程度最低的选项，除非用例简单或你只需要粗略的初始覆盖，否则不推荐。
 
 ## What You Can Synthesize
 
-`deepeval` supports two related synthetic-data workflows:
+`deepeval` 支持两个相关的合成数据工作流：
 
-- **Generate goldens:** Use the [Golden Synthesizer](/docs/golden-synthesizer) to create single-turn or conversational goldens for your evaluation dataset.
-- **Simulate turns:** Use the [Conversation Simulator](/docs/conversation-simulator) to generate realistic back-and-forth turns between a simulated user and your chatbot.
+- **生成 golden：** 使用 [Golden Synthesizer](/docs/golden-synthesizer) 为你的评估数据集创建单轮或会话式 golden。
+- **模拟轮次：** 使用 [Conversation Simulator](/docs/conversation-simulator) 在模拟用户与你的聊天机器人之间生成真实的多轮往复对话。
 
 ### Generate Goldens
 
-Goldens define what you want to test. They can be single-turn examples for regular LLM interactions, or conversational goldens that define a multi-turn scenario and expected outcome.
+Golden 定义你要测试什么。它们可以是常规 LLM 交互的单轮示例，也可以是定义多轮场景和期望结果的会话式 golden。
 
 ```python
 from deepeval.synthesizer import Synthesizer
@@ -51,7 +51,7 @@ goldens = synthesizer.generate_goldens_from_docs(
 )
 ```
 
-For multi-turn use cases, generate conversational goldens instead:
+对于多轮用例，改为生成会话式 golden：
 
 ```python
 from deepeval.synthesizer import Synthesizer
@@ -63,11 +63,11 @@ conversational_goldens = synthesizer.generate_conversational_goldens_from_docs(
 )
 ```
 
-Learn more in the [Golden Synthesizer](/docs/golden-synthesizer) docs.
+更多信息见 [Golden Synthesizer](/docs/golden-synthesizer) 文档。
 
 ### Simulate Turns
 
-Turn simulation is only for multi-turn use cases. It follows golden generation: first create conversational goldens with a scenario and expected outcome, then use the Conversation Simulator to produce the actual back-and-forth turns.
+轮次模拟只适用于多轮用例。它紧随 golden 生成之后：先创建带场景和期望结果的会话式 golden，再用 Conversation Simulator 产出实际的多轮往复对话。
 
 ```python
 from deepeval.simulator import ConversationSimulator
@@ -79,22 +79,20 @@ test_cases = simulator.simulate(
 )
 ```
 
-Learn more in the [Conversation Simulator](/docs/conversation-simulator) docs.
+更多信息见 [Conversation Simulator](/docs/conversation-simulator) 文档。
 
-For single-turn use cases, generated goldens may be enough. For multi-turn use cases, you typically need both: use the Golden Synthesizer to define the scenario and expected outcome, then use the Conversation Simulator to generate the actual turns for evaluation.
+对于单轮用例，生成的 golden 通常就够用了。对于多轮用例，通常两者都需要：先用 Golden Synthesizer 定义场景和期望结果，再用 Conversation Simulator 生成实际的对话轮次用于评估。
 
 ## 下一步
 
-Start with goldens to define what should be tested, then add turn simulation when you need realistic multi-turn conversations.
+先用 golden 定义要测试什么，然后在你需要真实多轮对话时加入轮次模拟。
 
 <CardGroup cols={2}>
   <Card icon="database" title="Golden Synthesizer" href="/docs/golden-synthesizer">
-    Generate single-turn or conversational goldens from documents, contexts,
-    existing goldens, or scratch.
+    从文档、上下文、既有 golden 或零起点生成单轮或会话式 golden。
   </Card>
   <Card icon="message-square-text" title="Conversation Simulator" href="/docs/conversation-simulator">
-    Simulate multi-turn conversations from conversational goldens and your
-    chatbot callback.
+    从会话式 golden 和你的聊天机器人回调出发模拟多轮对话。
   </Card>
 </CardGroup>
 
@@ -102,24 +100,24 @@ Start with goldens to define what should be tested, then add turn simulation whe
 
 <AccordionGroup>
 <Accordion title="When should I use synthetic data?">
-Sparingly, as a starting point when you lack real examples — it should complement, not replace, real data. Prefer a curated dataset first, then production traffic, and only then synthetic generation.
+克制使用，作为缺少真实示例时的起点——它应该补充而非替代真实数据。优先用整理好的数据集，其次生产流量，最后才是合成生成。
 </Accordion>
 <Accordion title="What's the best source to generate goldens from?">
-[From documents](/docs/synthesizer-generate-from-docs) is the strongest default since goldens stay grounded in your knowledge base, followed by [existing goldens](/docs/synthesizer-generate-from-goldens) . [From scratch](/docs/synthesizer-generate-from-scratch) is least grounded — use it only for simple cases or rough coverage.
+[从文档生成](/docs/synthesizer-generate-from-docs)是最强的默认选择，因为 golden 扎根于你的知识库；其次是[既有 golden](/docs/synthesizer-generate-from-goldens) 。[从零生成](/docs/synthesizer-generate-from-scratch)扎根程度最低——只用于简单场景或粗略覆盖。
 </Accordion>
 <Accordion title="How do I generate data for multi-turn chatbots?">
-Generate conversational goldens (e.g. `generate_conversational_goldens_from_docs` ) to define the scenario and expected outcome, then feed them to the [Conversation Simulator](/docs/conversation-simulator) to produce the actual turns.
+先生成会话式 golden（例如 `generate_conversational_goldens_from_docs` ）来定义场景和期望结果，再把它们交给 [Conversation Simulator](/docs/conversation-simulator) 产出实际的对话轮次。
 </Accordion>
 <Accordion title="Do I need to review generated goldens?">
-Yes. For anything high-stakes, review, edit, and enrich generated goldens before treating them as ground truth — don't generate goldens you'll never look at again.
+需要。对任何高风险的内容，在把生成的 golden 当作真值之前都要审阅、编辑和充实——不要生成一堆你永远不会再看一眼的 golden。
 </Accordion>
 <Accordion title="Can I use any model to generate synthetic data?">
-Yes. The `model` parameter accepts any of OpenAI's GPT models by name, or [any custom LLM](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM` (Anthropic, Gemini, Ollama, local models, and more). It's also reused as the `critic_model` for filtration unless you set one explicitly.
+可以。`model` 参数按名称接受 OpenAI 的任意 GPT 模型，或 `DeepEvalBaseLLM` 类型的[任意自定义 LLM](/docs/metrics-introduction#using-a-custom-llm)（Anthropic、Gemini、Ollama、本地模型等）。若未显式设置，它还会被复用为过滤阶段的 `critic_model`。
 </Accordion>
 <Accordion title="How do I turn production traffic into evaluation datasets?">
-Ingest traces with `deepeval` , then review and promote the best examples into a dataset on [Confident AI](https://www.confident-ai.com) , the enterprise platform for all-in-one evals, observability, and red teaming, which automates the trace → annotate → dataset loop.
+用 `deepeval` 摄入追踪数据，然后在 [Confident AI](https://www.confident-ai.com)（集评估、可观测性和红队测试于一体的企业平台，自动完成追踪 → 标注 → 数据集的循环）上审阅并把最佳样本提升进数据集。
 </Accordion>
 <Accordion title="Can my team generate synthetic data without code?">
-Yes. On [Confident AI](https://www.confident-ai.com) you can generate goldens no-code — connect your knowledge bases, customize the generation pipeline, experiment with variations, and collaborate on the resulting dataset as a team.
+可以。在 [Confident AI](https://www.confident-ai.com) 上你可以无代码生成 golden——连接知识库，定制生成流水线，试验不同变体，并与团队协作处理产生的数据集。
 </Accordion>
 </AccordionGroup>

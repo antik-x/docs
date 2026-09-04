@@ -2,7 +2,7 @@
 title: Generate Goldens From Goldens
 ---
 
-`deepeval` enables you to **generate synthetic goldens from an existing set of goldens**, without requiring any documents or context. This is ideal for quickly expanding or adding more complexity to your evaluation dataset.
+`deepeval` 支持**从一组既有 golden 生成合成 golden**，不需要任何文档或上下文。这非常适合快速扩充评估数据集或为其增加更多复杂度。
 
 <div
   style={{
@@ -15,12 +15,12 @@ title: Generate Goldens From Goldens
 </div>
 
 <Tip>
-By default, `generate_goldens_from_goldens` extracts `StylingConfig` from your existing Golden, but it is recommended to [provide a `StylingConfig` explicitly](/docs/golden-synthesizer#styling-options) for better accuracy and consistency.
+默认情况下，`generate_goldens_from_goldens` 会从你既有的 Golden 中提取 `StylingConfig`，但建议[显式提供 `StylingConfig`](/docs/golden-synthesizer#styling-options) 以获得更好的准确性和一致性。
 </Tip>
 
 ## Generate Your Goldens
 
-To get started, simply define a `Synthesizer` object and pass in your list of existing goldens. Note that you can only generate single-turn goldens from existing single-turn ones, and vice versa.
+开始使用只需定义一个 `Synthesizer` 对象并传入你的既有 golden 列表。注意：只能从单轮 golden 生成单轮 golden，反之亦然。
 
 <Tabs>
 <Tab title="单轮">
@@ -36,17 +36,17 @@ goldens = synthesizer.generate_goldens_from_goldens(
 )
 ```
 
-There is **ONE** mandatory and **TWO** optional parameter when using the `generate_goldens_from_goldens` method:
+使用 `generate_goldens_from_goldens` 方法时有**一个**必填参数和**两个**可选参数：
 
-- `goldens`: a list of existing Goldens from which the new Goldens will be generated.
-- [Optional] `max_goldens_per_golden`: the maximum number of goldens to be generated per golden. Defaulted to 2.
-- [Optional] `include_expected_output`: a boolean which when set to `True`, will additionally generate an `expected_output` for each synthetic `Golden`. Defaulted to `True`.
+- `goldens`：既有 Golden 列表，新的 Golden 将从中生成。
+- [可选] `max_goldens_per_golden`：每个 golden 可生成的最大 golden 数。默认为 2。
+- [可选] `include_expected_output`：布尔值，设为 `True` 时会额外为每个合成 `Golden` 生成一个 `expected_output`。默认为 `True`。
 
 <Warning>
 
-**WARNING**
+**警告**
 
-The generated goldens will contain `expected_output` **ONLY** if your existing goldens contain `context`. This is to ensure that the `expected_output`s are grounded in truth and are not hallucinated.
+生成的 golden 只有在你的既有 golden 包含 `context` 时才会包含 `expected_output`。这是为了确保 `expected_output` 扎根于事实而不是幻觉。
 </Warning>
 
 </Tab>
@@ -63,32 +63,32 @@ conversational_goldens = synthesizer.generate_conversational_goldens_from_golden
 )
 ```
 
-There is **ONE** mandatory and **TWO** optional parameter when using the `generate_conversational_goldens_from_goldens` method:
+使用 `generate_conversational_goldens_from_goldens` 方法时有**一个**必填参数和**两个**可选参数：
 
-- `goldens`: a list of existing Goldens from which the new Goldens will be generated.
-- [Optional] `max_goldens_per_golden`: the maximum number of goldens to be generated per golden. Defaulted to 2.
-- [Optional] `include_expected_outcome`: a boolean which when set to `True`, will additionally generate an `expected_outcome` for each synthetic `ConversationalGolden`. Defaulted to `True`.
+- `goldens`：既有 Golden 列表，新的 Golden 将从中生成。
+- [可选] `max_goldens_per_golden`：每个 golden 可生成的最大 golden 数。默认为 2。
+- [可选] `include_expected_outcome`：布尔值，设为 `True` 时会额外为每个合成 `ConversationalGolden` 生成一个 `expected_outcome`。默认为 `True`。
 
 </Tab>
 </Tabs>
 
 <Info>
-If your existing Goldens include `context`, the synthesizer will utilize these contexts to generate synthetic Goldens, ensuring they are grounded in truth. If no context is present, the synthesizer will employ the `generate_from_scratch` method to create additional inputs based on provided inputs.
+如果你的既有 Golden 包含 `context`，合成器会利用这些上下文生成扎根于事实的合成 Golden。如果没有上下文，合成器会使用 `generate_from_scratch` 方法基于提供的输入创建额外的输入。
 </Info>
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="When should I use generate_goldens_from_goldens?">
-Use it when you already have a set of seed goldens and want to quickly expand or add complexity to your dataset — no documents or contexts required. Control volume with `max_goldens_per_golden` .
+当你已有一组种子 golden 并想快速扩充数据集或为其增加复杂度时使用——无需文档或上下文。用 `max_goldens_per_golden` 控制数量。
 </Accordion>
 <Accordion title="Does it require context to work?">
-No. If your existing goldens include `context` , it grounds generation in that context; otherwise it falls back to [generate_goldens_from_scratch](/docs/synthesizer-generate-from-scratch) using your existing `input` s. Note `expected_output` s are only generated when the seed goldens contain `context` .
+不会。如果你的既有 golden 包含 `context` ，生成会以该上下文为依据；否则回退到 [generate_goldens_from_scratch](/docs/synthesizer-generate-from-scratch) 基于既有 `input` 生成。注意 `expected_output` 只在种子 golden 包含 `context` 时才会生成。
 </Accordion>
 <Accordion title="Can I mix single-turn and multi-turn goldens?">
-No. You can only generate single-turn goldens from single-turn ones, and multi-turn `ConversationalGolden` s from multi-turn ones.
+不能。只能从单轮 golden 生成单轮 golden，从多轮 `ConversationalGolden` 生成多轮 golden。
 </Accordion>
 <Accordion title="Can my team generate goldens from our existing goldens without code?">
-Yes. On [Confident AI](https://www.confident-ai.com) you can connect your knowledge bases and run the generation pipeline no-code — tweak filtration, evolutions, and styling, experiment with variations, and collaborate on the resulting dataset as a team.
+可以。在 [Confident AI](https://www.confident-ai.com) 上你可以连接知识库并无代码地运行生成流水线——调整过滤、演化和样式，试验不同变体，并与团队协作处理产生的数据集。
 </Accordion>
 </AccordionGroup>
