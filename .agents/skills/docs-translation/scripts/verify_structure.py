@@ -112,8 +112,18 @@ def check_pair(src_path, dst_path, label):
                 break
 
     # 列表/表格
-    la = sum(1 for ln in na.split("\n") if LIST_RE.match(ln))
-    lb = sum(1 for ln in nb.split("\n") if LIST_RE.match(ln))
+    def count_list(prose):
+        n = 0
+        for ln in prose.split("\n"):
+            if not LIST_RE.match(ln):
+                continue
+            content = re.sub(r"^\s*[-*+]\s*", "", ln)
+            if not re.search(r"[A-Za-z0-9\u4e00-\u9fff]", content):
+                continue
+            n += 1
+        return n
+    la = count_list(na)
+    lb = count_list(nb)
     if la != lb:
         issues.append(f"列表项 {la} != {lb}")
     ta = sum(1 for ln in na.split("\n") if TABLE_RE.match(ln))

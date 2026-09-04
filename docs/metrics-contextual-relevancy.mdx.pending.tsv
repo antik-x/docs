@@ -1,0 +1,103 @@
+1	---
+2	title: Contextual Relevancy
+3	---
+7	The contextual relevancy metric uses LLM-as-a-judge to measure the quality of your RAG pipeline's retriever by evaluating the overall relevance of the information presented in your `retrieval_context` for a given `input`. `deepeval`'s contextual relevancy metric is a self-explaining LLM-Eval, meaning it outputs a reason for its metric score.
+9	<Info>
+10	Not sure if the `ContextualRelevancyMetric` is suitable for your use case? Run the follow command to find out:
+16	</Info>
+18	## Required Arguments
+20	To use the `ContextualRelevancyMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+22	- `input`
+23	- `actual_output`
+24	- `retrieval_context`
+26	<Note>
+27	Similar to `ContextualPrecisionMetric`, the `ContextualRelevancyMetric` uses `retrieval_context` from your RAG pipeline for evaluation.
+28	</Note>
+30	Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+32	## Usage
+34	The `ContextualRelevancyMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation of text-based and multimodal test cases:
+36	<Tabs>
+37	<Tab title="Text Based">
+39	<Tabs>
+41	<Tab title="Python">
+72	</Tab>
+74	<Tab title="TypeScript">
+105	</Tab>
+107	</Tabs>
+109	</Tab>
+110	<Tab title="Multimodal">
+112	<Tabs>
+114	<Tab title="Python">
+145	</Tab>
+147	<Tab title="TypeScript">
+178	</Tab>
+180	</Tabs>
+182	</Tab>
+183	</Tabs>
+185	<Tabs>
+187	<Tab title="Python">
+189	There are **EIGHT** optional parameters when creating a `ContextualRelevancyMetricMetric`:
+191	</Tab>
+193	<Tab title="TypeScript">
+195	There are **SEVEN** optional parameters when creating a `ContextualRelevancyMetricMetric`:
+197	</Tab>
+199	</Tabs>
+202	- [Optional] `model`: a string specifying which of OpenAI's GPT models to use, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+205	- 
+206	    [Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+209	- [Optional] `evaluation_template`: a class of type `ContextualRelevancyTemplate`, which allows you to override the default prompt templates used to compute the `ContextualRelevancyMetric` score. You can learn what the default prompts looks like [here](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_relevancy/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section below to understand how you can tailor it to your needs. Defaulted to `deepeval`'s `ContextualRelevancyTemplate`.
+212	### Within components
+214	You can also run the `ContextualRelevancyMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+216	<Tabs>
+218	<Tab title="Python">
+243	</Tab>
+245	<Tab title="TypeScript">
+274	</Tab>
+276	</Tabs>
+278	### As a standalone
+280	You can also run the `ContextualRelevancyMetric` on a single test case as a standalone, one-off execution.
+282	<Tabs>
+284	<Tab title="Python">
+293	</Tab>
+295	<Tab title="TypeScript">
+304	</Tab>
+306	</Tabs>
+308	<Warning>
+309	This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports, Confident AI platform) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+310	</Warning>
+312	## How Is It Calculated?
+314	The `ContextualRelevancyMetric` score is calculated according to the following equation:
+316	$$
+317	\text{Contextual Relevancy} = \frac{\text{Number of Relevant Statements}}{\text{Total Number of Statements}}
+318	$$
+320	Although similar to how the `AnswerRelevancyMetric` is calculated, the `ContextualRelevancyMetric` first uses an LLM to extract all statements made in the `retrieval_context` instead, before using the same LLM to classify whether each statement is relevant to the `input`.
+322	## Customize Your Template
+324	Since `deepeval`'s `ContextualRelevancyMetric` is evaluated by LLM-as-a-judge, you can likely improve your metric accuracy by [overriding `deepeval`'s default prompt templates](/docs/metrics-introduction#customizing-metric-prompts). This is especially helpful if:
+326	- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
+327	- You want to customize the examples used in the default `ContextualRelevancyTemplate` to better align with your expectations.
+329	<Tip>
+330	You can learn what the default `ContextualRelevancyTemplate` looks like [here on GitHub](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_relevancy/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section above to understand how you can tailor it to your needs.
+331	</Tip>
+333	Here's a quick example of how you can override the relevancy classification step of the `ContextualRelevancyMetric` algorithm:
+335	<Tabs>
+337	<Tab title="Python">
+374	</Tab>
+376	<Tab title="TypeScript">
+411	Each override receives the template's variables as its first argument, and the default renderer as its second, so you can extend a prompt instead of replacing it:
+422	</Tab>
+424	</Tabs>
+426	## FAQs
+428	<AccordionGroup>
+429	<Accordion title="Why is my contextual relevancy low even though the right answer was retrieved?">
+430	It measures signal-to-noise, not just presence. It scores the fraction of statements in `retrieval_context` relevant to the `input` , so the right passage buried in irrelevant text still scores low. The fix is usually less noisy context.
+431	</Accordion>
+432	<Accordion title="What does a low contextual relevancy score tell me to change?">
+433	Too much irrelevant material in your `retrieval_context` . Lower top-K to return fewer marginal chunks and shrink chunk size for more focused nodes — the most direct ways to raise the relevant ratio.
+434	</Accordion>
+435	<Accordion title="How is Contextual Relevancy different from Answer Relevancy?">
+436	Opposite ends of the pipeline. Contextual relevancy grades your retriever via `retrieval_context` , while [Answer Relevancy](/docs/metrics-answer-relevancy) grades your generator via `actual_output` . Clean context with an off-topic answer points to the generator; noisy context to the retriever.
+437	</Accordion>
+438	<Accordion title="Do I need a ground-truth answer to run it?">
+439	No. It's referenceless — judging `retrieval_context` purely against the `input` with no `expected_output` , unlike reference-based [Contextual Recall](/docs/metrics-contextual-recall) . That makes it usable on live traffic without labeled data.
+440	</Accordion>
+441	</AccordionGroup>

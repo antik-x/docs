@@ -1,0 +1,432 @@
+---
+title: Answer Relevancy
+---
+
+**标签**：LLM-as-a-judge · 单轮 · 无参考 · RAG · 多模态
+
+答案相关性（answer relevancy）指标使用 LLM-as-a-judge，通过评估你的 LLM 应用的 `actual_output` 与给定 `input` 的相关程度，来衡量 RAG 流水线生成器的质量。`deepeval` 的答案相关性指标是会自我解释的 LLM-Eval，会输出指标分数的理由。
+
+<Tip>
+这里有一份详细的 [RAG 评估](/guides/guides-rag-evaluation)指南，我们强烈推荐阅读，它讲解了 `deepeval` RAG 指标的一切。
+</Tip>
+
+## Required Arguments
+
+要使用 `AnswerRelevancyMetric`，你需要在创建 [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case) 时提供以下参数：
+
+- `input`
+- `actual_output`
+
+Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+
+## Usage
+
+`AnswerRelevancyMetric` 可用于文本与多模态测试用例的[端到端](/docs/evaluation-end-to-end-llm-evals)评估：
+
+<Tabs>
+<Tab title="Text Based">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics import AnswerRelevancyMetric
+from deepeval.test_case import LLMTestCase
+from deepeval import evaluate
+
+metric = AnswerRelevancyMetric(
+    threshold=0.7,
+    model="gpt-4.1",
+    include_reason=True
+)
+test_case = LLMTestCase(
+    input="What if these shoes don't fit?",
+    # Replace this with the output from your LLM app
+    actual_output="We offer a 30-day full refund at no extra cost."
+)
+
+# To run metric as a standalone
+# metric.measure(test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { LLMTestCase } from "deepeval/test-case";
+import { evaluate } from "deepeval";
+
+const metric = new AnswerRelevancyMetric({
+  threshold: 0.7,
+  model: "gpt-4.1",
+  includeReason: true,
+});
+const testCase = new LLMTestCase({
+  input: "What if these shoes don't fit?",
+  // Replace this with the output from your LLM app
+  actualOutput: "We offer a 30-day full refund at no extra cost.",
+});
+
+// To run metric as a standalone
+// await metric.measure(testCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([testCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+<Tab title="Multimodal">
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.test_case import LLMTestCase, MLLMImage
+from deepeval.metrics import AnswerRelevancyMetric
+from deepeval import evaluate
+
+metric = AnswerRelevancyMetric(
+    threshold=0.7,
+    model="gpt-4.1",
+    include_reason=True
+)
+test_case = LLMTestCase(
+    input=f"Tell me about this landmark in France: {MLLMImage(...)}",
+    # Replace this with the output from your LLM app
+    actual_output=f"This appears to be Eiffel Tower, which is a famous landmark in France"
+)
+
+# To run metric as a standalone
+# metric.measure(test_case)
+# print(metric.score, metric.reason)
+
+evaluate(test_cases=[test_case], metrics=[metric])
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { LLMTestCase, MLLMImage } from "deepeval/test-case";
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+import { evaluate } from "deepeval";
+
+const metric = new AnswerRelevancyMetric({
+  threshold: 0.7,
+  model: "gpt-4.1",
+  includeReason: true,
+});
+const testCase = new LLMTestCase({
+  input: `Tell me about this landmark in France: ${new MLLMImage({
+    url: "...",
+  })}`,
+  // Replace this with the output from your LLM app
+  actualOutput: `This appears to be Eiffel Tower, which is a famous landmark in France`,
+});
+
+// To run metric as a standalone
+// await metric.measure(testCase);
+// console.log(metric.score, metric.reason);
+
+await evaluate([testCase], [metric]);
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+</Tabs>
+
+<Tabs>
+
+<Tab title="Python">
+
+创建 `AnswerRelevancyMetric` 时有**八个**可选参数：
+
+</Tab>
+
+<Tab title="TypeScript">
+
+创建 `AnswerRelevancyMetric` 时有**七个**可选参数：
+
+</Tab>
+
+</Tabs>
+
+- [可选] `threshold`：表示最低通过阈值的数字。也可以设为 `None`（TypeScript 中为 `null`），以[仅分数模式](/docs/metrics-introduction#metric-thresholds)运行指标。默认为 `0.5`。
+- [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
+- [可选] `include_reason`：布尔值，设为 `True`（TypeScript 中为 `true`）时，会为评估分数附带理由。默认为 `True`（TypeScript 中为 `true`）。
+- [可选] `strict_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把指标分数强制为二元：完美为 1，否则为 0。它还会覆盖当前阈值并将其设为 1。默认为 `False`（TypeScript 中为 `false`）。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
+- [可选] `verbose_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把计算该指标所用的中间步骤打印到控制台（见 [How Is It Calculated](#how-is-it-calculated) 一节）。默认为 `False`（TypeScript 中为 `false`）。
+- [可选] `evaluation_template`：类型为 `AnswerRelevancyTemplate`（TypeScript 中为 `AnswerRelevancyTemplateOverride`），允许你[覆盖](#customize-your-template)用于计算 `AnswerRelevancyMetric` 分数的默认提示词。默认为 `deepeval` 的默认提示词。
+- [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
+
+### Within components
+
+你还可以在嵌套组件内运行 `AnswerRelevancyMetric`，进行[组件级](/docs/evaluation-component-level-llm-evals)评估。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.tracing import observe, update_current_span
+...
+
+@observe(metrics=[metric])
+def inner_component():
+    # Set test case at runtime
+    test_case = LLMTestCase(input="...", actual_output="...")
+    update_current_span(test_case=test_case)
+    return
+
+@observe
+def llm_app(input: str):
+    # Component can be anything from an LLM call, retrieval, agent, tool use, etc.
+    inner_component()
+    return
+
+dataset = EvaluationDataset(goldens=[Golden(input="Hi!")])
+for golden in dataset.evals_iterator():
+    llm_app(golden.input)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { EvaluationDataset, Golden } from "deepeval/dataset";
+import { observe, updateCurrentSpan } from "deepeval/tracing";
+// ...
+
+const innerComponent = observe({
+  metrics: [metric],
+  fn: async () => {
+    // Set test case at runtime
+    const testCase = new LLMTestCase({ input: "...", actualOutput: "..." });
+    updateCurrentSpan({ testCase });
+  },
+});
+
+const llmApp = observe({
+  fn: async (input: string) => {
+    // Component can be anything from an LLM call, retrieval, agent, tool use, etc.
+    await innerComponent();
+  },
+});
+
+const dataset = new EvaluationDataset({
+  goldens: [new Golden({ input: "Hi!" })],
+});
+for await (const golden of dataset.evalsIterator()) {
+  await llmApp((golden as Golden).input);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+### As a standalone
+
+你还可以把 `AnswerRelevancyMetric` 作为独立的一次性执行，运行在单个测试用例上。
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric.measure(test_case)
+print(metric.score, metric.reason)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+await metric.measure(testCase);
+console.log(metric.score, metric.reason);
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+这非常适合调试，或者你想构建自己的评估流水线；但你会**失去** `evaluate()` 函数或 `deepeval test run` 提供的种种好处（测试报告、Confident AI 平台）与全部优化（速度、缓存、计算）。
+</Warning>
+
+## How Is It Calculated?
+
+`AnswerRelevancyMetric` 的分数按以下公式计算：
+
+$$
+\text{Answer Relevancy} = \frac{\text{Number of Relevant Statements}}{\text{Total Number of Statements}}
+$$
+
+`AnswerRelevancyMetric` 首先用 LLM 抽取 `actual_output` 中做出的所有陈述，再用同一个 LLM 判断每条陈述是否与 `input` 相关。
+
+<Note>
+You can set the `verbose_mode` of **ANY** `deepeval` metric to `True`（TypeScript 中为 `true`） to debug the `measure()`（TypeScript 中为 `await measure()`） method:
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+...
+
+metric = AnswerRelevancyMetric(verbose_mode=True)
+metric.measure(test_case)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+// ...
+
+const metric = new AnswerRelevancyMetric({ verboseMode: true });
+await metric.measure(testCase);
+```
+
+</Tab>
+
+</Tabs>
+
+</Note>
+
+## Customize Your Template
+
+由于 `deepeval` 的 `AnswerRelevancyMetric` 由 LLM-as-a-judge 评估，你可以通过[覆盖 `deepeval` 的默认提示词模板](/docs/metrics-introduction#customizing-metric-prompts)来提升指标准确性。这在以下情况特别有帮助：
+
+- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
+- 你想自定义默认提示词中使用的示例，使其更符合你的预期。
+
+<Tip>
+默认提示词的样子可以在 [GitHub 这里](https://github.com/confident-ai/deepeval/tree/main/deepeval/metrics/answer_relevancy/templates)查看，并请阅读上方的 [How Is It Calculated](#how-is-it-calculated) 一节，了解如何按需裁剪。
+</Tip>
+
+下面是一个快速示例，展示如何覆盖 `AnswerRelevancyMetric` 算法中生成陈述的步骤：
+
+<Tabs>
+
+<Tab title="Python">
+
+```python
+from deepeval.metrics.answer_relevancy import AnswerRelevancyTemplate
+from deepeval.metrics import AnswerRelevancyMetric
+
+# Define custom template
+class CustomTemplate(AnswerRelevancyTemplate):
+    @staticmethod
+    def generate_statements(actual_output: str):
+        return f"""Given the text, breakdown and generate a list of statements presented.
+
+Example:
+Our new laptop model features a high-resolution Retina display for crystal-clear visuals.
+
+{{
+    "statements": [
+        "The new laptop model has a high-resolution Retina display."
+    ]
+}}
+===== END OF EXAMPLE ======
+
+Text:
+{actual_output}
+
+JSON:
+"""
+
+# Inject custom template to metric
+metric = AnswerRelevancyMetric(evaluation_template=CustomTemplate)
+metric.measure(...)
+```
+
+</Tab>
+
+<Tab title="TypeScript">
+
+```typescript
+import { AnswerRelevancyMetric } from "deepeval/metrics";
+
+// Inject custom template to metric
+const metric = new AnswerRelevancyMetric({
+  evaluationTemplate: {
+    generateStatements: ({ actualOutput }) =>
+      `Given the text, breakdown and generate a list of statements presented.
+
+Example:
+Our new laptop model features a high-resolution Retina display for crystal-clear visuals.
+
+{
+    "statements": [
+        "The new laptop model has a high-resolution Retina display."
+    ]
+}
+===== END OF EXAMPLE ======
+
+Text:
+${actualOutput}
+
+JSON:
+`,
+  },
+});
+await metric.measure(testCase);
+```
+
+每个覆盖函数都会收到模板变量作为第一个参数、默认渲染器作为第二个参数，因此你可以在替换之外扩展提示词：
+
+```typescript
+const metric = new AnswerRelevancyMetric({
+  evaluationTemplate: {
+    generateStatements: (vars, renderDefault) =>
+      `${renderDefault(vars)}\n\nTreat each bullet point as its own statement.`,
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+## FAQs
+
+<AccordionGroup>
+<Accordion title="Does a high answer relevancy score mean my answer is factually correct?">
+不是。它只检查 `actual_output` 中的陈述是否回应了 `input`，而不检查它们是否以检索到的上下文为依据——答案可能切题却仍在胡编。请搭配[忠实度](/docs/metrics-faithfulness)来发现事实错误。
+</Accordion>
+<Accordion title="My answer relevancy is low — is this a retriever or a generator problem?">
+是生成器的问题。它把 `actual_output` 与 `input` 对照，从不看 `retrieval_context`，因此低分数说明提示词或模型在啰嗦、含糊或跑题。检索问题请用上下文类指标。
+</Accordion>
+<Accordion title="Do I need a reference answer or ground truth to use it?">
+不需要。它是无参考的——只需要 `input` 和 `actual_output`，无需撰写 `expected_output`，可以直接在实时生产流量上运行。见[测试用例文档](/docs/evaluation-test-cases#llm-test-case)。
+</Accordion>
+<Accordion title="Why is my score low when the answer looks fine to me?">
+It counts how many statements in `actual_output` are relevant to the `input` , so preamble, caveats, or tangents drag the score down even when the core answer is correct. Set `verbose_mode=True`（TypeScript 中为 `verboseMode: true`） to see which statements were flagged.
+</Accordion>
+</AccordionGroup>

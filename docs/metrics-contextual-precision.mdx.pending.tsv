@@ -1,0 +1,109 @@
+1	---
+2	title: Contextual Precision
+3	---
+7	The contextual precision metric uses LLM-as-a-judge to measure your RAG pipeline's retriever by evaluating whether nodes in your `retrieval_context` that are relevant to the given `input` are ranked higher than irrelevant ones. `deepeval`'s contextual precision metric is a self-explaining LLM-Eval, meaning it outputs a reason for its metric score.
+9	<Info>
+11	The `ContextualPrecisionMetric` focuses on evaluating the re-ranker of your RAG pipeline's retriever by assessing the ranking order of the text chunks in the `retrieval_context`.
+13	</Info>
+15	## Required Arguments
+17	To use the `ContextualPrecisionMetric`, you'll have to provide the following arguments when creating an [`LLMTestCase`](/docs/evaluation-test-cases#llm-test-case):
+19	- `input`
+20	- `actual_output`
+21	- `expected_output`
+22	- `retrieval_context`
+24	Read the [How Is It Calculated](#how-is-it-calculated) section below to learn how test case parameters are used for metric calculation.
+26	## Usage
+28	The `ContextualPrecisionMetric()` can be used for [end-to-end](/docs/evaluation-end-to-end-llm-evals) evaluation of text-based and multimodal test cases:
+30	<Tabs>
+31	<Tab title="Text Based">
+33	<Tabs>
+35	<Tab title="Python">
+70	</Tab>
+72	<Tab title="TypeScript">
+107	</Tab>
+109	</Tabs>
+111	</Tab>
+112	<Tab title="Multimodal">
+114	<Tabs>
+116	<Tab title="Python">
+148	</Tab>
+150	<Tab title="TypeScript">
+182	</Tab>
+184	</Tabs>
+186	</Tab>
+187	</Tabs>
+189	<Tabs>
+191	<Tab title="Python">
+193	There are **EIGHT** optional parameters when creating a `ContextualPrecisionMetric`:
+195	</Tab>
+197	<Tab title="TypeScript">
+199	There are **SEVEN** optional parameters when creating a `ContextualPrecisionMetric`:
+201	</Tab>
+203	</Tabs>
+206	- [Optional] `model`: a string specifying which of OpenAI's GPT models to use, **OR** [any custom LLM model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
+209	- 
+210	    [Optional] `async_mode`: a boolean which when set to `True`, enables [concurrent execution within the `measure()` method.](/docs/metrics-introduction#measuring-metrics-in-async) Defaulted to `True`.
+213	- [Optional] `evaluation_template`: a class of type `ContextualPrecisionTemplate`, which allows you to [override the default prompts](#customize-your-template) used to compute the `ContextualPrecisionMetric` score. Defaulted to `deepeval`'s `ContextualPrecisionTemplate`.
+216	### Within components
+218	You can also run the `ContextualPrecisionMetric` within nested components for [component-level](/docs/evaluation-component-level-llm-evals) evaluation.
+220	<Tabs>
+222	<Tab title="Python">
+247	</Tab>
+249	<Tab title="TypeScript">
+278	</Tab>
+280	</Tabs>
+282	### As a standalone
+284	You can also run the `ContextualPrecisionMetric` on a single test case as a standalone, one-off execution.
+286	<Tabs>
+288	<Tab title="Python">
+297	</Tab>
+299	<Tab title="TypeScript">
+308	</Tab>
+310	</Tabs>
+312	<Warning>
+313	This is great for debugging or if you wish to build your own evaluation pipeline, but you will **NOT** get the benefits (testing reports, Confident AI platform) and all the optimizations (speed, caching, computation) the `evaluate()` function or `deepeval test run` offers.
+314	</Warning>
+316	## How Is It Calculated?
+318	The `ContextualPrecisionMetric` score is calculated according to the following equation:
+320	$$
+321	\text{Contextual Precision} = \frac{1}{\text{Number of Relevant Nodes}} \sum_{k=1}^{n} \left( \frac{\text{Number of Relevant Nodes Up to Position } k}{k} \times r_{k} \right)
+322	$$
+324	<Info>
+326	- **_k_** is the (i+1)<sup>th</sup> node in the `retrieval_context` (nodes with the same `source` are grouped together as a single node if `RetrievedContextData` is used)
+327	- **_n_** is the length of the `retrieval_context` (after grouping by `source`)
+328	- **_r<sub>k</sub>_** is the binary relevance for the k<sup>th</sup> node in the `retrieval_context`. _r<sub>k</sub>_ = 1 for nodes that are relevant, 0 if not.
+330	</Info>
+332	The `ContextualPrecisionMetric` first uses an LLM to determine for each node in the `retrieval_context` whether it is relevant to the `input` based on information in the `expected_output`, before calculating the **weighted cumulative precision** as the contextual precision score. The weighted cumulative precision (WCP) is used because it:
+334	- **Emphasizes on Top Results**: WCP places a stronger emphasis on the relevance of top-ranked results. This emphasis is important because LLMs tend to give more attention to earlier nodes in the `retrieval_context` (which may cause downstream hallucination if nodes are ranked incorrectly).
+335	- **Rewards Relevant Ordering**: WCP can handle varying degrees of relevance (e.g., "highly relevant", "somewhat relevant", "not relevant"). This is in contrast to metrics like precision, which treats all retrieved nodes as equally important.
+337	A higher contextual precision score represents a greater ability of the retrieval system to correctly rank relevant nodes higher in the `retrieval_context`.
+339	## Customize Your Template
+341	Since `deepeval`'s `ContextualPrecisionMetric` is evaluated by LLM-as-a-judge, you can likely improve your metric accuracy by [overriding `deepeval`'s default prompt templates](/docs/metrics-introduction#customizing-metric-prompts). This is especially helpful if:
+343	- You're using a [custom evaluation LLM](/guides/guides-using-custom-llms), especially for smaller models that have weaker instruction following capabilities.
+344	- You want to customize the examples used in the default `ContextualPrecisionTemplate` to better align with your expectations.
+346	<Tip>
+347	You can learn what the default `ContextualPrecisionTemplate` looks like [here on GitHub](https://github.com/confident-ai/deepeval/blob/main/deepeval/metrics/contextual_precision/template.py), and should read the [How Is It Calculated](#how-is-it-calculated) section above to understand how you can tailor it to your needs.
+348	</Tip>
+350	Here's a quick example of how you can override the statement generation step of the `ContextualPrecisionMetric` algorithm:
+352	<Tabs>
+354	<Tab title="Python">
+397	</Tab>
+399	<Tab title="TypeScript">
+438	Each override receives the template's variables as its first argument, and the default renderer as its second, so you can extend a prompt instead of replacing it:
+449	</Tab>
+451	</Tabs>
+453	## FAQs
+455	<AccordionGroup>
+456	<Accordion title="Does contextual precision care about the order of my retrieved chunks?">
+457	Yes — ranking is the whole point. A weighted cumulative precision rewards relevant nodes appearing early in the `retrieval_context` and penalizes irrelevant ones ranked ahead. The same chunks in a different order score differently, which is why this metric targets your re-ranker.
+458	</Accordion>
+459	<Accordion title="My retrieved chunks are all relevant but precision is still low — why?">
+460	It asks whether relevant chunks are ranked above irrelevant ones, not just present. Relevant nodes buried beneath noise in the `retrieval_context` drop the score even when everything was retrieved — implicating your re-ranker or top-K ordering.
+461	</Accordion>
+462	<Accordion title="Should I use Contextual Precision or Contextual Recall?">
+463	Use both. Precision asks "are relevant chunks ranked high enough?" (ordering), while [Contextual Recall](/docs/metrics-contextual-recall) asks "did I retrieve everything I needed?" (completeness). High recall with low precision means right chunks, poor ranking.
+464	</Accordion>
+465	<Accordion title="Why does it require an expected output?">
+466	It's reference-based: the LLM judges each node against the ideal `expected_output` , not the generator's `actual_output` , keeping ranking evaluation honest even when the generator answered poorly. See the [test case docs](/docs/evaluation-test-cases#llm-test-case) .
+467	</Accordion>
+468	</AccordionGroup>

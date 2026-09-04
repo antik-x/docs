@@ -104,6 +104,44 @@ def main():
             for i, line in pending:
                 f.write(f"{i}\t{line}\n")
         print(f"autoapplied {hit} 行（记忆命中）；待翻译 {len(pending)} 行 -> {pending_path}")
+    elif cmd == "applymatch":
+        """按英文子串匹配定位替换：TSV 每行 = EN子串<TAB>整行中文译文。
+        目标行 = 围栏外、不含中文、且包含该子串的行（必须唯一）。"""
+        pairs = []
+        for ln in open(sys.argv[3], encoding="utf-8"):
+            if not ln.strip() or ln.startswith("#"):
+                continue
+            key, _, zh = ln.rstrip("\n").partition("\t")
+            if key.strip() and zh.strip():
+                pairs.append((key.strip(), zh))
+        lines = text.split("\n")
+        fenced = set()
+        in_f, closer = False, None
+        for i, ln in enumerate(lines, 1):
+            t = ln.lstrip()
+            if t.startswith("```") or t.startswith("~~~"):
+                if not in_f:
+                    in_f, closer = True, t[0]
+                    fenced.add(i)
+                elif t[0] == closer:
+                    in_f = False
+                    fenced.add(i)
+            elif in_f:
+                fenced.add(i)
+        used = set()
+        misses = []
+        for key, zh in pairs:
+            hits = [i for i, ln in enumerate(lines, 1)
+                    if i not in fenced and key in ln]
+            if len(hits) == 1:
+                lines[hits[0] - 1] = zh
+                used.add(key)
+            else:
+                misses.append((key[:50], len(hits)))
+        open(path, "w", encoding="utf-8").write("\n".join(lines))
+        print(f"applymatch: 替换 {len(used)} 行；未命中 {len(misses)}")
+        for k, c in misses:
+            print(f"  MISS({c}): {k}")
     elif cmd == "learn":
         import json, os
         pending_path, done_path = sys.argv[2], sys.argv[3]

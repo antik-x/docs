@@ -504,6 +504,8 @@ def convert_only(text):
     text = re.sub(r'<Only\s+id="python"\s*>(.*?)</Only>', py_repl, text, flags=re.S)
     text = re.sub(r'<Only\s+id="typescript"\s*>(.*?)</Only>', ts_repl, text,
                   flags=re.S)
+    # 解包后残留的裸列表标记行（`- ` 后跟缩进续行）合并为单行列表项
+    text = re.sub(r"(^\s*)[-*+]\s*\n(\s+)(\S)", r"\1\3", text, flags=re.M)
     return text
 
 
