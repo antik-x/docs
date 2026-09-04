@@ -1,5 +1,5 @@
 ---
-title: Stopping Logic
+title: 停止逻辑
 ---
 
 By default, `ConversationSimulator` ends a simulation when the `expected_outcome` in your `ConversationalGolden` has been met. You can replace this behavior with a custom `stopping_controller` that returns `proceed()` or `end()`.
@@ -67,7 +67,7 @@ The four terminators are complementary, not redundant — see the comparison in 
 **`terminal` and `max_visits` live on `SimulationNode`, not here.** This page only covers `stopping_controller`. For node-level termination — `terminal=True` leaves and `max_visits` caps — see the [Simulation Graph](/docs/conversation-simulator-simulation-graph#terminal-nodes-and-max_visits) docs.
 </Info>
 
-## Supported Arguments
+## 支持的参数
 
 Only define the arguments your callback needs. `deepeval` will pass supported arguments by name:
 
@@ -101,7 +101,7 @@ Your callback can return:
 - `end(reason=...)`: end the simulation and optionally record why.
 - Anything else, including `None`: continue the simulation.
 
-## Common Use Cases
+## 常见用例
 
 ### Confirmation States
 
@@ -155,7 +155,7 @@ def stopping_controller(turns):
 `max_user_simulations` is always checked before your callback runs. This means the max-turn limit remains the hard safety cap, even if your callback keeps returning `proceed()`.
 </Note>
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="What stops a simulation if I don't write a stopping_controller?">

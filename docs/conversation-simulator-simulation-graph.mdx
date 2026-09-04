@@ -1,8 +1,8 @@
 ---
-title: Simulation Graph
+title: 模拟图
 ---
 
-By default, `ConversationSimulator` generates every simulated user turn with a single LLM call against a fixed prompt template. That works for fuzzy exploration but breaks down when you need the simulated user to follow a specific trajectory — e.g., "first ask about pricing, push back if the assistant cites policy, escalate after three pushbacks, accept any compromise".
+默认情况下，`ConversationSimulator` 使用内置的模拟模板生成每条模拟的用户轮次。
 
 ```python title="main.py"
 from deepeval.simulator import ConversationSimulator, SimulationNode
@@ -37,11 +37,11 @@ simulator = ConversationSimulator(
 )
 ```
 
-Pass a `simulation_graph` (a `SimulationNode`) to encode that trajectory as a state machine. Each node is one state of the simulated user; its `action(...)` returns the user's next message, and its outgoing edges describe — in natural language — when to advance to a different state. An LLM router classifies the assistant's reply against the edge descriptions to decide which child node runs next.
+传入 `simulation_graph`（一个 `SimulationNode`）将该轨迹编码为一个图。
 
 ## How Routing Works
 
-Each conversation starts at the `simulation_graph` root. On every iteration, the runner:
+每段对话从 `simulation_graph` 根节点开始。
 
 1. Invokes the current node's `action(...)` to produce the next user `Turn` (or skips and ends if `max_visits` is exhausted — see below).
 2. Calls `model_callback` to get the assistant's reply.
@@ -176,7 +176,7 @@ Use a [**custom template**](/docs/conversation-simulator-custom-templates) (`def
 
 Use a **simulation graph** when the _trajectory_ matters — e.g., you need deterministic ordering, retry budgets, branching on assistant behavior, or terminal success/failure states. Inside a node's `action` you can still call any LLM (including the one in `simulator.simulator_model`) to phrase the user's message, so the two are not mutually exclusive.
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="When should I pass a simulation_graph instead of using the default LLM-driven user?">

@@ -1,8 +1,8 @@
 ---
-title: Personas
+title: 人设
 ---
 
-A `Persona` defines **who the simulated user is, how they behave, and how they sound**.
+人设（Persona）定义了**模拟用户是谁、如何表现、以及听起来如何**。
 
 A persona pairs with a `ConversationalGolden`: the persona is _who_ is calling, while the golden's `scenario` and `expected_outcome` are _what_ they are trying to do.
 
@@ -75,9 +75,9 @@ A few things that matter more in voice than in text:
 - **Spell filler words plainly.** `um`, `uh`, `hmm`, `oh`, `well` — not `ummm` or `uhhhh`, which TTS engines often spell out letter by letter.
 - **Tag blocks work well.** `characteristics` is free-form multi-line text, so `<speaking_style>…</speaking_style>` or `<end_call>…</end_call>` sections are a good way to separate delivery from call-control instructions.
 
-## Configuring Audio
+## 配置音频
 
-### Voice
+### 声音
 
 `voice` is passed straight through to your `tts_model`, so valid values depend on the model you configured on [`VoiceConfig`](/docs/conversation-simulator-voice-mode#tts-and-stt-models) — `"alloy"`, `"onyx"`, `"shimmer"`, etc. for the default `OpenAITTSModel`.
 
@@ -90,7 +90,7 @@ persona = Persona(
 
 Rate, pitch, and delivery style are **not** persona fields, because no two TTS providers spell them the same way. Set those on the TTS model itself (`OpenAITTSModel(generation_kwargs={...})`) and keep the persona portable.
 
-### Background Noise
+### 背景噪音
 
 Real calls are not made from a recording booth. `background_noise` loops an ambient audio file underneath the caller's speech, so your agent's speech recognition has to work through it:
 
@@ -112,9 +112,9 @@ There is **ONE** mandatory and **ONE** optional parameter when creating a `Backg
 Pick a file that loops cleanly — an abrupt cut or trailing silence repeats for the whole conversation. `.mp3` files need `pydub` and `ffmpeg` installed; `.wav` files need nothing.
 </Tip>
 
-## Configuring Behavior
+## 配置行为
 
-### Who Speaks First
+### 谁先说话
 
 Most voice agents open with a greeting. Set `speaks_first=False` and the simulated caller stays quiet until the agent has spoken, so the greeting becomes the first `Turn` of the conversation:
 
@@ -127,7 +127,7 @@ persona = Persona(
 
 On a full-duplex connector the caller waits [`hold_timeout`](#hanging-up-on-hold-music) seconds for the greeting (15 when unset), then speaks first anyway.
 
-### Silent Callers
+### 静默来电者
 
 `muted=True` makes the caller never speak at all — every user turn is empty and only silence goes up the wire. Use it to test how your agent handles dead air: does it re-prompt, escalate, or hang up?
 
@@ -135,7 +135,7 @@ On a full-duplex connector the caller waits [`hold_timeout`](#hanging-up-on-hold
 persona = Persona(characteristics="You are unable to speak.", muted=True)
 ```
 
-### Hanging Up On Hold Music
+### 等待音乐时挂断
 
 `hold_timeout` is the number of seconds of agent silence (or hold music) the caller tolerates before ending the call. Without it, the simulation runs until `max_user_simulations` is exhausted:
 
@@ -148,11 +148,11 @@ persona = Persona(
 
 This is most useful for transfer flows — set it to 10–15 seconds to confirm a hand-off actually happened without waiting out the agent's own timeout.
 
-### Multilingual Recognition
+### 多语言识别
 
 By default the caller "hears" your agent in whatever language your `stt_model` is configured for. Set `multilingual_stt=True` and the STT model detects the language per utterance instead, which is what you want for agents that switch mid-call ("For English press one, para español presione dos").
 
-### Interruptions
+### 打断
 
 `interruption_behavior` gives the caller permission to **barge in**: instead of politely waiting for each reply, they can cut in mid-sentence while the agent is still speaking.
 
@@ -171,7 +171,7 @@ persona = Persona(
 Barge-in is a whole simulation mode of its own — how the judge decides to interrupt, what happens during double-talk, and what gets recorded on each `Turn` are covered in [Interruptions](/docs/conversation-simulator-voice-interruptions).
 </Tip>
 
-## FAQs
+## 常见问题
 
 <AccordionGroup>
 <Accordion title="Do personas work in text simulations too?">
