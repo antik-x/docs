@@ -135,7 +135,7 @@ flowchart TD
 
 **第一阶段——指南生成：** 提出器要求优化器 LLM 头脑风暴出 `breadth` 个不同的「变体指南」——关于如何有意义地改变提示的高层次策略。示例：
 
-| Guideline Example                                                              | Effect                                                     |
+| 准则示例                                                           | 效果                                                       |
 |--------------------------------------------------------------------------------|------------------------------------------------------------|
 | 「重新构建提示以要求在最终答案前进行逐步推理」 | 生成一个强制思维链的指令 |
 | 「将指令精简为高度直接、简洁的格式」 | 产生更简短、更激进指令风格 |
@@ -189,12 +189,12 @@ COPRO 在**每个深度步骤**都对最佳候选运行全数据集验证，而�
 
 **示例：深度步骤 3 时历史日志的样子**
 
-| Attempt | Score | Metric Feedback Summary                                      |
+| 尝试 | 分数 | 指标反馈摘要                                              |
 |---------|-------|--------------------------------------------------------------|
-| P₃ᵦ     | 0.81  | Minor formatting issues on 1/25 examples                     |
-| P₂ₐ     | 0.74  | Consistently missed JSON schema on structured outputs        |
-| P₁ᵦ     | 0.71  | Verbose responses triggered conciseness metric failures      |
-| P₂ᵦ     | 0.68  | Lacked step-by-step reasoning on multi-hop questions         |
+| P₃ᵦ     | 0.81  | 25 个示例中有 1 个存在轻微格式问题                             |
+| P₂ₐ     | 0.74  | 在结构化输出上始终缺失 JSON 模式                               |
+| P₁ᵦ     | 0.71  | 冗长的响应触发了简洁性指标失败                                  |
+| P₂ᵦ     | 0.68  | 在多跳问题上缺乏分步推理                                      |
 | ...     | ...   | ...                                                          |
 
 提出器会看到此排名历史并生成指南，**明确修复之前步骤中的失败**。
@@ -205,9 +205,9 @@ COPRO 在**每个深度步骤**都对最佳候选运行全数据集验证，而�
 
 **示例：4 个深度步骤中的坐标上升进展**
 
-| Depth | Candidates Evaluated | Best Minibatch Score | Full Dataset Score | Accepted? |
+| 深度 | 评估的候选数         | 最佳小批量分数        | 全数据集分数        | 是否接受？ |
 | ----- | -------------------- | -------------------- | ------------------ | --------- |
-| 1     | 8 (7 + original)     | 0.68                 | 0.65               | ✅ (root) |
+| 1     | 8（7 + 原始）     | 0.68                 | 0.65               | ✅（根节点） |
 | 2     | 7                    | 0.74                 | 0.71               | ✅        |
 | 3     | 7                    | 0.79                 | 0.76               | ✅        |
 | 4     | 7                    | 0.77                 | 0.73               | ❌        |
@@ -218,25 +218,25 @@ COPRO 在**每个深度步骤**都对最佳候选运行全数据集验证，而�
 
 COPRO 在以下情况下特别有效：
 
-| Scenario                                           | Why COPRO Helps                                                                    |
+| 场景                                               | 为什么选择 COPRO                                                                  |
 |----------------------------------------------------|------------------------------------------------------------------------------------|
-| **Instruction quality is the main lever**          | COPRO focuses entirely on refining the instruction text                            |
-| **You have clear metric feedback**                 | Diagnostic feedback per candidate makes each generation more targeted              |
-| **You want predictable, monotonic improvement**    | Coordinate ascent commits each improvement before building on it                   |
-| **Smaller datasets**                               | Full-dataset validation at every step works well when goldens are not too numerous |
-| **You need fast convergence**                      | Depth steps are shallow and focused; typically 3-5 steps is enough                 |
+| **指令质量是主要抓手**                            | COPRO 专注于打磨指令文本本身                                                  |
+| **你有清晰的指标反馈**                             | 每个候选的诊断性反馈让每次生成更有针对性                                          |
+| **你想要可预测的单调提升**                        | 坐标上升每一步都会先提交改进，再在此基础上继续                                  |
+| **数据集较小**                                           | 每步都做全数据集验证，在 golden 数量不多时效果很好                              |
+| **你需要快速收敛**                                    | depth 步数浅而聚焦；通常 3-5 步就够了                                          |
 
 ## COPRO vs. Other Algorithms
 
-| Aspect                     | COPRO                                   | SIMBA                                      | GEPA                                   | MIPROv2                                      |
+| 维度                       | COPRO                                   | SIMBA                                      | GEPA                                   | MIPROv2                                      |
 |----------------------------|------------------------------------------|--------------------------------------------|----------------------------------------|---------------------------------------------|
-| **Search strategy**        | Informed coordinate ascent               | Variance-driven introspective ascent       | Pareto-based evolutionary              | Bayesian Optimization (TPE)                 |
-| **Feedback signal**        | Score + metric feedback per candidate    | Score variance across trajectories         | LLM diagnosis of failures/successes    | Minibatch score per trial                   |
-| **Optimizes instructions?**| ✅ Yes                                    | ✅ Yes                                     | ✅ Yes                                 | ✅ Yes                                      |
-| **Optimizes demos?**       | ❌ No                                     | ✅ Yes                                     | ❌ No                                  | ✅ Yes                                      |
-| **Candidate generation**   | Two-pass guideline + rewrite             | Per-iteration from hard examples           | Per-iteration via reflective mutation  | All upfront (proposal phase)                |
-| **Full eval frequency**    | Every depth step                         | Every N iterations                         | Per accepted candidate                 | Every N trials                              |
-| **Best for**               | Fast, instruction-focused optimization   | Inconsistent model behavior, complex tasks | Diverse problem types, multi-objective | Large search spaces, few-shot-heavy tasks   |
+| **搜索策略**             | 有引导的坐标上升                         | 方差驱动的内省式上升                       | 基于 Pareto 的进化搜索              | 贝叶斯优化（TPE）                             |
+| **反馈信号**             | 每个候选的分数 + 指标反馈              | 各轨迹间的分数方差                         | LLM 对成败的诊断                      | 每次试验的小批量分数                           |
+| **优化指令？**           | ✅ 是                                    | ✅ 是                                     | ✅ 是                                 | ✅ 是                                      |
+| **优化演示？**           | ❌ 否                                     | ✅ 是                                     | ❌ 否                                  | ✅ 是                                      |
+| **候选生成**             | 两遍式准则 + 重写                         | 每轮从难例生成                             | 每轮通过反思式变异生成                  | 一次性全部生成（提案阶段）                      |
+| **全量评估频率**         | 每个 depth 步                             | 每 N 轮                                     | 每个被接受的候选                       | 每 N 次试验                                  |
+| **最适用场景**           | 快速、聚焦指令的优化                       | 模型行为不稳定、复杂任务                    | 问题类型多样、多目标                    | 大搜索空间、依赖少样本的任务                   |
 
 当你想要快速、有针对性的指令改进并获得清晰的诊断反馈时，选择 ****COPRO****。
 
@@ -253,7 +253,7 @@ COPRO 在以下情况下特别有效：
 `COPRO`（协作提示优化器）使用坐标上升：在每个深度步骤评估一批候选并提交最佳者。
 </Accordion>
 <Accordion title="What do depth and breadth control in COPRO?">
-`depth` (default `4` ) is the number of coordinate ascent steps; each step commits the best candidate as the baseline for the next. `breadth` (default `7` ) is how many candidates are generated and evaluated at each step. Higher `breadth` explores more of the prompt space per step but costs more.
+`depth`（默认 `4` ）是坐标上升的步数；每一步都会把最佳候选提交为下一步的基线。`breadth`（默认 `7` ）是每一步生成并评估的候选数量。`breadth` 越大，每步探索的提示空间越广，但开销也越高。
 </Accordion>
 <Accordion title="Does COPRO optimize few-shot demonstrations?">
 不会。COPRO 完全专注于改进指令文本，不注入任何示例。

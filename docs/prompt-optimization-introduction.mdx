@@ -2,20 +2,20 @@
 title: Introduction to Prompt Optimization
 ---
 
-`deepeval`'s `PromptOptimizer` allows anyone to automatically craft better prompts based on evaluation results of 50+ metrics. Instead of repeatedly running evals, eyeballing failures, and manually tweaking prompts, which is slow and tedious, `deepeval` writes prompts for you.
+`deepeval` 的 `PromptOptimizer` 让任何人都能基于 50 多个指标的评估结果自动打磨更好的提示。不必反复运行评估、肉眼排查失败、手动微调提示——这些既慢又乏味——`deepeval` 会替你编写提示。
 
-`deepeval` offers **2 state-of-the-art, research-backed** core prompt optimization algorithms:
+`deepeval` 提供 **2 种先进且经研究验证的**核心提示优化算法：
 
-- [GEPA](/docs/prompt-optimization-gepa) – multi-objective genetic–Pareto search that maintains a Pareto frontier of prompts using metric-driven feedback on a split golden set.
-- [MIPROv2](/docs/prompt-optimization-miprov2) – zero-shot surrogate-based search over an unbounded pool of prompts using epsilon-greedy selection on minibatch scores and periodic full evaluations.
+- [GEPA](/docs/prompt-optimization-gepa) – 多目标遗传–Pareto 搜索，在拆分的 golden 集上利用指标驱动的反馈维护提示的 Pareto 前沿。
+- [MIPROv2](/docs/prompt-optimization-miprov2) – 基于零样本代理模型的无界提示池搜索，在小批量分数上使用 epsilon-greedy 选择并定期做全量评估。
 
 <Info>
-These algorithms are replicas of implementations from `DSPy` but in `deepeval`'s ecosystem.
+这些算法是 `DSPy` 实现在 `deepeval` 生态中的复刻。
 </Info>
 
 ## Quick Summary
 
-To get started, simply provide a `Prompt` you wish to optimize, a list of [goldens](/docs/evaluation-datasets#what-are-goldens) to optimize against, one or more metrics to optimize for, and a `model_callback` that invokes your LLM app at optimization time.
+开始使用只需提供：你想优化的 `Prompt`、用于优化的一组 [golden](/docs/evaluation-datasets#what-are-goldens)、一个或多个要优化的指标，以及在优化时调用你的 LLM 应用的 `model_callback`。
 
 ```python title="main.py"
 from deepeval.dataset import Golden
@@ -40,35 +40,35 @@ optimized_prompt = optimizer.optimize(
 print(optimized_prompt.text_template)
 ```
 
-Then run the code:
+然后运行代码：
 
 ```bash
 python main.py
 ```
 
-Congratulations 🎉🥳! You've just optimized your first prompt. Let's break down what happened:
+恭喜 🎉🥳！你刚刚优化了第一个提示。看看发生了什么：
 
-- The variable `prompt` is an instance of the `Prompt` class, which contains your prompt template.
-- The `model_callback` wraps around your LLM app for `deepeval` to call during optimization.
-- The outputs of your `model_callback` will be used as `actual_output`s in [test cases](/docs/evaluation-test-cases) before being evaluated using the provided `metrics`.
-- The scores of the `metrics` is used to determine whether the optimized prompt is better or worse than the original prompt.
-- The default optimization algorithm in `deepeval` is **GEPA**.
+- 变量 `prompt` 是 `Prompt` 类的实例，包含你的提示模板。
+- `model_callback` 包装你的 LLM 应用，供 `deepeval` 在优化期间调用。
+- `model_callback` 的输出会作为 [测试用例](/docs/evaluation-test-cases) 的 `actual_output`，再使用提供的 `metrics` 进行评估。
+- `metrics` 的分数用于判断优化后的提示比原始提示更好还是更差。
+- `deepeval` 默认的优化算法是 **GEPA**。
 
-In reality, different algorithms work slightly differently, and while this is what happens overall, you should go to each algorithm's documentation pages to determine how they work.
+实际上，不同算法的工作方式略有差异，以上只是整体流程，具体细节请查阅各算法的文档页面。
 
 <Tip>
 
-Prompt optimization requires knowledge of existing terminologies in `deepeval`'s ecosystem, so be sure to brush up on some fundamentals if any of the above feels confusing:
+提示优化需要了解 `deepeval` 生态中的既有术语，如果对上面的内容感到困惑，请先温习一些基础知识：
 
-- [Test Cases](/docs/evaluation-test-cases)
+- [测试用例](/docs/evaluation-test-cases)
   - [指标](/docs/metrics-introduction)
-- [Goldens & Datasets](/docs/evaluation-datasets)
+- [Golden 与数据集](/docs/evaluation-datasets)
 
 </Tip>
 
 ## Create An Optimizer
 
-To start optimizing prompts, begin by creating a `PromptOptimizer` object:
+要开始优化提示，先创建一个 `PromptOptimizer` 对象：
 
 ```python
 from deepeval.metrics import AnswerRelevancyMetric
@@ -81,24 +81,24 @@ async def model_callback(prompt_text: str):
 optimizer = PromptOptimizer(metrics=[AnswerRelevancyMetric()], model_callback=model_callback)
 ```
 
-There are **TWO** required parameters and **FIVE** optional parameters when creating a `PromptOptimizer`:
+创建 `PromptOptimizer` 时有**两个**必填参数和**五个**可选参数：
 
-- `metrics`: list of `deepeval` metrics used for scoring and feedback.
-- `model_callback`: a callback that wraps around your LLM app.
-- [Optional] `algorithm`: an instance of the optimization algorithm to be used. Defaulted to `GEPA()`.
-- [Optional] `async_config`: an instance of type `AsyncConfig` that allows you to [customize the degree of concurrency](something) during optimization. Defaulted to the default `AsyncConfig` values.
-- [Optional] `display_config`: an instance of type `DisplayConfig` that allows you to [customize what is displayed](something) in the console during optimization. Defaulted to the default `DisplayConfig` values.
-- [Optional] `mutation_config`: `MutationConfig` controlling which message is rewritten in LIST-style prompts.
+- `metrics`：用于打分和反馈的 `deepeval` 指标列表。
+- `model_callback`：包装你的 LLM 应用的回调。
+- [可选] `algorithm`：要使用的优化算法实例。默认为 `GEPA()`。
+- [可选] `async_config`：`AsyncConfig` 类型的实例，允许你[自定义优化期间的并发程度](something)。默认为默认的 `AsyncConfig` 值。
+- [可选] `display_config`：`DisplayConfig` 类型的实例，允许你[自定义优化期间控制台的显示内容](something)。默认为默认的 `DisplayConfig` 值。
+- [可选] `mutation_config`：`MutationConfig`，控制 LIST 风格提示中哪条消息被重写。
 
 <Info>
-If you want full control over algorithm-specific settings (for example, GEPA's `iterations`, minibatch sizing, or tie-breaking), construct a `GEPA` instance with custom parameters and pass it via the `algorithm` argument. The [GEPA page](/docs/prompt-optimization-gepa) covers those fields in detail.
+如果你想完全掌控算法特定的设置（例如 GEPA 的 `iterations`、小批量大小或平局裁决），请构造一个带自定义参数的 `GEPA` 实例，并通过 `algorithm` 参数传入。[GEPA 页面](/docs/prompt-optimization-gepa) 详细介绍了这些字段。
 </Info>
 
 ### Model Callback
 
-The `model_callback` is a wrapper around your LLM app that will act as a feedback loop for `deepeval` to know whether a rewritten prompt is better or worse than before. It is therefore extremely important that you call your LLM app correctly within your `model_callback`.
+`model_callback` 是对你的 LLM 应用的包装，充当反馈回路，让 `deepeval` 知道重写后的提示比原来更好还是更差。因此，在 `model_callback` 中正确调用你的 LLM 应用极其重要。
 
-During optimization, `deepeval` will pass you a `Prompt` instance (the rewritten prompt) and a `Golden` (for you to generate dynamically for a given prompt) that you must accept as arguments.
+优化期间，`deepeval` 会传入一个 `Prompt` 实例（重写后的提示）和一个 `Golden`（供你针对给定提示动态生成），你必须将它们作为参数接收。
 
 ```python title="main.py"
 from deepeval.prompt import Prompt
@@ -113,16 +113,16 @@ async def model_callback(prompt: Prompt, golden: Union[Golden, ConversationalGol
     return res
 ```
 
-The `model_callback` accepts **TWO** required arguments:
+`model_callback` 接受**两个**必填参数：
 
-- `prompt`: the current `Prompt` candidate being evaluated. You should use `prompt.interpolate()` to inject the golden's input, or any other field, into the prompt template.
-- `golden`: the current `Golden` or `ConversationalGolden` being scored. This contains the `input` you need to interpolate into the prompt.
+- `prompt`：当前正在评估的 `Prompt` 候选。你应使用 `prompt.interpolate()` 将 golden 的输入或其他字段注入提示模板。
+- `golden`：当前被打分的 `Golden` 或 `ConversationalGolden`。其中包含你需要注入提示的 `input`。
 
-It **MUST** return a string.
+它**必须**返回一个字符串。
 
 ## Optimize Your First Prompt
 
-Once you've created an optimizer, you can optimize any `Prompt` against a relevant set of goldens:
+创建优化器后，你可以针对一组相关 golden 优化任意 `Prompt`：
 
 ```python
 from deepeval.dataset import Golden
@@ -149,13 +149,13 @@ print("Optimized prompt:", optimized_prompt.text_template)
 print("Optimization report:", optimizer.optimization_report)
 ```
 
-There are **TWO** mandatory parameters when calling the `optimize()` method:
+调用 `optimize()` 方法时有**两个**必填参数：
 
-- `prompt`: the `Prompt` to optimize.
-- `goldens`: a list of `Golden`s or `ConversationalGolden`s instances to evaluate against.
+- `prompt`：要优化的 `Prompt`。
+- `goldens`：用于评估的 `Golden` 或 `ConversationalGolden` 实例列表。
 
 <Info>
-As with many methods in `deepeval`, the `optimize()` method offers an async `a_optimize` counterpart that can be called asynchronously:
+与 `deepeval` 中的许多方法一样，`optimize()` 方法提供了异步版本 `a_optimize`，可以异步调用：
 
 ```python
 import asyncio
@@ -166,31 +166,31 @@ def async main():
 asyncio.run(main)
 ```
 
-This allows you to run prompt optimizations concurrently without blocking the main thread.
+这让你可以在不阻塞主线程的情况下并发运行提示优化。
 </Info>
 
-You can also access the `optimization_report` through a `PromptOptimizer` instance:
+你还可以通过 `PromptOptimizer` 实例访问 `optimization_report`：
 
 ```python
 print(optimizer.optimization_report)
 ```
 
-The `optimization_report` exposes **SIX** top-level fields:
+`optimization_report` 暴露**六个**顶层字段：
 
-| Field                   | Type                              | Description                                                                                                                                                        |
+| 字段 | 类型 | 说明 |
 | ----------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `optimization_id`       | `str`                             | Unique string identifier for this optimization run.                                                                                                                |
-| `best_id`               | `str`                             | Internal id of the final best-performing prompt configuration.                                                                                                     |
-| `accepted_iterations`   | `List[AcceptedIteration]`         | List of accepted child configurations. Each item records the `parent` and `child` ids, the `module` id, and the scalar `before` and `after` scores.                |
-| `pareto_scores`         | `Dict[str, List[float]]`          | Mapping from configuration id to a list of scores on the Pareto subset of goldens. GEPA uses this table to maintain the Pareto front during the search.            |
-| `parents`               | `Dict[str, Optional[str]]`        | Mapping from each configuration id to its parent id (or `None` for the root configuration). This forms the ancestry tree of all explored prompt variants.          |
-| `prompt_configurations` | `Dict[str, PromptConfigSnapshot]` | Mapping from each configuration id to a lightweight snapshot of the prompts at that node. Each snapshot records the parent id and per-module TEXT or LIST prompts. |
+| `optimization_id` | `str` | 本次优化运行的唯一字符串标识。 |
+| `best_id` | `str` | 最终表现最佳提示配置的内部 id。 |
+| `accepted_iterations` | `List[AcceptedIteration]` | 被接受的子配置列表。每项记录 `parent` 与 `child` id、`module` id，以及标量 `before` 与 `after` 分数。 |
+| `pareto_scores` | `Dict[str, List[float]]` | 配置 id 到其在 golden Pareto 子集上分数列表的映射。GEPA 用该表在搜索期间维护 Pareto 前沿。 |
+| `parents` | `Dict[str, Optional[str]]` | 每个配置 id 到其父配置 id 的映射（根配置为 `None`）。这构成了所有被探索提示变体的谱系树。 |
+| `prompt_configurations` | `Dict[str, PromptConfigSnapshot]` | 每个配置 id 到该节点提示轻量快照的映射。每个快照记录父 id 以及各模块的 TEXT 或 LIST 提示。 |
 
-In most workflows you will use `optimized_prompt.text_template` (or `messages_template`) directly and optionally log `optimized_prompt.optimization_report.optimization_id`. These report fields are helpful when you want to go deeper, such as reconstructing the search tree, visualizing how prompts evolved across iterations, or debugging why a particular configuration was selected as `best_id`.
+大多数工作流会直接使用 `optimized_prompt.text_template`（或 `messages_template`），并可选择记录 `optimized_prompt.optimization_report.optimization_id`。当你想深入了解时，这些报告字段很有用，例如重建搜索树、可视化提示在各轮迭代中的演化，或调试某个配置为何被选为 `best_id`。
 
 ## Optimization Configs
 
-If you need more control in how optimizations are run, you can pass configuration objects into `PromptOptimizer` to control aspects of concurrency, progress displays, and more.
+如果你需要对优化的运行方式做更多控制，可以向 `PromptOptimizer` 传入配置对象，控制并发、进度显示等方面。
 
 ### 异步配置
 
@@ -218,10 +218,10 @@ from deepeval.optimizer.configs import DisplayConfig
 optimizer = PromptOptimizer(display_config=DisplayConfig())
 ```
 
-There are **TWO** optional parameters when creating an `DisplayConfig`:
+创建 `DisplayConfig` 时有**两个**可选参数：
 
-- [Optional] `show_indicator`: boolean that controls whether a CLI progress indicator is shown while optimization runs. Defaulted to `True`.
-- [Optional] `announce_ties`: boolean that prints a one-line message when GEPA detects a tie between prompt configurations. Defaulted to `False`.
+- [可选] `show_indicator`：布尔值，控制优化运行时是否显示 CLI 进度指示器。默认为 `True`。
+- [可选] `announce_ties`：布尔值，当 GEPA 检测到提示配置之间打平时打印一行消息。默认为 `False`。
 
 ### Mutation Configs
 
@@ -232,36 +232,36 @@ from deepeval.optimizer.configs import MutationConfig
 optimizer = PromptOptimizer(mutation_config=MutationConfig())
 ```
 
-There are **THREE** optional parameters when creating a `MutationConfig`:
+创建 `MutationConfig` 时有**三个**可选参数：
 
-- [Optional] `target_type`: `MutationTargetType` indicating which message in a LIST-style prompt is eligible for mutation. Options are `"random"`, or `"fixed_index"`. Defaulted to `"random"`.
-- [Optional] `target_role`: string role filter. When set, only messages with this role (case insensitive) are considered as mutation targets. Defaulted to `None`.
-- [Optional] `target_index`: zero-based index used when `target_type` is `"fixed_index"`. Defaulted to `0`.
+- [可选] `target_type`：`MutationTargetType`，指示 LIST 风格提示中哪条消息可被变异。选项为 `"random"` 或 `"fixed_index"`。默认为 `"random"`。
+- [可选] `target_role`：字符串角色过滤。设置后，只有具有该角色（不区分大小写）的消息才会被视为变异目标。默认为 `None`。
+- [可选] `target_index`：当 `target_type` 为 `"fixed_index"` 时使用的从零开始的索引。默认为 `0`。
 
-These configs let you fine-tune how optimization behaves without changing your metrics or callback. You can start with the defaults and only override the specific fields you need for your use case.
+这些配置让你无需更改指标或回调即可微调优化行为。你可以从默认值开始，只根据用例覆盖需要的特定字段。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="When should I use the PromptOptimizer instead of tuning prompts by hand?">
-Use `PromptOptimizer` when you would otherwise run evals, eyeball failures, and manually tweak prompts in a loop. It scores your [metrics](/docs/metrics-introduction) against a set of [goldens](/docs/evaluation-datasets#what-are-goldens) and uses those scores to automatically search for a higher-scoring prompt, so you get a data-driven rewrite instead of guesswork.
+当你本来要在"运行评估、肉眼排查失败、手动微调提示"的循环里打转时，就该用 `PromptOptimizer`。它会用一组 [golden](/docs/evaluation-datasets#what-are-goldens) 为你的 [指标](/docs/metrics-introduction) 打分，并利用这些分数自动搜索得分更高的提示，让你得到数据驱动的重写而不是凭感觉。
 </Accordion>
 <Accordion title="What are the required parameters to create a PromptOptimizer?">
-There are two required parameters: `metrics` , a list of DeepEval metrics used for scoring and feedback, and `model_callback` , a callback that wraps your LLM app. The optional parameters are `algorithm` , `async_config` , `display_config` , and `mutation_config` .
+有两个必填参数：`metrics` ，用于打分和反馈的 DeepEval 指标列表；`model_callback` ，包装你的 LLM 应用的回调。可选参数包括 `algorithm` 、`async_config` 、`display_config` 和 `mutation_config` 。
 </Accordion>
 <Accordion title="What does my model_callback receive and have to return?">
-During optimization DeepEval passes your callback the current `Prompt` candidate and a `Golden` (or `ConversationalGolden` ). You interpolate with `prompt.interpolate(input=golden.input)` , call your app, and the callback **must** return a `str` . That string is used as the `actual_output` in a [test case](/docs/evaluation-test-cases) before scoring.
+优化期间，DeepEval 会向你的回调传入当前 `Prompt` 候选和一个 `Golden`（或 `ConversationalGolden` ）。你使用 `prompt.interpolate(input=golden.input)` 插值、调用你的应用，回调**必须**返回一个 `str` 。该字符串会在打分前用作 [测试用例](/docs/evaluation-test-cases) 的 `actual_output`。
 </Accordion>
 <Accordion title="Which optimization algorithm does DeepEval use by default?">
-The default `algorithm` is `GEPA()` . DeepEval also ships [MIPROv2](/docs/prompt-optimization-miprov2) for surrogate-based search; pass an instance to the `algorithm` argument to switch, or to override algorithm-specific settings such as GEPA's `iterations` .
+默认的 `algorithm` 是 `GEPA()` 。DeepEval 还提供用于代理模型搜索的 [MIPROv2](/docs/prompt-optimization-miprov2) ；通过 `algorithm` 参数传入实例即可切换，或覆盖算法特定设置（例如 GEPA 的 `iterations` ）。
 </Accordion>
 <Accordion title="How do I run a prompt optimization asynchronously?">
-Call `a_optimize()` , the async counterpart of `optimize()` , from within an async function and run it with `asyncio.run(...)` . This lets you run optimizations concurrently without blocking the main thread.
+在异步函数中调用 `optimize()` 的异步版本 `a_optimize()`，并用 `asyncio.run(...)` 运行。这让你可以在不阻塞主线程的情况下并发运行优化。
 </Accordion>
 <Accordion title="What is the optimization_report and when do I need it?">
-The `optimization_report` is accessible on the `PromptOptimizer` instance and exposes six fields like `optimization_id` , `best_id` , `accepted_iterations` , and `parents` . Most workflows just use `optimized_prompt.text_template` (or `messages_template` ), but the report is useful for reconstructing the search tree or debugging why a configuration was selected as `best_id` .
+`optimization_report` 可从 `PromptOptimizer` 实例访问，暴露 `optimization_id` 、`best_id` 、`accepted_iterations` 、`parents` 等六个字段。大多数工作流只用 `optimized_prompt.text_template`（或 `messages_template` ），但该报告对于重建搜索树或调试某个配置为何被选为 `best_id` 很有用。
 </Accordion>
 <Accordion title="How do I avoid rate-limit errors during optimization?">
-Pass an `AsyncConfig` to `PromptOptimizer` and tune `throttle_value` and `max_concurrent` (defaulted to `20` ). Both only apply when `run_async` is `True` ; lowering `max_concurrent` and raising `throttle_value` is the recommended way to handle rate limits in your judge or LLM app.
+向 `PromptOptimizer` 传入 `AsyncConfig` 并调整 `throttle_value` 和 `max_concurrent`（默认 `20` ）。两者仅在 `run_async` 为 `True` 时生效；降低 `max_concurrent`、提高 `throttle_value` 是应对评审模型或 LLM 应用限流的推荐方式。
 </Accordion>
 </AccordionGroup>

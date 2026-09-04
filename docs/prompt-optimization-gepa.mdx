@@ -9,7 +9,7 @@ title: GEPA
 <Info>
 **帕累托**一词来自经济学和多目标优化。想象你在用多个标准评分一批提示——没有单一的「最佳」，只有不同的权衡。[帕累托选择](#step-2-pareto-selection)防止优化收敛到局部最大值。
 
-Pareto selection in GEPA prevents optimization from converging at a local maximum.
+GEPA 中的 Pareto 选择可防止优化收敛到局部最大值。
 </Info>
 
 ## 使用 GEPA 优化提示词
@@ -154,140 +154,140 @@ sequenceDiagram
 
 ### Step 1: Golden Splitting
 
-Before optimization begins, GEPA splits your goldens into two disjoint subsets:
+在优化开始之前，GEPA 会把你的 golden 划分为两个不相交的子集：
 
-- **`D_pareto`** (validation set): A fixed subset of `pareto_size` goldens used to score **every** prompt candidate. By evaluating all prompts on the same goldens, GEPA ensures fair comparison—score differences reflect actual prompt quality, not sampling luck.
-- **`D_feedback`** (feedback set): The remaining goldens used for sampling minibatches during mutation. These provide diverse training signals without contaminating the validation set.
+- **`D_pareto`**（验证集）：由 `pareto_size` 个 golden 组成的固定子集，用于给**每一个**提示候选打分。通过让所有提示在相同的 golden 上评估，GEPA 确保比较的公平性——分数差异反映的是真实的提示质量，而非抽样运气。
+- **`D_feedback`**（反馈集）：其余的 golden，在变异期间用于抽样小批量。它们提供多样化的训练信号，同时不会污染验证集。
 
-This train/validation split is fundamental to avoiding overfitting—prompts are mutated based on feedback goldens but selected based on held-out validation performance.
+这种训练/验证划分是避免过拟合的关键——提示基于反馈 golden 进行变异，但基于留出的验证表现来筛选。
 
 ### Step 2: Pareto Selection
 
-At each iteration, GEPA must choose a **parent prompt** to mutate. Instead of simply picking the prompt with the highest average score (which might be a local optimum), GEPA uses **Pareto-based selection** to maintain diversity. Pareto selection involves two steps:
+在每次迭代中，GEPA 都要选择一个**父提示**进行变异。GEPA 并不简单地挑选平均分最高的提示（那可能只是局部最优），而是使用**基于 Pareto 的选择**来保持多样性。Pareto 选择包含两个步骤：
 
-1. **Finding non-dominated prompts** — Identify all prompts on the Pareto frontier
-2. **Sampling from the frontier** — Select a parent using frequency-weighted sampling
+1. **找出非支配提示** —— 找出 Pareto 前沿上的所有提示
+2. **从前沿中抽样** —— 使用按频率加权的抽样选出父提示
 
 <Tip>
-The **Pareto frontier** is the set of all non-dominated prompts. A prompt is on the frontier if no other prompt beats it on _every_ golden—it might excel at some golden types while being weaker on others. By sampling from this frontier rather than always picking the single "best" prompt, GEPA explores diverse optimization strategies.
+**Pareto 前沿**是所有非支配提示的集合。只要没有其他提示在 _每一个_ golden 上都胜过某个提示，该提示就位于前沿上——它可能擅长某些类型的 golden，而在其他类型上较弱。通过从前沿中抽样而不是总是挑选单一"最佳"提示，GEPA 得以探索多样化的优化策略。
 </Tip>
 
 #### Finding Non-Dominated Prompts
 
-A prompt **dominates** another if it scores better or equal on all goldens, and strictly better on at least one. A prompt is on the Pareto frontier if it is non-dominated (i.e. if no other prompt dominates it).
+如果一个提示在所有 golden 上得分都更好或持平，且至少在一个 golden 上严格更优，那么它**支配**另一个提示。非支配（即没有其他提示支配它）的提示位于 Pareto 前沿上。
 
-In the tables below, scores represent the aggregated metric scores (from the `metrics` you provide) for each prompt–golden pair:
+在下表中，分数表示每个提示–golden 对的聚合指标得分（来自你提供的 `metrics`）：
 
-**Example 1: Dominance** — P₁ dominates P₀ because it scores higher on every golden:
+**示例 1：支配关系** —— P₁ 支配 P₀，因为它在每个 golden 上得分都更高：
 
-| Prompt | Golden 1 | Golden 2 | Golden 3 | Mean | On Frontier?         |
+| 提示 | Golden 1 | Golden 2 | Golden 3 | 均值 | 是否在前沿？ |
 | ------ | -------- | -------- | -------- | ---- | -------------------- |
-| P₀     | 0.60     | 0.55     | 0.50     | 0.55 | ❌ (dominated by P₁) |
+| P₀     | 0.60     | 0.55     | 0.50     | 0.55 | ❌（被 P₁ 支配） |
 | P₁     | 0.75     | 0.70     | 0.65     | 0.70 | ✅                   |
 
-**Example 2: No Dominance** — Neither prompt dominates the other because each wins on different goldens:
+**示例 2：无支配关系** —— 两个提示互不支配，因为它们各自在不同 golden 上占优：
 
-| Prompt | Golden 1 | Golden 2 | Golden 3 | Mean | On Frontier? |
+| 提示 | Golden 1 | Golden 2 | Golden 3 | 均值 | 是否在前沿？ |
 | ------ | -------- | -------- | -------- | ---- | ------------ |
 | P₀     | 0.9      | 0.6      | 0.7      | 0.73 | ✅           |
 | P₁     | 0.7      | 0.8      | 0.7      | 0.73 | ✅           |
 
-Other edge cases include:
+其他边界情况包括：
 
-- Ties on all goldens: Both prompts stay on the frontier (neither dominates)
-- One prompt wins some, ties on rest: The winning prompt dominates (e.g., P₀ scores [0.8, 0.7, 0.7] vs P₁'s [0.7, 0.7, 0.7] → P₀ dominates P₁)
-- Empty frontier: Impossible—there's always at least one non-dominated prompt
+- 在所有 golden 上打平：两个提示都留在前沿上（互不支配）
+- 一个提示部分胜出、其余打平：胜出的提示构成支配（例如 P₀ 得分 [0.8, 0.7, 0.7] 对 P₁ 的 [0.7, 0.7, 0.7] → P₀ 支配 P₁）
+- 前沿为空：不可能——至少总有一个非支配提示
 
 #### Sampling from the Frontier
 
-From the Pareto frontier, GEPA samples a parent with probability proportional to how often each prompt "wins" (achieves the highest score) across `D_pareto` goldens. This balances:
+GEPA 从 Pareto 前沿按概率抽样父提示，概率与每个提示在 `D_pareto` 的 golden 上"获胜"（取得最高分）的频率成正比。这样可以平衡：
 
-- **Exploration**: All non-dominated prompts have a chance to be selected, preventing premature convergence
-- **Exploitation**: Prompts that win more often are more likely to be chosen as parents
+- **探索**：所有非支配提示都有机会被选中，防止过早收敛
+- **利用**：更常获胜的提示更有可能被选为父提示
 
 #### Example: Pareto Table After 4 Iterations
 
-Here's what the Pareto score table might look like after 4 iterations with `pareto_size=3`:
+下面是 `pareto_size=3` 时 4 轮迭代后 Pareto 分数表可能的样子：
 
-| Prompt    | Golden 1 | Golden 2 | Golden 3 | Mean | Wins | On Frontier?         |
+| 提示    | Golden 1 | Golden 2 | Golden 3 | 均值 | 获胜次数 | 是否在前沿？ |
 | --------- | -------- | -------- | -------- | ---- | ---- | -------------------- |
-| P₀ (root) | 0.60     | 0.55     | 0.50     | 0.55 | 0    | ❌ (dominated by P₁) |
-| P₁        | 0.75     | 0.70     | 0.60     | 0.68 | 0    | ❌ (dominated by P₄) |
+| P₀（根节点） | 0.60     | 0.55     | 0.50     | 0.55 | 0    | ❌（被 P₁ 支配） |
+| P₁        | 0.75     | 0.70     | 0.60     | 0.68 | 0    | ❌（被 P₄ 支配） |
 | P₂        | 0.65     | **0.85** | 0.55     | 0.68 | 1    | ✅                   |
 | P₃        | 0.60     | 0.60     | **0.80** | 0.67 | 1    | ✅                   |
 | P₄        | **0.80** | 0.75     | 0.70     | 0.75 | 1    | ✅                   |
 
-In this example:
+在这个例子中：
 
-- **P₀** (the original prompt) is dominated by P₁, which scores better on all goldens
-- **P₁** is dominated by P₄, which also scores better on all goldens—so P₁ is off the frontier too
-- **P₂** specializes in Golden 2-type problems (e.g., reasoning tasks) but struggles with others
-- **P₃** specializes in Golden 3-type problems (e.g., creative tasks) but scores lower elsewhere
-- **P₄** has the highest mean but doesn't dominate P₂ or P₃—it loses to P₂ on Golden 2 and to P₃ on Golden 3
+- **P₀**（原始提示）被 P₁ 支配，后者在所有 golden 上得分更高
+- **P₁** 被 P₄ 支配，后者同样在所有 golden 上得分更高——所以 P₁ 也离开了前沿
+- **P₂** 专精 Golden 2 类问题（如推理任务），但在其他类型上表现吃力
+- **P₃** 专精 Golden 3 类问题（如创意任务），但在其他地方得分较低
+- **P₄** 均值最高，但并不支配 P₂ 或 P₃——它在 Golden 2 上输给 P₂，在 Golden 3 上输给 P₃
 
-The Pareto frontier contains **P₂, P₃, and P₄**. Each wins exactly 1 golden, giving them **equal selection probability** (33% each). Despite P₄ having the highest mean score, GEPA might still select P₂ or P₃ as parents to explore their specialized strategies—this is how GEPA avoids local optima and maintains prompt diversity.
+Pareto 前沿包含 **P₂、P₃ 和 P₄**。每个提示恰好获胜 1 个 golden，因此具有**相同的被选概率**（各 33%）。尽管 P₄ 的平均分最高，GEPA 仍可能选择 P₂ 或 P₃ 作为父提示来探索它们的专精策略——这正是 GEPA 避免局部最优、保持提示多样性的方式。
 
 ### Step 3: Feedback & Rewrite
 
-Once a parent prompt is selected, GEPA creates a child prompt through **feedback-driven rewriting**:
+父提示被选中后，GEPA 通过**反馈驱动的重写**创建子提示：
 
-1. **Sample a minibatch**: Draw up to `minibatch_size` examples from `D_feedback`
-2. **Diagnose**: Gather scorer feedback (`get_minibatch_feedback`) on the parent
-3. **Baseline score**: Score the parent on that same minibatch
-4. **Rewrite**: Use the rewriter to generate a child prompt from the diagnosis
-5. **Sanity filter**: Skip the child if it is effectively unchanged or has a different prompt type
+1. **抽样小批量**：从 `D_feedback` 中抽取最多 `minibatch_size` 个示例
+2. **诊断**：收集父提示的评分反馈（`get_minibatch_feedback`）
+3. **基线打分**：在该小批量上为父提示打分
+4. **重写**：让重写器根据诊断生成子提示
+5. **合理性过滤**：如果子提示实际上没有变化或提示类型不同，则跳过
 
-This keeps mutations targeted: changes are driven by metric feedback rather than random prompt edits.
+这让变异保持针对性：改动由指标反馈驱动，而不是随机的提示编辑。
 
 ### Step 4: Acceptance
 
-GEPA applies acceptance in two gates:
+GEPA 通过两道门槛执行接受判定：
 
-1. **Minibatch gate**: The child must strictly beat the parent on the same minibatch.
-2. **Pareto gate**: On `D_pareto`, the child must be non-dominated relative to both:
-   - the parent prompt configuration
-   - all existing configurations in the archive
+1. **小批量门槛**：子提示必须在同一个小批量上严格胜过父提示。
+2. **Pareto 门槛**：在 `D_pareto` 上，子提示必须相对以下两者都保持非支配：
+   - 父提示配置
+   - 归档中所有已有配置
 
-When accepted, GEPA:
+被接受后，GEPA 会：
 
-1. Adds the child to the prompt-configuration graph
-2. Inserts the child's Pareto scores into the archive
-3. Removes archive entries that are dominated by the new child
+1. 将子提示加入提示配置图
+2. 把子提示的 Pareto 分数插入归档
+3. 移除归档中被新子提示支配的条目
 
-If rejected by the Pareto gate, GEPA increments a consecutive-rejection counter and can early-stop once it reaches `patience`.
+如果子提示被 Pareto 门槛拒绝，GEPA 会递增连续拒绝计数器，并在达到 `patience` 后提前停止。
 
 ### Step 5: Final Selection
 
-After all iterations complete, GEPA selects the **final optimized prompt** from the candidate pool:
+所有迭代完成后，GEPA 从候选池中选出**最终优化提示**：
 
-1. **Aggregate scores**: Each prompt's scores across all `D_pareto` goldens are aggregated (mean by default)
-2. **Rank candidates**: Prompts are ranked by their aggregate score
-3. **Break ties**: If multiple prompts tie for the highest score, the `tie_breaker` policy determines the winner (`PREFER_CHILD` by default, which favors more recently evolved prompts)
+1. **聚合分数**：每个提示在所有 `D_pareto` golden 上的分数被聚合（默认取均值）
+2. **候选排序**：提示按聚合分数排序
+3. **打破平局**：如果多个提示并列最高分，`tie_breaker` 策略决定获胜者（默认 `PREFER_CHILD`，偏向较晚进化出的提示）
 
-The winning prompt is returned as the optimized result.
+获胜提示将作为优化结果返回。
 
 ## 常见问题
 
 <AccordionGroup>
 <Accordion title="What is GEPA and when should I use it?">
-`GEPA` (Genetic-Pareto) combines evolutionary optimization with multi-objective Pareto selection to improve prompts while keeping a diverse pool of candidates. Use it when your task spans different problem types and you want to avoid converging prematurely on a single prompt that only does well on some [goldens](/docs/evaluation-datasets#what-are-goldens) .
+`GEPA`（Genetic-Pareto）将进化优化与多目标 Pareto 选择相结合，在保持多样化候选池的同时改进提示。当你的任务跨越不同的问题类型、且你希望避免过早收敛到只在部分 [golden](/docs/evaluation-datasets#what-are-goldens) 上表现好的单一提示时，可以使用它。 
 </Accordion>
 <Accordion title="Do I need to pass GEPA() explicitly to the optimizer?">
-No. `GEPA` is already the default for the `algorithm` argument of [PromptOptimizer](/docs/prompt-optimization-introduction) , so you only need to construct a `GEPA` instance and pass it in when you want to customize how it runs.
+不需要。`GEPA` 已经是 [PromptOptimizer](/docs/prompt-optimization-introduction) 的 `algorithm` 参数默认值，因此只有当你想自定义它的运行方式时，才需要构造一个 `GEPA` 实例传入。
 </Accordion>
 <Accordion title="How do I make GEPA runs reproducible?">
-Set a fixed `random_seed` (for example `42` ) on the `GEPA` constructor. It controls golden splitting, minibatch sampling, Pareto parent selection, and tie-breaking. By default it uses `time.time_ns()` , so runs vary unless you pin the seed.
+在 `GEPA` 构造函数上设置固定的 `random_seed`（例如 `42` ）。它控制 golden 划分、小批量抽样、Pareto 父提示选择和平局裁决。默认使用 `time.time_ns()` ，因此除非固定种子，否则每次运行都会不同。
 </Accordion>
 <Accordion title="What is the difference between pareto_size and minibatch_size?">
-`pareto_size` (default `3` ) is the number of goldens in the held-out validation set `D_pareto` that every candidate is scored on for fair comparison. `minibatch_size` (default `8` ) is how many goldens are drawn from `D_feedback` each iteration to drive feedback and mutation. The two sets are disjoint to avoid overfitting.
+`pareto_size`（默认 `3` ）是留出验证集 `D_pareto` 中 golden 的数量，每个候选都会在其上打分以保证比较公平。`minibatch_size`（默认 `8` ）是每轮从 `D_feedback` 抽取、用于驱动反馈与变异的 golden 数量。两个集合不相交，以避免过拟合。
 </Accordion>
 <Accordion title="How does GEPA decide when to stop early?">
-GEPA tracks consecutive rejected children. When a child is rejected by the Pareto gate it increments a rejection counter, and once that counter reaches `patience` (default `3` ) the search stops early before exhausting all `iterations` (default `5` ).
+GEPA 会跟踪被拒绝的连续子提示。当子提示被 Pareto 门槛拒绝时，拒绝计数器递增；一旦计数器达到 `patience`（默认 `3` ），搜索会在耗尽全部 `iterations`（默认 `5` ）之前提前停止。
 </Accordion>
 <Accordion title="What happens when prompts tie on the final score?">
-During final selection, prompts are ranked by their aggregate `D_pareto` score (mean by default via `aggregate_instances` ). If several tie for the top score the `tie_breaker` policy decides the winner— `PREFER_CHILD` (the default) favors more recently evolved prompts, with `PREFER_ROOT` and `RANDOM` also available.
+最终选择时，提示按聚合的 `D_pareto` 分数排序（默认通过 `aggregate_instances` 取均值）。如果多个提示并列最高，`tie_breaker` 策略决定获胜者—— `PREFER_CHILD`（默认）偏向较晚进化出的提示，此外还有 `PREFER_ROOT` 和 `RANDOM` 可选。
 </Accordion>
 <Accordion title="Which models does GEPA use to diagnose and rewrite prompts?">
-GEPA uses two separate LLMs: `reflection_model` (default `"gpt-4o-mini"` ) generates the diagnosis and feedback, and `mutation_model` (default `"gpt-4o"` ) rewrites the prompt from that feedback. You can override either when constructing the `GEPA` instance.
+GEPA 使用两个独立的 LLM：`reflection_model`（默认 `"gpt-4o-mini"` ）生成诊断和反馈，`mutation_model`（默认 `"gpt-4o"` ）根据反馈重写提示。构造 `GEPA` 实例时可以覆盖其中任何一个。
 </Accordion>
 </AccordionGroup>
