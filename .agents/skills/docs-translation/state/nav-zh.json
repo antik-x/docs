@@ -130,6 +130,18 @@
     "benchmarks-truthful-qa": "TruthfulQA",
     "benchmarks-big-bench-hard": "BIG-Bench Hard",
     "benchmarks-human-eval": "HumanEval",
-    "benchmarks-drop": "DROP"
+    "benchmarks-drop": "DROP",
+    "(benchmarks)/benchmarks-logi-qa": "LogiQA",
+    "(benchmarks)/benchmarks-math-qa": "MathQA",
+    "(benchmarks)/benchmarks-bbq": "BBQ",
+    "(benchmarks)/benchmarks-squad": "SQuAD",
+    "(benchmarks)/benchmarks-truthful-qa": "TruthfulQA",
+    "(benchmarks)/benchmarks-big-bench-hard": "BIG-Bench Hard",
+    "(benchmarks)/benchmarks-human-eval": "HumanEval",
+    "(benchmarks)/benchmarks-drop": "DROP",
+    "conversation-simulator-custom-templates": "自定义模板",
+    "conversation-simulator-model-callback": "模型回调",
+    "conversation-simulator-simulation-graph": "模拟图",
+    "conversation-simulator-stopping-logic": "停止逻辑"
   }
 }
