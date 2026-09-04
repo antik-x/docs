@@ -86,6 +86,9 @@
     "(voice)/metrics-agent-responsiveness": "智能体响应性",
     "(mcp)/metrics-mcp-use": "MCP 使用",
     "(mcp)/metrics-multi-turn-mcp-use": "多轮 MCP 使用",
-    "(mcp)/metrics-mcp-task-completion": "MCP 任务完成"
+    "(mcp)/metrics-mcp-task-completion": "MCP 任务完成",
+    "(safety)/metrics-bias": "偏见",
+    "(safety)/metrics-toxicity": "毒性",
+    "(safety)/metrics-role-violation": "角色违规"
   }
 }

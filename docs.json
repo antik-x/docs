@@ -360,11 +360,11 @@
         "pages": [
           {
             "page": "docs/(safety)/metrics-bias",
-            "title": "Bias"
+            "title": "偏见"
           },
           {
             "page": "docs/(safety)/metrics-toxicity",
-            "title": "Toxicity"
+            "title": "毒性"
           },
           {
             "page": "docs/(safety)/metrics-non-advice",
@@ -380,7 +380,7 @@
           },
           {
             "page": "docs/(safety)/metrics-role-violation",
-            "title": "Role Violation"
+            "title": "角色违规"
           }
         ]
       },
