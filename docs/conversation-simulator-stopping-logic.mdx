@@ -2,7 +2,7 @@
 title: Stopping Logic
 ---
 
-默认情况下，`ConversationSimulator` 在 `expected_outcome` 满足时结束模拟。你可以通过传入自定义停止逻辑回调来覆盖此行为。
+By default, `ConversationSimulator` ends a simulation when the `expected_outcome` in your `ConversationalGolden` has been met. You can replace this behavior with a custom `stopping_controller` that returns `proceed()` or `end()`.
 
 ```python title="main.py"
 from deepeval.simulator import ConversationSimulator
@@ -21,10 +21,10 @@ simulator = ConversationSimulator(
 ```
 
 <Note>
-该参数之前叫 `controller`。它仍作为弃用别名被接受，但将在未来版本中移除。
+The kwarg was previously called `controller`. It is still accepted as a deprecated alias and emits a `DeprecationWarning`. Update existing call sites to `stopping_controller` at your earliest convenience.
 </Note>
 
-代码中的函数名可以任意——示例使用 `stopping_condition` 但你可以使用任何名称。
+Function name in your code can be anything — the example uses `stopping_controller` for parity but `def my_stop(...)` works equally well.
 
 ## Stopping Order
 
@@ -155,7 +155,7 @@ def stopping_controller(turns):
 `max_user_simulations` is always checked before your callback runs. This means the max-turn limit remains the hard safety cap, even if your callback keeps returning `proceed()`.
 </Note>
 
-## 常见问题
+## FAQs
 
 <AccordionGroup>
 <Accordion title="What stops a simulation if I don't write a stopping_controller?">

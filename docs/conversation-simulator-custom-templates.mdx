@@ -2,7 +2,7 @@
 title: Custom Templates
 ---
 
-通过传入 `template=` 来自定义用于模拟用户轮次的提示词。你可以覆盖默认的用户模拟和助手模拟模板。
+通过将 `template=` 传给 [`default_simulation_node`](/docs/conversation-simulator-simulation-graph#default_simulation_node) 并把返回的节点传入 `simulation_graph`，自定义用于模拟用户轮次的提示词。
 
 ## API
 
@@ -14,8 +14,8 @@ default_simulation_node(template=MyTemplate)
 
 | Argument | Description |
 |---|---|
-| `template` | A subclass of `SimulationTemplate` overriding `simulate_first_user_turn()` and/or `simulate_user_turn()`. Validated eagerly — invalid templates raise `TypeError` at construction time. When omitted, the built-in `SimulationTemplate` is used. |
-| `terminal`, `max_visits`, `name` | Same as `SimulationNode` — see [Simulation Graph](/docs/conversation-simulator-simulation-graph#default_simulation_node) for full reference. |
+| `template` | `SimulationTemplate` 的子类，覆盖 `simulate_first_user_turn()` 和/或 `simulate_user_turn()`。会在构造时立即验证——无效模板会在构造时抛出 `TypeError`。省略时使用内置的 `SimulationTemplate`。 |
+| `terminal`, `max_visits`, `name` | 与 `SimulationNode` 相同——完整参考见 [Simulation Graph](/docs/conversation-simulator-simulation-graph#default_simulation_node)。 |
 
 自定义模板必须：
 
@@ -26,10 +26,10 @@ default_simulation_node(template=MyTemplate)
 两个方法都必须返回一个提示字符串，该字符串引导出包含 `simulated_input` 键的 JSON 响应。
 
 <Note>
-过去接受顶层 `simulation_template=` 关键字参数。该参数已被移除，改用 `default_simulation_node(template=...)`，它将模板保持在实际使用它的节点上。
+`ConversationSimulator` 过去接受顶层 `simulation_template=` 关键字参数。该参数已被移除，改用 `default_simulation_node(template=...)`，它将模板保持在实际使用它的节点上。
 </Note>
 
-## 示例
+## Example
 
 ```python
 from deepeval.simulator import (
@@ -69,19 +69,19 @@ simulator = ConversationSimulator(
 
 ## Common Use Cases
 
-### 用户风格
+### User Style
 
 当模拟用户需要以特定语气说话时使用自定义模板，例如正式的买家、沮丧的客户、临床医生、学生或非技术用户。
 
-### 领域框架
+### Domain Framing
 
 当生成的用户轮次应反映默认模拟器提示未强调的领域特定行为、词汇或约束时，使用自定义模板。
 
-### 对话压力
+### Conversation Pressure
 
 当你希望模拟用户比默认角色扮演行为更具对抗性、更困惑、更简洁或更执着时，使用自定义模板。
 
-### 与模拟图混合使用
+### Mixing with a Simulation Graph
 
 你还可以将 `default_simulation_node(template=...)` 作为节点嵌入更大的[模拟图](/docs/conversation-simulator-simulation-graph)中。
 
@@ -98,19 +98,19 @@ scripted_opener.add_node(
 )
 ```
 
-## 常见问题
+## FAQs
 
 <AccordionGroup>
 <Accordion title="When do I need a custom template versus the default simulator?">
-当模拟用户需要以特定语气、领域框架或压力水平说话时使用它。如果默认的角色扮演听起来已经合适，就不需要模板。
+当模拟用户需要以特定语气、领域框架或压力水平说话时使用它——正式的买家、沮丧的客户、临床医生、更具对抗性或更简洁的用户。如果默认的角色扮演听起来已经合适，就不需要模板。
 </Accordion>
-<Accordion title="How do I actually plug a custom template in?">
-Pass it to `default_simulation_node(template=MyTemplate)` and feed the returned node into `simulation_graph` . The old top-level `simulation_template=` kwarg has been removed in favor of this, which keeps the template attached to the node that consumes it.
+<Accordion title="如何实际接入自定义模板？">
+把它传给 `default_simulation_node(template=MyTemplate)` 并将返回的节点传入 `simulation_graph`。旧的顶层 `simulation_template=` 参数已被移除，改为此方式，它将模板保持在实际使用它的节点上。
 </Accordion>
-<Accordion title="Which methods does my template have to override?">
-Subclass `SimulationTemplate` and override `simulate_first_user_turn(golden, language)` and/or `simulate_user_turn(golden, turns, language)` . Each must return a prompt string that elicits JSON with one key, `simulated_input` . Templates are validated eagerly, so bad subclasses raise `TypeError` at construction time.
+<Accordion title="我的模板必须覆盖哪些方法？">
+继承 `SimulationTemplate` 并覆盖 `simulate_first_user_turn(golden, language)` 和/或 `simulate_user_turn(golden, turns, language)`。每个方法都必须返回一个引导出包含 `simulated_input` 键的 JSON 响应的提示字符串。模板会立即验证，因此无效的子类会在构造时抛出 `TypeError`。
 </Accordion>
-<Accordion title="Can I keep a custom voice on some branches but script others?">
-Yes — embed `default_simulation_node(template=...)` as one node inside a larger [simulation graph](/docs/conversation-simulator-simulation-graph) , using the template for free-form exploration on some branches and deterministic, scripted nodes on others.
+<Accordion title="可以在某些分支上保留自定义语气但对其他分支使用脚本吗？">
+可以——将 `default_simulation_node(template=...)` 作为一个节点嵌入更大的[模拟图](/docs/conversation-simulator-simulation-graph)中，在某些分支上使用自定义模板进行自由探索，在其他分支上使用确定性脚本节点。
 </Accordion>
 </AccordionGroup>

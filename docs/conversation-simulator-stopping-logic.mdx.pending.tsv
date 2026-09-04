@@ -1,0 +1,61 @@
+1	---
+2	title: Stopping Logic
+3	---
+5	By default, `ConversationSimulator` ends a simulation when the `expected_outcome` in your `ConversationalGolden` has been met. You can replace this behavior with a custom `stopping_controller` that returns `proceed()` or `end()`.
+23	<Note>
+24	The kwarg was previously called `controller`. It is still accepted as a deprecated alias and emits a `DeprecationWarning`. Update existing call sites to `stopping_controller` at your earliest convenience.
+25	</Note>
+27	Function name in your code can be anything — the example uses `stopping_controller` for parity but `def my_stop(...)` works equally well.
+29	## Stopping Order
+31	A `ConversationSimulator` run can end for **four** different reasons. They are checked in a fixed order on every iteration of the simulation loop:
+33	1. **`max_user_simulations`** — hard outer cap. Checked first.
+34	2. **`stopping_controller`** — your custom (or the default `expected_outcome`) gate. Runs *before* the next user turn is generated.
+35	3. **`SimulationNode.max_visits` exhausted** — fires from inside the [simulation graph](/docs/conversation-simulator-simulation-graph) runner when a node would emit its `(N+1)`-th turn; the runner skips emission and ends.
+36	4. **`SimulationNode(terminal=True)`** — fires *after* the user turn from a terminal node and the matching assistant reply have both been recorded.
+38	The sequence diagram below traces one iteration and highlights where each terminator can fire:
+40	The sequence diagram below traces one happy-path iteration and marks where each terminator can fire:
+64	The four terminators are complementary, not redundant — see the comparison in the [Simulation Graph](/docs/conversation-simulator-simulation-graph#stopping-controller-vs-terminal) docs for when to reach for which.
+66	<Info>
+67	**`terminal` and `max_visits` live on `SimulationNode`, not here.** This page only covers `stopping_controller`. For node-level termination — `terminal=True` leaves and `max_visits` caps — see the [Simulation Graph](/docs/conversation-simulator-simulation-graph#terminal-nodes-and-max_visits) docs.
+68	</Info>
+70	## Supported Arguments
+72	Only define the arguments your callback needs. `deepeval` will pass supported arguments by name:
+74	- [Optional] `turns`: the current list of `Turn`s in the simulation.
+75	- [Optional] `golden`: the `ConversationalGolden` being simulated.
+76	- [Optional] `index`: the index of the turn being simulated.
+77	- [Optional] `thread_id`: the unique thread ID for the simulated conversation.
+78	- [Optional] `simulated_user_turns`: the number of new simulated user turns generated so far.
+79	- [Optional] `max_user_simulations`: the maximum number of user-assistant message cycles allowed.
+80	- [Optional] `last_user_turn`: the latest user `Turn`, if one exists.
+81	- [Optional] `last_assistant_turn`: the latest assistant `Turn`, if one exists.
+83	## Return Values
+85	If your callback returns anything other than `proceed()` or `end()`, `deepeval` treats it the same as `proceed()`. This is useful when you only want to explicitly handle terminal states:
+98	Your callback can return:
+100	- `proceed()`: continue the simulation.
+101	- `end(reason=...)`: end the simulation and optionally record why.
+102	- Anything else, including `None`: continue the simulation.
+104	## Common Use Cases
+106	### Confirmation States
+108	Many task flows should stop as soon as your chatbot confirms the user completed the task.
+120	### Tool Completion
+122	When your chatbot returns tool call metadata, a specific successful tool call can be the clearest completion signal.
+137	### Repeated Failures
+139	For unhelpful simulations where the assistant repeatedly fails, end early instead of letting them run to the max-turn cap.
+154	<Note>
+155	`max_user_simulations` is always checked before your callback runs. This means the max-turn limit remains the hard safety cap, even if your callback keeps returning `proceed()`.
+156	</Note>
+158	## FAQs
+160	<AccordionGroup>
+161	<Accordion title="What stops a simulation if I don't write a stopping_controller?">
+162	The default `stopping_controller` ends the run once the `expected_outcome` in your `ConversationalGolden` has been met. Write a custom one only when you need a different signal, like a specific tool call or confirmation message.
+163	</Accordion>
+164	<Accordion title="How do I stop as soon as my chatbot confirms or calls a specific tool?">
+165	Return `end(reason=...)` from your controller when you see the signal — e.g. a "confirmation number" in `last_assistant_turn.content` , or a matching `tool.name` in `last_assistant_turn.tools_called` — and `proceed()` otherwise.
+166	</Accordion>
+167	<Accordion title="What's the difference between proceed() and end()?">
+168	`proceed()` continues the simulation; `end(reason=...)` stops it and optionally records why. Anything else your callback returns (including `None` ) is treated as `proceed()` , so you only need to handle the terminal cases.
+169	</Accordion>
+170	<Accordion title="Can my controller run forever if it never returns end()?">
+171	No. `max_user_simulations` is checked *before* your controller on every iteration, so it stays the hard safety cap even if you keep returning `proceed()` .
+172	</Accordion>
+173	</AccordionGroup>
