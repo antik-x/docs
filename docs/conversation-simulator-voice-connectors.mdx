@@ -2,11 +2,11 @@
 title: Voice Connectors
 ---
 
-A connector is how `deepeval` reaches your voice agent. In [voice mode](/docs/conversation-simulator-voice-mode) it opens a live session, plays the simulated user's audio, captures the spoken reply, and times how long that reply took to start.
+连接器（connector）是 `deepeval` 与你的语音智能体交互的方式。在[语音模式](/docs/conversation-simulator-voice-mode)下，它会打开实时会话、播放模拟用户的音频、捕获语音回复，并测量回复开始所需的时间。
 
-## Why Agent Connectors?
+## 为什么需要智能体连接器？
 
-Every voice platform is reached differently — Vapi mints a call over REST before any audio moves, ElevenLabs takes base64 audio in JSON, Pipecat takes protobuf frames, LiveKit is a WebRTC track in a room. A connector holds all of that, so the simulator asks the same thing of every agent:
+每个语音平台的接入方式都不同——Vapi 通过 REST 发起通话，ElevenLabs 通过 JSON 接收 base64 音频，Pipecat 使用 protobuf 帧，LiveKit 是房间中的 WebRTC 轨道。连接器封装了所有这些细节，使模拟器对每个智能体的操作完全一致：
 
 ```mermaid
 sequenceDiagram
@@ -22,11 +22,11 @@ sequenceDiagram
     Connector-->>Simulator: ConnectorTurn(audio, transcript, latency_ms)
 ```
 
-Switching platforms is therefore a different connector and nothing else — your goldens, metrics, and simulation config don't change.
+因此切换平台只是换一个连接器而已——你的金标、指标和模拟配置都不需要改变。
 
-## Setup Agent Connector
+## 设置智能体连接器
 
-Each connector needs only enough to find your agent — an id, a URL, or credentials — and everything else is shared:
+每个连接器只需要足够找到你的智能体的信息——一个 ID、一个 URL 或凭据——其余配置都是共享的：
 
 <Tabs>
 <Tab title="ElevenLabs">
@@ -110,7 +110,7 @@ Every parameter is under [Generic WebSocket](#generic-websocket) below.
 </Tab>
 <Tab title="Callback">
 
-Wraps an in-process Python callable, so you can exercise the full TTS to agent to STT pipeline with no network transport at all.
+包装一个进程内的 Python 可调用对象，让你无需任何网络传输就能测试完整的 TTS → 智能体 → STT 流水线。
 
 ```python
 from deepeval.voice import CallbackVoiceConnector
@@ -123,9 +123,9 @@ What your callable may return is under [Callback](#callback) below.
 </Tab>
 </Tabs>
 
-A connector is not a tracing callback: it joins the call from outside and owns the live session — auth, transport, teardown — while `deepeval` layers the turn-taking on top.
+连接器不是追踪回调：它从外部加入通话并管理实时会话——认证、传输、拆除——而 `deepeval` 在此之上叠加轮次切换逻辑。
 
-Here are the connectors available on `deepeval` so far:
+以下是 `deepeval` 目前提供的连接器：
 
 | Connector                | Transport  | Use it for                                                           |
 | ------------------------ | ---------- | -------------------------------------------------------------------- |
@@ -137,12 +137,12 @@ Here are the connectors available on `deepeval` so far:
 | `CallbackVoiceConnector` | In-process | A Python callable, no network — handy for testing your own pipeline. |
 
 <Note>
-Provider not listed? If your agent exposes a raw-audio WebSocket, `WebSocketConnector` needs only the URL and the message shape. If it's callable in the same Python process, use `CallbackVoiceConnector`. Subclass `BaseVoiceConnector` only for a transport the others can't express.
+找不到你的提供商？如果你的智能体暴露了原始音频 WebSocket，`WebSocketConnector` 只需要 URL 和消息格式。如果它可以在同一个 Python 进程中调用，使用 `CallbackVoiceConnector`。只有当其他连接器无法表达你的传输方式时，才需要继承 `BaseVoiceConnector`。
 </Note>
 
-## Generic WebSocket
+## 通用 WebSocket
 
-For custom agents that accept and emit raw audio over a WebSocket, `WebSocketConnector` lets you describe your agent's message shape — which JSON keys carry audio in and out, whether frames are binary, and what marks the end of a turn.
+对于通过 WebSocket 接收和发送原始音频的自定义智能体，`WebSocketConnector` 允许你描述智能体的消息格式——哪些 JSON 键承载输入/输出音频、帧是否为二进制、以及什么标记轮次结束。
 
 ```python
 from deepeval.voice import VoiceConfig, WebSocketConnector
@@ -159,11 +159,11 @@ voice_config = VoiceConfig(
 )
 ```
 
-There are **ONE** mandatory and **TWELVE** optional parameters when creating a `WebSocketConnector`:
+创建 `WebSocketConnector` 时有**一个**必填参数和**十二个**可选参数：
 
-- `url`: a string WebSocket URL for your agent (e.g. `"wss://your-agent.example.com/audio"`).
-- [Optional] `headers`: a dictionary of HTTP headers for the WebSocket handshake. Defaulted to `None`.
-- [Optional] `sample_rate`: an integer sample rate in Hz for outbound audio. Defaulted to `24000`.
+- `url`：字符串，你的智能体的 WebSocket URL（例如 `"wss://your-agent.example.com/audio"`）。
+- [可选] `headers`：WebSocket 握手的 HTTP 头字典。默认为 `None`。
+- [可选] `sample_rate`：整数，出站音频的采样率（Hz）。默认为 `24000`。
 - [Optional] `send_key`: a string JSON key for outbound audio payloads. Defaulted to `"audio"`.
 - [Optional] `binary_outbound`: a boolean which when set to `True`, sends outbound frames as binary instead of JSON. Defaulted to `False`.
 - [Optional] `receive_audio_key`: a string JSON key for inbound audio payloads. Defaulted to `"audio"`.
