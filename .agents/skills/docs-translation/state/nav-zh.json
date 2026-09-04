@@ -51,6 +51,7 @@
     "evaluation-unit-testing-in-ci-cd": "CI/CD 中的单元测试",
     "evaluation-flags-and-configs": "开关与配置",
     "evaluation-end-to-end-single-turn": "单轮端到端评估",
-    "evaluation-end-to-end-multi-turn": "多轮端到端评估"
+    "evaluation-end-to-end-multi-turn": "多轮端到端评估",
+    "metrics-introduction": "指标简介"
   }
 }

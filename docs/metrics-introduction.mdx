@@ -1,19 +1,19 @@
 ---
-title: Introduction to LLM Evaluation Metrics
+title: LLM 评估指标简介
 ---
 
-`deepeval` offers 50+ SOTA, ready-to-use metrics for you to quickly get started with. Essentially, while a test case represents the thing you're trying to measure, the metric acts as the ruler for specific criteria of interest.
+`deepeval` 提供 50+ 个开箱即用的 SOTA 指标，助你快速上手。本质上，测试用例表示你要测量的对象，而指标则是针对特定关注标准的尺子。
 
 ## Quick Summary
 
-Almost all predefined metrics on `deepeval` use **LLM-as-a-judge**, with techniques such as **QAG** (question-answer-generation), **DAG** (deep acyclic graphs), and **G-Eval**. Most score [test cases](/docs/evaluation-test-cases) representing atomic interactions, while [trajectory metrics](/docs/evaluation-trajectory-based-llm-evals) score the complete ordered trace produced by an AI agent.
+`deepeval` 上几乎所有预定义指标都使用 **LLM-as-a-judge**，采用 **QAG**（问答生成）、**DAG**（深无环图）与 **G-Eval** 等技术。大多数指标为表示原子化交互的[测试用例](/docs/evaluation-test-cases)打分，而[轨迹指标](/docs/evaluation-trajectory-based-llm-evals)为 AI 智能体产生的完整有序追踪打分。
 
-All of `deepeval`'s metrics output a **score between 0-1** based on its corresponding equation, as well as score **reasoning**. A metric is only successful if the evaluation score is equal to or greater than `threshold`, which is defaulted to `0.5` for all metrics.
+`deepeval` 的所有指标都会输出基于相应公式的 **0-1 之间的分数**，以及打分**理由**。只有评估分数大于等于 `threshold`（所有指标默认 `0.5`）时，指标才算成功。
 
 <Tabs>
 <Tab title="Custom metrics">
 
-Custom metrics allow you to define your **custom criteria** using SOTA implementations of LLM-as-a-Judge metrics in everyday language:
+自定义指标让你用日常语言定义**自定义标准**，底层使用 LLM-as-a-Judge 指标的 SOTA 实现：
 
 - G-Eval
 - DAG (Deep Acyclic Graph)
@@ -22,31 +22,30 @@ Custom metrics allow you to define your **custom criteria** using SOTA implement
 - Arena G-Eval
 - Do it yourself, 100% self-coded metrics (e.g. if you want to use BLEU, ROUGE)
 
-You should aim to have **at least one** custom metric in your LLM evals pipeline.
 
 </Tab>
 <Tab title="AI Agents">
 
-Agentic metrics evaluate AI agents at two different scopes:
+智能体指标在两个不同范围上评估 AI 智能体：
 
-**Trajectory metrics** analyze the complete ordered chain of decisions and actions captured through [LLM tracing](/docs/evaluation-llm-tracing):
+**轨迹指标**分析通过 [LLM 追踪](/docs/evaluation-llm-tracing)捕获的完整有序决策与行动链：
 
-- Task Completion — whether the agent successfully accomplished its task.
-- Step Efficiency — whether the agent avoided unnecessary or redundant steps.
-- Plan Adherence — whether the agent followed its generated plan.
-- Plan Quality — whether the generated plan was logical, complete, and efficient.
+- 任务完成 —— 智能体是否成功完成了任务。
+- 步骤效率 —— 智能体是否避免了不必要或冗余的步骤。
+- 计划遵循 —— 智能体是否遵循了它生成的计划。
+- 计划质量 —— 生成的计划是否合理、完整、高效。
 
-**Component-level action metrics** evaluate one LLM decision about tool selection and arguments inside that trajectory:
+**组件级行动指标**评估轨迹内单次关于工具选择与参数的 LLM 决策：
 
-- Tool Correctness — whether the agent selected the correct tools.
-- Argument Correctness — whether it supplied the correct arguments to those tools.
+- 工具正确性 —— 智能体是否选对了工具。
+- 参数正确性 —— 它是否为这些工具提供了正确的参数。
 
-Use [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals) for overall execution quality and [component-level evaluation](/docs/evaluation-component-level-llm-evals) to diagnose individual actions.
+整体执行质量用[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)，诊断单个动作用[组件级评估](/docs/evaluation-component-level-llm-evals)。
 
 </Tab>
 <Tab title="RAG">
 
-RAG (retrieval augmented generation) metrics focus on the **retriever and generator components** independently.
+RAG（检索增强生成）指标独立关注**检索器与生成器组件**。
 
 - Retriever:
 
@@ -61,19 +60,19 @@ RAG (retrieval augmented generation) metrics focus on the **retriever and genera
 </Tab>
 <Tab title="Chatbots (multi-turn)">
 
-Multi-turn metrics' main use case are for evaluating chatbots and uses a `ConversationalTestCase` instead. They include:
+多轮指标的主要用途是评估聊天机器人，使用 `ConversationalTestCase` 代替。它们包括：
 
 - Knowledge Retention
 - Role Adherence
 - Conversation Completeness
 - Conversation Relevancy
 
-Multi-turn metrics evaluates conversations as a whole and takes prior context into consideration when doing so.
+多轮指标把对话作为整体评估，并在此过程中考虑先前上下文。
 
 </Tab>
 <Tab title="Safety">
 
-Safety metrics concerns more on LLM security. They include:
+安全指标更关注 LLM 安全。它们包括：
 
 - Bias
 - Toxicity
@@ -82,12 +81,12 @@ Safety metrics concerns more on LLM security. They include:
 - PIILeakage
 - Role Violation
 
-For those looking for a full-blown LLM red teaming orchestration frameowork, checkout [DeepTeam](https://www.trydeepteam.com/). DeepTeam is `deepeval` but for red teaming LLMs specifically.
+对于想要成熟的 LLM 红队测试编排框架的人，请看 [DeepTeam](https://www.trydeepteam.com/)。DeepTeam 就是专攻 LLM 红队测试的 `deepeval`。
 
 </Tab>
 <Tab title="Image">
 
-Metrics in `deepeval` are multi-modal by default, metrics targeting images are metrics that definitely expects an image in the test case. They include:
+`deepeval` 的指标默认是多模态的，针对图像的指标是明确期望测试用例中有图像的指标。它们包括：
 
 - Image Coherence
 - Image Helpfulness
@@ -95,12 +94,12 @@ Metrics in `deepeval` are multi-modal by default, metrics targeting images are m
 - Text-to-Image
 - Image-Editing
 
-Note that multi-modal metrics requires [`MLLMImage`s](/docs/evaluation-test-cases#mllmimage-data-model) in `LLMTestCase`s.
+注意多模态指标需要在 `LLMTestCase` 中提供 [`MLLMImage`](/docs/evaluation-test-cases#mllmimage-data-model)。
 
 </Tab>
 <Tab title="Others">
 
-Not use case specific, but still useful for some use cases:
+非特定用例，但对某些场景仍有用：
 
 - Hallucination
 - Json Correctness
@@ -111,10 +110,10 @@ Not use case specific, but still useful for some use cases:
 </Tabs>
 
 <Info>
-**Most metrics only require 1-2 parameters** in a test case, so it's important that you visit each metric's documentation pages to learn what's required.
+**大多数指标只需要 1-2 个测试用例参数**，因此请务必访问每个指标的文档页面，了解所需内容。
 </Info>
 
-Metrics can score your app's black-box result, an agent's complete trajectory, or an individual component. This first example runs an **end-to-end** evaluation by providing metrics and test cases:
+指标可以为你的应用的黑盒结果、智能体的完整轨迹或单个组件打分。第一个示例通过提供指标与测试用例运行**端到端**评估：
 
 <Tabs>
 
@@ -155,31 +154,31 @@ await evaluate(
 
 </Tabs>
 
-If you're logged into [Confident AI](https://confident-ai.com) before running an evaluation (`deepeval login` or `deepeval view` in the CLI), you'll also get entire testing reports on the platform:
+如果你在运行评估前登录了 [Confident AI](https://confident-ai.com)（CLI 中的 `deepeval login` 或 `deepeval view`），还能在平台上获得完整的测试报告：
 
 <figure>
   <video controls src="https://confident-docs.s3.us-east-1.amazonaws.com/evaluation:single-turn-e2e-report.mp4"></video>
-  <figcaption>Get sharable test reports for every metric you run with deepeval.</figcaption>
+  <figcaption>为用 deepeval 运行的每个指标获取可分享的测试报告。</figcaption>
 </figure>
 
-More information on everything can be found on the [Confident AI evaluation docs.](https://www.confident-ai.com/docs/llm-evaluation/quickstart)
+更多信息见 [Confident AI 评估文档](https://www.confident-ai.com/docs/llm-evaluation/quickstart)。
 
 ## Why `deepeval` Metrics?
 
-Apart from the variety of metrics offered, `deepeval`'s metrics are a step up to other implementations because they:
+除了提供的指标种类之外，`deepeval` 的指标比其他实现更进一步，因为它们：
 
-- Are research-backed LLM-as-as-Judge (`GEval`)
-- One of the most used in the world (20 million+ daily evaluations)
-- Make deterministic metric scores possible (when using `DAGMetric`)
-- Are extra reliable as LLMs are only used for extremely confined tasks during evaluation to greatly reduce stochasticity and flakiness in scores
-- Provide a comprehensive reason for the scores computed
-- Integrated 100% with Confident AI
+- 有研究支撑的 LLM-as-a-Judge（`GEval`）
+- 是全世界使用最广的指标之一（日评估量 2000 万+）
+- 让确定性的指标分数成为可能（使用 `DAGMetric` 时）
+- 特别可靠，因为评估期间 LLM 只被用于极度受限的任务，大幅降低分数的随机性与波动性
+- 为计算出的分数提供全面的理由
+- 与 Confident AI 100% 集成
 
 ## Create Your First Metric
 
 ### Custom Metrics
 
-`deepeval` provides G-Eval, a state-of-the-art LLM evaluation framework for anyone to create a custom LLM-evaluated metric using natural language. G-Eval is available for all single-turn, multi-turn, and multimodal evals.
+`deepeval` 提供 G-Eval——一个最先进的 LLM 评估框架，让任何人都能用自然语言创建自定义的 LLM 评估指标。G-Eval 适用于所有单轮、多轮与多模态评估。
 
 <Tabs>
 <Tab title="G-Eval">
@@ -296,11 +295,11 @@ console.log(professionalismMetric.score, professionalismMetric.reason);
 </Tab>
 </Tabs>
 
-Under the hood, `deepeval` first generates a series of evaluation steps, before using these steps in conjunction with information in an `LLMTestCase` for evaluation. For more information, visit the [G-Eval documentation page.](/docs/metrics-llm-evals)
+在底层，`deepeval` 先生成一系列评估步骤，再将这些步骤与 `LLMTestCase` 中的信息结合进行评估。更多信息见 [G-Eval 文档页面](/docs/metrics-llm-evals)。
 
 <Tip>
 
-If you're looking for decision-tree based LLM-as-a-Judge, checkout the [Deep Acyclic Graph (DAG)](/docs/metrics-dag) metric.
+如果你在寻找基于决策树的 LLM-as-a-Judge，请看[深无环图（DAG）](/docs/metrics-dag)指标。
 
 </Tip>
 
@@ -309,21 +308,21 @@ If you're looking for decision-tree based LLM-as-a-Judge, checkout the [Deep Acy
 <Tabs>
 <Tab title="AI Agents">
 
-`deepeval` includes six metrics for evaluating AI agents. Choose them based on the scope you need:
+`deepeval` 包含六个用于评估 AI 智能体的指标。按你需要的范围选择：
 
-**Trajectory metrics** evaluate how the full execution works together:
+**轨迹指标**评估完整执行过程如何协同：
 
-- **Task Completion:** Assesses whether the agent successfully completed its task.
-- **Step Efficiency:** Assesses whether the agent completed the task without unnecessary or redundant steps.
-- **Plan Adherence:** Assesses whether the agent followed its generated plan during execution.
-- **Plan Quality:** Assesses whether the generated plan was logical, complete, and efficient.
+- **任务完成：**评估智能体是否成功完成了任务。
+- **步骤效率：**评估智能体是否在没有不必要或冗余步骤的情况下完成任务。
+- **计划遵循：**评估智能体在执行期间是否遵循了它生成的计划。
+- **计划质量：**评估生成的计划是否合理、完整、高效。
 
-**Component-level action metrics** evaluate individual LLM tool-calling decisions:
+**组件级行动指标**评估单次 LLM 工具调用决策：
 
-- **Tool Correctness:** Assesses whether the agent selected the correct tools.
-- **Argument Correctness:** Assesses whether the agent supplied the correct arguments to those tools.
+- **工具正确性：**评估智能体是否选对了工具。
+- **参数正确性：**评估智能体是否为这些工具提供了正确的参数。
 
-Trajectory metrics require [tracing](/docs/evaluation-llm-tracing) because they analyze the complete ordered trace. Pass them to `evals_iterator()` when running the agent:
+轨迹指标需要[追踪](/docs/evaluation-llm-tracing)，因为它们分析完整的有序追踪。运行智能体时把它们传给 `evals_iterator()`：
 
 <Tabs>
 
@@ -385,15 +384,15 @@ for await (const golden of dataset.evalsIterator({
 </Tab>
 <Tab title="RAG">
 
-The most used RAG metrics include:
+最常用的 RAG 指标包括：
 
-- **Answer Relevancy:** Evaluates if the generated answer is relevant to the user query
-- **Faithfulness:** Measures if the generated answer is factually consistent with the provided context
-- **Contextual Relevancy:** Assesses if the retrieved context is relevant to the user query
-- **Contextual Recall:** Evaluates if the retrieved context contains all relevant information
-- **Contextual Precision:** Measures if the retrieved context is precise and focused
+- **答案相关性：**评估生成的答案是否与用户查询相关
+- **忠实度：**衡量生成的答案与提供的上下文在事实上是否一致
+- **上下文相关性：**评估检索到的上下文是否与用户查询相关
+- **上下文召回率：**评估检索到的上下文是否包含所有相关信息
+- **上下文精确率：**衡量检索到的上下文是否精确且聚焦
 
-Which can be simply imported from the `deepeval.metrics` module:
+它们可以从 `deepeval.metrics` 模块直接导入：
 
 <Tabs>
 
@@ -432,14 +431,14 @@ console.log(relevancy.score, relevancy.reason);
 </Tab>
 <Tab title="Chatbots">
 
-Chatbots require "conversational" (or multi-turn) metrics and they include:
+聊天机器人需要「对话式」（或多轮）指标，它们包括：
 
-- **Conversation Completeness:** Evaluates if conversation satisfy user needs.
-- **Conversation Relevancy:** Measures if the generated outputs are relevant to user inputs.
-- **Role Adherence:** Assesses if the chatbot stays in character throughout a conversation.
-- **Knowledge Retention:** Evaluates if the chatbot is able to retain knowledge learnt throughout a conversation.
+- **对话完整性：**评估对话是否满足用户需求。
+- **对话相关性：**衡量生成的输出是否与用户输入相关。
+- **角色遵循：**评估聊天机器人在整个对话中是否保持角色设定。
+- **知识保留：**评估聊天机器人能否保留在对话中学到的知识。
 
-You'll need to also use [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases#conversational-test-case)s instead of regular `LLMTestCase` for conversational metrics:
+对话式指标需要使用 [`ConversationalTestCase`](/docs/evaluation-multiturn-test-cases#conversational-test-case) 而不是普通的 `LLMTestCase`：
 
 <Tabs>
 
@@ -562,33 +561,33 @@ console.log(bias.score, bias.reason);
 
 ## Choosing Your Metrics
 
-These are the metric categories to consider when choosing your metrics:
+选择指标时可以考虑以下类别：
 
-- **Custom metrics** are use case specific and architecture agnostic:
-  - G-Eval – best for **subjective** criteria like correctness, coherence, or tone; easy to set up.
-  - DAG – **decision-tree** metric for **objective or mixed** criteria (e.g., verify format before tone).
-  - Start with G-Eval for simplicity; use DAG for more control. You can also subclass `BaseMetric` to create your own.
-- **Generic metrics** are system specific and use case agnostic:
-  - Agent trajectory metrics: evaluate task completion, execution efficiency, planning, and plan adherence across the complete trace
-  - Agent component metrics: evaluate tool selection and argument generation at individual action steps
-  - RAG metrics: measures retriever and generator separately
-  - Multi-turn metrics: measure overall dialogue quality
-  - Combine these for multi-component LLM systems.
-- **Reference vs. Referenceless**:
-  - Reference-based metrics need **ground truth** (e.g., contextual recall or tool correctness).
-  - Referenceless metrics work **without labeled data**, ideal for online or production evaluation.
-  - Check each metric’s docs for required parameters.
+- **自定义指标**是特定于用例、与架构无关的：
+  - G-Eval——最适合正确性、连贯性、语气等**主观**标准；易于上手。
+  - DAG——面向**客观或混合**标准的**决策树**指标（例如先验证格式再评估语气）。
+  - 从简单的 G-Eval 开始；需要更多控制时用 DAG。你也可以继承 `BaseMetric` 创建自己的指标。
+- **通用指标**是特定于系统、与用例无关的：
+  - 智能体轨迹指标：在完整追踪上评估任务完成、执行效率、规划与计划遵循
+  - 智能体组件指标：在单个行动步骤上评估工具选择与参数生成
+  - RAG 指标：分别衡量检索器与生成器
+  - 多轮指标：衡量整体对话质量
+  - 多组件 LLM 系统可组合使用这些指标。
+- **基于参考 vs 无参考**：
+  - 基于参考的指标需要**基准真值**（例如上下文召回率或工具正确性）。
+  - 无参考指标**无需标注数据**即可工作，适合在线或生产评估。
+  - 请查看每个指标的文档了解所需参数。
 
 <Info>
-If you're running metrics in production, you _must_ choose a referenceless metric since no labelled data will exist.
+如果你要在生产环境中运行指标，_必须_选择无参考指标，因为线上不会有标注数据。
 </Info>
 
-When deciding on metrics, no matter how tempting, try to limit yourself to **no more than 5 metrics**, with this breakdown:
+决定指标时，无论多诱惑，请尽量把自己限制在**不超过 5 个指标**，按此 breakdown：
 
-- **2-3** generic, system-specific metrics (e.g. task completion for agents, contextual precision for RAG)
-- **1-2** custom, use case-specific metrics (e.g. helpfulness for a medical chatbot, format correctness for summarization)
+- **2-3 个**通用、特定于系统的指标（例如智能体的任务完成、RAG 的上下文精确率）
+- **1-2 个**自定义、特定于用例的指标（例如医疗聊天机器人的有用性、摘要的格式正确性）
 
-The goal is to force yourself to prioritize and clearly define your evaluation criteria. This will not only help you use `deepeval`, but also help you understand what you care most about in your LLM application.
+目标是逼自己排定优先级、清晰地定义评估标准。这不仅帮你用好 `deepeval`，也帮你理解在 LLM 应用中你最在意什么。
 
 <div style={{textAlign: 'center', margin: "1rem 0"}}>
 
@@ -606,18 +605,18 @@ graph TD
 
 </div>
 
-Here are some additional ideas if you're not sure:
+如果你还不确定，这里有一些额外的想法：
 
-- **AI agents**: Start with `TaskCompletionMetric` for overall trajectory quality, add `StepEfficiencyMetric`, `PlanAdherenceMetric`, or `PlanQualityMetric` when the execution path matters, and use `ToolCorrectnessMetric` or `ArgumentCorrectnessMetric` to diagnose individual LLM tool-calling decisions
-- **RAG**: Focus on the `AnswerRelevancyMetric` (evaluates `actual_output` alignment with the `input`) and `FaithfulnessMetric` (checks for hallucinations against `retrieval_context`)
-- **Chatbots**: Implement a `ConversationCompletenessMetric` to assess overall conversation quality
-- **Custom Requirements**: When standard metrics don't fit your needs, create custom evaluations with `G-Eval` or `DAG` frameworks
+- **AI 智能体**：从 `TaskCompletionMetric` 开始评估整体轨迹质量，当执行路径重要时加入 `StepEfficiencyMetric`、`PlanAdherenceMetric` 或 `PlanQualityMetric`，并用 `ToolCorrectnessMetric` 或 `ArgumentCorrectnessMetric` 诊断单个 LLM 工具调用决策
+- **RAG**：关注 `AnswerRelevancyMetric`（评估 `actual_output` 与 `input` 的对齐）和 `FaithfulnessMetric`（对照 `retrieval_context` 检查幻觉）
+- **聊天机器人**：实现 `ConversationCompletenessMetric` 评估整体对话质量
+- **自定义需求**：当标准指标不满足需求时，用 `G-Eval` 或 `DAG` 框架创建自定义评估
 
-In some cases, where your LLM model is doing most of the heavy lifting, it is not uncommon to have more use case specific metrics.
+在某些情况下，当你的 LLM 模型承担了大部分工作，使用更多特定于用例的指标也很常见。
 
-## Configure LLM Judges
+## 配置 LLM 裁判
 
-You can use **ANY** LLM judge in `deepeval`, including OpenAI, Azure OpenAI, Ollama, Anthropic, Gemini, LiteLLM, etc. You can also wrap your own LLM API in `deepeval`'s `DeepEvalBaseLLM` class to use ANY model of your choice. [Click here](/guides/guides-using-custom-llms) for full guide.
+你可以在 `deepeval` 中使用**任意** LLM 裁判，包括 OpenAI、Azure OpenAI、Ollama、Anthropic、Gemini、LiteLLM 等。你也可以把自己的 LLM API 包装进 `deepeval` 的 `DeepEvalBaseLLM` 类来使用任意模型。完整指南[点击这里](/guides/guides-using-custom-llms)。
 
 <Tabs>
 
@@ -1031,18 +1030,18 @@ npx deepeval test run chatbot.test.ts -i -c
 
 </Tabs>
 
-## Using Metrics
+## 使用指标
 
-There are four ways you can use metrics:
+使用指标有四种方式：
 
-1. [End-to-end](/docs/evaluation-end-to-end-llm-evals) evals, treating your LLM system as a black-box and evaluating the system inputs and outputs.
-2. [Trajectory-based](/docs/evaluation-trajectory-based-llm-evals) evals, evaluating the complete ordered chain of steps taken by an AI agent.
-3. [Component-level](/docs/evaluation-component-level-llm-evals) evals, placing metrics on individual components in your LLM app instead.
-4. One-off (or standalone) evals, where you would use a metric to execute it individually.
+1. [端到端](/docs/evaluation-end-to-end-llm-evals)评估：把你的 LLM 系统当黑盒，评估系统输入与输出。
+2. [基于轨迹](/docs/evaluation-trajectory-based-llm-evals)评估：评估 AI 智能体走过的完整有序步骤链。
+3. [组件级](/docs/evaluation-component-level-llm-evals)评估：把指标放在 LLM 应用内的单个组件上。
+4. 一次性（或独立）评估：用单个指标单独执行。
 
 ### For End-to-End Evals
 
-To run end-to-end evaluations of your LLM system, provide black-box metrics with a list of [test cases](/docs/evaluation-test-cases):
+要对你的 LLM 系统运行端到端评估，为黑盒指标提供一组[测试用例](/docs/evaluation-test-cases)：
 
 <Tabs>
 
@@ -1076,17 +1075,17 @@ await evaluate([testCase], [new AnswerRelevancyMetric()]);
 
 </Tabs>
 
-The [`evaluate()` function](/docs/evaluation-introduction#evaluating-without-pytest) or `deepeval test run` **is the best way to run evaluations**. They offer tons of features out of the box, including caching, parallelization, cost tracking, error handling, and integration with [Confident AI.](https://confident-ai.com)
+[`evaluate()` 函数](/docs/evaluation-introduction#evaluating-without-pytest)或 `deepeval test run` **是运行评估的最佳方式**。它们开箱即带大量功能，包括缓存、并行化、成本追踪、错误处理，以及与 [Confident AI](https://confident-ai.com) 的集成。
 
 <Tip>
-[`deepeval test run`](/docs/evaluation-introduction#evaluating-with-pytest) is `deepeval`'s native Pytest integration, which allows you to run evals in CI/CD pipelines.
+[`deepeval test run`](/docs/evaluation-introduction#evaluating-with-pytest) 是 `deepeval` 的原生 Pytest 集成，让你能在 CI/CD 流水线中运行评估。
 </Tip>
 
 ### For Trajectory-Based Evals
 
-Trajectory metrics analyze relationships between the plans, model calls, tools, handoffs, and intermediate steps in an agent's complete trace. Metrics carrying the **Trajectory** tag—Task Completion, Step Efficiency, Plan Adherence, and Plan Quality—require [LLM tracing](/docs/evaluation-llm-tracing).
+轨迹指标分析智能体完整追踪中计划、模型调用、工具、移交与中间步骤之间的关系。带有**轨迹**标签的指标——任务完成、步骤效率、计划遵循、计划质量——需要 [LLM 追踪](/docs/evaluation-llm-tracing)。
 
-Pass trajectory metrics to `evals_iterator()`, then invoke your traced agent once for each golden:
+把轨迹指标传给 `evals_iterator()`，然后为每个金标调用一次你做了追踪的智能体：
 
 <Tabs>
 
@@ -1129,11 +1128,11 @@ for await (const golden of dataset.evalsIterator({
 
 </Tabs>
 
-Each metric receives the complete ordered trace after the agent finishes. See [trajectory-based evaluation](/docs/evaluation-trajectory-based-llm-evals) for instrumentation examples, CI/CD usage, and guidance on combining trajectory and component metrics.
+智能体结束后，每个指标都会收到完整的有序追踪。埋点示例、CI/CD 用法以及组合轨迹与组件指标的指引见[基于轨迹的评估](/docs/evaluation-trajectory-based-llm-evals)。
 
 ### For Component-Level Evals
 
-To run component-level evaluations of your LLM system using any metric of your choice, simply decorate your components with `@observe` and create [test cases](/docs/evaluation-test-cases) at runtime:
+要用任意指标对你的 LLM 系统运行组件级评估，只需用 `@observe` 装饰你的组件并在运行时创建[测试用例](/docs/evaluation-test-cases)：
 
 <Tabs>
 
@@ -1211,7 +1210,7 @@ for await (const golden of dataset.evalsIterator()) {
 
 ### Use Metrics with Integrations
 
-`deepeval`'s framework integrations capture the traces and spans that metrics evaluate, so you can score complete agent trajectories or individual framework-emitted components without recreating the execution structure yourself.
+`deepeval` 的框架集成捕获指标所评估的追踪与 span，让你可以为完整的智能体轨迹或框架产生的单个组件打分，而无需自己重建执行结构。
 
 以下是你所选 SDK 可用的一些示例：
 
@@ -1266,33 +1265,33 @@ for await (const golden of dataset.evalsIterator()) {
   </Tab>
 </Tabs>
 
-Pass metrics to `evals_iterator()` for end-to-end or trajectory-based evaluation. Attach or stage metrics on framework-emitted spans for component-level evaluation. Each integration guide shows the supported patterns for that framework.
+端到端或基于轨迹的评估把指标传给 `evals_iterator()`。组件级评估则在框架产生的 span 上挂载或预置指标。每个集成指南都会展示该框架支持的用法。
 
 [浏览全部框架集成 →](/integrations)
 
 ### For One-Off Evals
 
-You can also execute each metric individually. All metrics in `deepeval`, including [custom metrics that you create](/docs/metrics-custom):
+你也可以单独执行每个指标。`deepeval` 中的所有指标（包括[你创建的自定义指标](/docs/metrics-custom)）：
 
-- can be executed via the `metric.measure()` method
-- can have its score accessed via `metric.score`, which ranges from 0 - 1
-- can have its score reason accessed via `metric.reason`
-- can have its status accessed via `metric.is_successful()`
-- can be used to evaluate test cases or entire datasets, with or without Pytest
-- has a [`threshold`](/docs/metrics-introduction#metric-thresholds) that acts as the threshold for success. `metric.is_successful()` is only true if `metric.score` is above/below `threshold`
-- has a [`flaky`](/docs/metrics-introduction#flaky-metrics) property, which when turned on stops the metric's verdict from deciding a test case's pass/fail status
-- has a `strict_mode` property, which when turned on enforces `metric.score` to a binary one
-- has a `verbose_mode` property, which when turned on prints metric logs whenever a metric is executed
+- 可以通过 `metric.measure()` 方法执行
+- 可以通过 `metric.score` 访问分数，范围为 0 - 1
+- 可以通过 `metric.reason` 访问打分理由
+- 可以通过 `metric.is_successful()` 访问状态
+- 可以用于评估测试用例或整个数据集，有无 Pytest 均可
+- 有一个充当成功阈值的 [`threshold`](/docs/metrics-introduction#metric-thresholds)。只有 `metric.score` 高于/低于 `threshold` 时 `metric.is_successful()` 才为真
+- 有一个 [`flaky`](/docs/metrics-introduction#flaky-metrics) 属性，开启后该指标的判定不再决定测试用例的通过/失败状态
+- 有一个 `strict_mode` 属性，开启后会把 `metric.score` 强制为二元值
+- 有一个 `verbose_mode` 属性，开启后每次执行指标都会打印指标日志
 
-In addition, all metrics in `deepeval` execute asynchronously by default.
+此外，`deepeval` 的所有指标默认异步执行。
 
-You can configure this behavior using the `async_mode` parameter when instantiating a metric.
+你可以在实例化指标时用 `async_mode` 参数配置该行为。
 
 <Tip>
-Visit an individual metric page to learn how they are calculated, and what is required when creating an `LLMTestCase` in order to execute it.
+访问单个指标页面，了解它们如何计算，以及创建 `LLMTestCase` 时需要什么才能执行。
 </Tip>
 
-Here's a quick example:
+下面是一个快速示例：
 
 <Tabs>
 
@@ -1334,30 +1333,30 @@ console.log(metric.score, metric.reason);
 
 </Tabs>
 
-All of `deepeval`'s metrics give a `reason` alongside its score.
+`deepeval` 的所有指标都会在分数之外给出 `reason`。
 
-## Using Metrics Async
+## 异步使用指标
 
 <Tabs>
 
 <Tab title="Python">
 
-When a metric's `async_mode=True` (which is the default for all metrics), invocations of `metric.measure()` will execute internal algorithms concurrently. However, it's important to note that while operations **INSIDE** `measure()` execute concurrently, the `metric.measure()` call itself still blocks the main thread.
+当指标的 `async_mode=True`（所有指标的默认值）时，调用 `metric.measure()` 会并发执行内部算法。但要注意：虽然 `measure()` **内部**的操作并发执行，`metric.measure()` 调用本身仍会阻塞主线程。
 
 </Tab>
 
 <Tab title="TypeScript">
 
-Every metric in `deepeval` is already asynchronous, and there is nothing to switch on. A metric's algorithm is made up of several LLM calls, and `measure()` fires the ones that don't depend on each other at the same time rather than one after the other.
+`deepeval` 中的每个指标本身就是异步的，没有任何开关要打开。指标的算法由多次 LLM 调用组成，`measure()` 会同时发起彼此不依赖的调用，而不是一个接一个。
 
 <Info>
 Take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-calculated) for example:
 
-1. **Extract all factual claims** made in the `actualOutput`
-2. **Extract all factual truths** found in the `retrievalContext`
-3. **Compare extracted claims and truths** to generate a final score and reason
+1. **抽取所有事实声明**（来自 `actualOutput`）
+2. **抽取所有事实真相**（来自 `retrievalContext`）
+3. **比较抽取出的声明与真相**，生成最终分数与理由
 
-Steps 1 and 2 are independent, so they run concurrently, and only step 3 waits on both. The `await` you write is a single call, but underneath it is as parallel as the algorithm allows.
+步骤 1 与 2 相互独立，因此并发运行，只有步骤 3 等待两者。你写的 `await` 只是一个调用，但底层已尽可能并行。
 </Info>
 
 </Tab>
@@ -1367,9 +1366,9 @@ Steps 1 and 2 are independent, so they run concurrently, and only step 3 waits o
 <Info>
 Let's take the [`FaithfulnessMetric` algorithm](/docs/metrics-faithfulness#how-is-it-calculated) for example:
 
-1. **Extract all factual claims** made in the `actual_output`
-2. **Extract all factual truths** found in the `retrieval_context`
-3. **Compare extracted claims and truths** to generate a final score and reason.
+1. **抽取所有事实声明**（来自 `actual_output`）
+2. **抽取所有事实真相**（来自 `retrieval_context`）
+3. **比较抽取出的声明与真相**，生成最终分数与理由。
 
 ```python
 from deepeval.metrics import FaithfulnessMetric
@@ -1380,9 +1379,9 @@ metric.measure(test_case)
 print("Metric finished!")
 ```
 
-When `async_mode=True`, steps 1 and 2 execute concurrently (i.e., at the same time) since they are independent of each other, while `async_mode=False` causes steps 1 and 2 to execute sequentially instead (i.e., one after the other).
+当 `async_mode=True` 时，步骤 1 与 2 并发执行（即同时进行），因为它们彼此独立；而 `async_mode=False` 会让步骤 1 与 2 顺序执行（即一个接一个）。
 
-In both cases, "Metric finished!" will wait for `metric.measure()` to finish running before printing, but setting `async_mode` to `True` would make the print statement appear earlier, as `async_mode=True` allows `metric.measure()` to run faster.
+两种情况下，「Metric finished!」都会等 `metric.measure()` 运行完才打印，但把 `async_mode` 设为 `True` 会让打印语句更早出现，因为 `async_mode=True` 让 `metric.measure()` 跑得更快。
 
 </Info>
 
@@ -1390,13 +1389,13 @@ In both cases, "Metric finished!" will wait for `metric.measure()` to finish run
 
 <Tab title="Python">
 
-To measure multiple metrics at once and **NOT** block the main thread, use the asynchronous `a_measure()` method instead.
+要一次测量多个指标且**不**阻塞主线程，改用异步的 `a_measure()` 方法。
 
 </Tab>
 
 <Tab title="TypeScript">
 
-This means the thing to control is not whether metrics run concurrently, but how many run at once. Awaiting a large `Promise.all()` of `measure()` calls sends every request to your evaluation model simultaneously, which is the fastest route to a rate limit error. Throttle instead, by capping how many metrics are in flight at a time:
+所以要控制的不是指标是否并发运行，而是同时运行多少个。await 一个巨大的 `Promise.all()`（包含大量 `measure()` 调用）会同时把所有请求发给你的评估模型，是最快触发速率限制错误的方式。应当限流——限制同时在途的指标数量：
 
 </Tab>
 
@@ -1443,7 +1442,7 @@ for (let i = 0; i < metrics.length; i += maxConcurrent) {
 console.log("Metrics finished!");
 ```
 
-If you're running metrics through [`evaluate()`](/docs/evaluation-end-to-end-llm-evals) instead of calling `measure()` yourself, set the same limit through its `asyncConfig`:
+如果你是通过 [`evaluate()`](/docs/evaluation-end-to-end-llm-evals) 运行指标而不是自己调 `measure()`，通过它的 `asyncConfig` 设置同样的上限：
 
 ```typescript
 await evaluate([testCase], metrics, {
@@ -1455,9 +1454,9 @@ await evaluate([testCase], metrics, {
 
 </Tabs>
 
-## Debug A Metric Judgement
+## 调试指标判定
 
-You can turn on `verbose_mode` for **ANY** `deepeval` metric at metric initialization to debug a metric whenever <Tabs><Tab title="Python">the `measure()` or `a_measure()` method</Tab><Tab title="TypeScript">`measure()`</Tab></Tabs> is called:
+你可以在指标初始化时为**任何** `deepeval` 指标开启 `verbose_mode`，以便在调用 <Tabs><Tab title="Python">`measure()` 或 `a_measure()` 方法</Tab><Tab title="TypeScript">`measure()`</Tab></Tabs> 时调试指标：
 
 <Tabs>
 
@@ -1486,24 +1485,24 @@ await metric.measure(testCase);
 </Tabs>
 
 <Note>
-Turning `verbose_mode` on will print the inner workings of a metric whenever <Tabs><Tab title="Python">`measure()` or `a_measure()`</Tab><Tab title="TypeScript">`measure()`</Tab></Tabs> is called.
+开启 `verbose_mode` 后，每次调用 <Tabs><Tab title="Python">`measure()` 或 `a_measure()`</Tab><Tab title="TypeScript">`measure()`</Tab></Tabs> 都会打印指标的内部工作过程。
 </Note>
 
 ## Customize Metric Prompts
 
-All of `deepeval`'s metrics use LLM-as-a-judge evaluation with unique default prompt templates for each metric. While `deepeval` has well-designed algorithms for each metric, you can customize these prompt templates to improve evaluation accuracy and stability. Simply provide a custom template class as the `evaluation_template` parameter to your metric of choice (example below).
+`deepeval` 的所有指标都使用 LLM-as-a-judge 评估，且每个指标都有独特的默认提示词模板。虽然 `deepeval` 为每个指标设计了良好的算法，你可以自定义这些提示词模板来提升评估的准确性与稳定性。只需提供一个自定义模板类作为你选用指标的 `evaluation_template` 参数（示例如下）。
 
 <Info>
-For example, in the `AnswerRelevancyMetric`, you might disagree with what we consider something to be "relevant", but with this capability you can now override any opinions `deepeval` has in its default evaluation prompts.
+例如在 `AnswerRelevancyMetric` 中，你可能不认同我们对「相关」的界定——有了这个能力，你可以覆盖 `deepeval` 默认评估提示词中的任何观点。
 </Info>
 
-You'll find this particularly valuable when [using a custom LLM](/guides/guides-using-custom-llms), as `deepeval`'s default metrics are optimized for OpenAI's models, which are generally more powerful than most custom LLMs.
+在[使用自定义 LLM](/guides/guides-using-custom-llms) 时你会发现这特别有价值，因为 `deepeval` 的默认指标是针对 OpenAI 的模型优化的，而它们通常比大多数自定义 LLM 更强大。
 
 <Note>
-This means you can better handle invalid JSON outputs (along with [JSON confinement](/guides/guides-using-custom-llms#json-confinement-for-custom-llms)) which comes with weaker models, and provide better examples for in-context learning for your custom LLM judges for better metric accuracy.
+这意味着你可以更好地处理较弱的模型带来的非法 JSON 输出（配合 [JSON 约束](/guides/guides-using-custom-llms#json-confinement-for-custom-llms)），并为你的自定义 LLM 裁判提供更好的上下文学习示例，从而提升指标准确性。
 </Note>
 
-Here's a quick example of how you can define a custom `AnswerRelevancyTemplate` and inject it into the `AnswerRelevancyMetric` through the `evaluation_params` parameter:
+下面是一个快速示例，展示如何定义自定义 `AnswerRelevancyTemplate` 并通过 `evaluation_params` 参数注入 `AnswerRelevancyMetric`：
 
 <Tabs>
 
@@ -1578,7 +1577,7 @@ await metric.measure(testCase);
 </Tabs>
 
 <Tip>
-You can find examples of how this can be done in more detail on the **Customize Your Template** section of each individual metric page, which shows code examples, and a link to `deepeval`'s GitHub showing the default templates currently used.
+你可以在每个指标页面的**自定义你的模板**板块找到更详细的示例，包括代码示例，以及指向 `deepeval` GitHub 上当前所用默认模板的链接。
 </Tip>
 
 ## Metric Thresholds
@@ -1663,43 +1662,43 @@ const metric = new AnswerRelevancyMetric({ threshold: 0.7, flaky: true });
 
 </Tabs>
 
-This is useful for metrics you know are noisy — for example ones with borderline scores that flip between passing and failing across runs — that you still want to keep measuring and tracking without letting them gate deployments. Flaky pass/fail counts are shown separately in test run results, and the `flaky` status is also logged on Confident AI.
+这对那些你明知有噪声的指标很有用——例如分数处于临界、多次运行在通过与失败之间来回摆动，但你仍想继续测量与追踪、又不想让它们阻塞部署的指标。flaky 的通过/失败计数会在测试运行结果中单独显示，`flaky` 状态也会记录在 Confident AI 上。
 
 <Info>
-Test cases can also be [marked as flaky](/docs/evaluation-test-cases#mark-test-cases-as-flaky) — a failing flaky test case <Tabs><Tab title="Python">makes `assert_test()` print a warning instead of raising an `AssertionError`.</Tab><Tab title="TypeScript">makes `expect(testCase).toPass()` print a warning instead of failing the test.</Tab></Tabs>
+测试用例也可以[被标记为 flaky](/docs/evaluation-test-cases#mark-test-cases-as-flaky)——失败的 flaky 测试用例 <Tabs><Tab title="Python">会让 `assert_test()` 打印警告而不是抛出 `AssertionError`。</Tab><Tab title="TypeScript">会让 `expect(testCase).toPass()` 打印警告而不是让测试失败。</Tab></Tabs>
 </Info>
 
 ## What About Non-LLM-as-a-judge Metrics?
 
-If you're looking to use something like **ROUGE**, **BLEU**, or **BLEURT**, etc. you can create a custom metric and use the `scorer` module available in `deepeval` for scoring by following [this guide](/docs/metrics-custom).
+如果你想使用 **ROUGE**、**BLEU** 或 **BLEURT** 等，可以创建自定义指标，并使用 `deepeval` 提供的 `scorer` 模块打分，遵循[本指南](/docs/metrics-custom)。
 
-The [`scorer` module](https://github.com/confident-ai/deepeval/blob/main/deepeval/scorer/scorer.py) is available but not documented because our experience tells us these scorers are not useful as LLM metrics where outputs require a high level of reasoning to evaluate.
+[`scorer` 模块](https://github.com/confident-ai/deepeval/blob/main/deepeval/scorer/scorer.py)可用但未写入文档，因为我们的经验表明，当输出需要高水平的推理才能评估时，这些统计打分器并不如 LLM 指标有用。
 
 ## FAQs
 
 <AccordionGroup>
 <Accordion title="How many metrics should I use?">
-No more than 5: roughly **2-3** generic system metrics (e.g. agent or RAG metrics) and **1-2** custom use-case metrics. Capping forces you to prioritize what you actually care about.
+不超过 5 个：大约 **2-3** 个通用系统指标（例如智能体或 RAG 指标）加 **1-2** 个自定义用例指标。设上限能逼你排定真正关心的优先级。
 </Accordion>
 <Accordion title="Do all of deepeval's metrics use an LLM?">
-Most do — they're **LLM-as-a-judge** (QAG, G-Eval). The [DAGMetric](/docs/metrics-dag) can be fully deterministic, and for statistical scorers like ROUGE/BLEU you build a [custom metric](/docs/metrics-custom) with the `scorer` module.
+大多数是——它们是 **LLM-as-a-judge**（QAG、G-Eval）。[DAGMetric](/docs/metrics-dag) 可以完全确定性，而 ROUGE/BLEU 之类的统计打分器可以用 `scorer` 模块构建[自定义指标](/docs/metrics-custom)。
 </Accordion>
 <Accordion title="Which metrics can I use in production?">
-Only **referenceless** ones, since no labeled data exists live. Reference-based metrics (e.g. [Contextual Recall](/docs/metrics-contextual-recall) , [Tool Correctness](/docs/metrics-tool-correctness) ) need a ground truth and are for development.
+只有**无参考**指标，因为线上没有标注数据。基于参考的指标（如[上下文召回率](/docs/metrics-contextual-recall)、[工具正确性](/docs/metrics-tool-correctness)）需要基准真值，面向开发阶段。
 </Accordion>
 <Accordion title="Should I use G-Eval or DAG for a custom metric?">
-[G-Eval](/docs/metrics-llm-evals) for subjective criteria (correctness, tone) — easy to set up. [DAG](/docs/metrics-dag) is a decision-tree for objective/mixed criteria and gives deterministic scores. Start with G-Eval, move to DAG for more control.
+主观标准（正确性、语气）用 [G-Eval](/docs/metrics-llm-evals)——易于上手。[DAG](/docs/metrics-dag) 是面向客观/混合标准的决策树，给出确定性分数。从 G-Eval 开始，需要更多控制时转向 DAG。
 </Accordion>
 <Accordion title="Can I use my own LLM as the judge?">
-Yes. Pass any model via the `model` param — OpenAI, Azure, Ollama, Gemini, LiteLLM — or wrap your own by subclassing `DeepEvalBaseLLM` . See the [custom LLM guide](/guides/guides-using-custom-llms) .
+可以。通过 `model` 参数传入任意模型——OpenAI、Azure、Ollama、Gemini、LiteLLM——或继承 `DeepEvalBaseLLM` 包装自己的模型。见[自定义 LLM 指南](/guides/guides-using-custom-llms)。
 </Accordion>
 <Accordion title="How do I run metrics in production for monitoring?">
-In production you run **referenceless** metrics on your live LLM [traces](/docs/evaluation-llm-tracing) and spans rather than prebuilt test cases. Trajectory metrics can score the complete agent path, while component metrics can score selected spans. For continuous online evals, dashboards, and alerts on live traffic, run them on [Confident AI](https://confident-ai.com) , the enterprise platform for all-in-one evals, observability, and red teaming.
+在生产中，你在实时 LLM [追踪](/docs/evaluation-llm-tracing)与 span 上运行**无参考**指标，而不是预构建的测试用例。轨迹指标可以为完整的智能体路径打分，组件指标可以为选定的 span 打分。要在实时流量上持续在线评估、仪表盘与告警，请在 [Confident AI](https://confident-ai.com)（集评估、可观测性与红队测试于一体的企业平台）上运行。
 </Accordion>
 <Accordion title="Can I run metrics on traces for monitoring?">
-Yes. Once you [set up tracing](/docs/evaluation-llm-tracing) , metrics can score spans and traces automatically. Metrics on the complete ordered trace are [trajectory-based](/docs/evaluation-trajectory-based-llm-evals) , while metrics on individual spans are [component-level](/docs/evaluation-component-level-llm-evals) . Wire them up on [Confident AI](https://confident-ai.com) to track metric scores on production traffic over time.
+可以。[设置追踪](/docs/evaluation-llm-tracing)后，指标可以自动为 span 与追踪打分。完整有序追踪上的指标是[基于轨迹的](/docs/evaluation-trajectory-based-llm-evals)，单个 span 上的指标是[组件级的](/docs/evaluation-component-level-llm-evals)。在 [Confident AI](https://confident-ai.com) 上接线，即可追踪生产流量上指标分数随时间的变化。
 </Accordion>
 <Accordion title="Which metrics evaluate a complete agent trajectory?">
-Metrics carrying the **Trajectory** tag evaluate the complete ordered trace. These are `TaskCompletionMetric` , `StepEfficiencyMetric` , `PlanAdherenceMetric` , and `PlanQualityMetric` . They require tracing and are passed to the evals iterator or test assertion rather than measured against one isolated component.
+带有**轨迹**标签的指标评估完整的有序追踪。它们是 `TaskCompletionMetric`、`StepEfficiencyMetric`、`PlanAdherenceMetric` 与 `PlanQualityMetric`。它们需要追踪，并传给评估迭代器或测试断言，而不是针对某个孤立组件测量。
 </Accordion>
 </AccordionGroup>
