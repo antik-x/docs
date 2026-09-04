@@ -155,13 +155,13 @@ await evaluate([testCase], [metric]);
 - [可选] `assessment_questions`：一组**只能用「是」或「否」回答的封闭式问题**。这些问题是你希望摘要理想情况下能够回答的，当你已经知道好摘要的样子时特别有用。若未提供 `assessment_questions`，我们会在评估时替你生成一组 `assessment_questions`。`assessment_questions` 用于计算覆盖率分数。
 - [可选] `n`：未提供 `assessment_questions` 时要生成的评估问题数量。默认为 5。
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
-- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
+- [可选] `include_reason`：布尔值，设为 `True`（TypeScript 中为 `true`）时，会为评估分数附带理由。默认为 `True`（TypeScript 中为 `true`）。
 - [Optional] `strict_mode`: a boolean which when set to True, enforces a strict evaluation criterion. In strict mode, the metric score becomes binary: a score of 1 indicates a perfect result, and any outcome less than perfect is scored as 0. Defaulted as `False`（TypeScript 中为 `false`）.
-[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
-- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `verbose_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把计算该指标所用的中间步骤打印到控制台，具体见 [How Is It Calculated](#how-is-it-calculated) 一节。默认为 `False`（TypeScript 中为 `false`）。
 - [Optional] `truths_extraction_limit`: a number which when set, determines the maximum number of factual truths to extract from the `input`. The truths extracted will used to determine the alignment score, and will be ordered by importance, decided by your evaluation `model`. Defaulted to `None`（TypeScript 中为 `null`）.
-- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
 
 <Note>
 有时你可能只想考虑 `input` 中最重要的事实真相。如果是这种情况，可以选择设置 `truths_extraction_limit` 参数，限制评估期间考虑的真相最大数量。

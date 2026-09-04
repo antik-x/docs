@@ -103,12 +103,12 @@ await evaluate([mTestCase], [metric]);
 </Tabs>
 
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
-- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+- [可选] `strict_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把指标分数强制为二元：完美为 1，否则为 0。它还会覆盖当前阈值并将其设为 1。默认为 `False`（TypeScript 中为 `false`）。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
-- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `verbose_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把计算该指标所用的中间步骤打印到控制台，具体见 [How Is It Calculated](#how-is-it-calculated) 一节。默认为 `False`（TypeScript 中为 `false`）。
 - [Optional] `max_context_size`: a number representing the maximum number of characters in each context, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `None`（TypeScript 中为 `null`）.
-- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
 
 ### 独立运行
 

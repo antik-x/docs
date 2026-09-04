@@ -132,7 +132,7 @@ await evaluate([testCase], [metric]);
 - [Optional] `model`: an OpenAI model name or a [custom evaluation model](/docs/metrics-introduction#using-a-custom-llm) of type `DeepEvalBaseLLM`. Defaulted to `gpt-5.4`.
 - [可选] `include_reason`：是否为最终分数生成理由。默认为 `True`。
 - [可选] `strict_mode`：为 `True` 时把阈值设为 `1`。默认为 `False`。
-[可选] `async_mode`：`measure()` 是否异步执行图。默认为 `True`。
+- [可选] `async_mode`：`measure()` 是否异步执行图。默认为 `True`。
   
 - [可选] `verbose_mode`：是否打印用于计算分数的节点与结果。默认为 `False`。
 - [可选] `flaky`：布尔值，设为 `True` 时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`。

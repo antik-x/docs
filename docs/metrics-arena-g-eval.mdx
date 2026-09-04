@@ -134,9 +134,9 @@ await compare([aTestCase], metric);
 - `evaluation_params`：类型为 `SingleTurnParams` 的列表，只纳入与评估相关的参数。
 - [可选] `evaluation_steps`：字符串列表，列出 LLM 评估应采取的确切步骤。若未提供 `evaluation_steps`，`ConversationalGEval` 会根据给定的 `criteria` 替你生成一系列 `evaluation_steps`。`evaluation_steps` 与 `criteria` 只能二选一。
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
-[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-metrics-in-async)。默认为 `True`。
   
-- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `verbose_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把计算该指标所用的中间步骤打印到控制台，具体见 [How Is It Calculated](#how-is-it-calculated) 一节。默认为 `False`（TypeScript 中为 `false`）。
 
 <Danger>
 为获得准确且有效的结果，`evaluation_params` 中只应包含 `criteria`/`evaluation_steps` 中提及的评估参数。

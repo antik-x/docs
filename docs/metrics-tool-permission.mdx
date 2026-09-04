@@ -50,10 +50,10 @@ There is at least **ONE** required and **FIVE** optional parameters when creatin
 - `allowed_tools`: a list of permitted tool names (an allowlist). If provided, any called tool not in this list is unauthorized.
 - `denied_tools`: a list of forbidden tool names (a denylist). Any called tool in this list is unauthorized, and a denial always takes precedence over an allow.
 - [Optional] `threshold`: a float representing the minimum passing threshold. Can also be set to `None` to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `1.0` (any unauthorized call fails).
-- [Optional] `include_reason`: a boolean which when set to `True`, includes a reason listing the unauthorized tools. Defaulted to `True`.
+- [可选] `include_reason`：布尔值，设为 `True` 时，会为评估分数附带理由。默认为 `True`。
 - [Optional] `strict_mode`: a boolean which enforces a binary metric score, defaulted to `False`.
-- [Optional] `verbose_mode`: a boolean which when set to `True`, prints the intermediate steps used to calculate the metric to the console. Defaulted to `False`.
-- [Optional] `flaky`: a boolean which when set to `True`, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`.
+- [可选] `verbose_mode`：布尔值，设为 `True` 时，把计算该指标所用的中间步骤打印到控制台。默认为 `False`。
+- [可选] `flaky`：布尔值，设为 `True` 时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`。
 
 At least one of `allowed_tools` or `denied_tools` must be provided.
 

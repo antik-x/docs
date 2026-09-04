@@ -165,12 +165,12 @@ await evaluate([testCase], [metric]);
 - `expected_schema`：`pydantic` `BaseModel`，指定你期望 LLM 输出的 JSON 的 schema。
 - [Optional] `threshold`: a number representing the minimum passing threshold. Can also be set to `None`（TypeScript 中为 `null`） to run the metric in [score-only mode](/docs/metrics-introduction#metric-thresholds). Defaulted to `0.5`.
 - [可选] `model`：字符串，指定使用 OpenAI 的哪款 GPT 模型来生成理由，**或**类型为 `DeepEvalBaseLLM` 的[任意自定义 LLM 模型](/docs/metrics-introduction#using-a-custom-llm)。默认为 `gpt-5.4`。
-- [Optional] `include_reason`: a boolean which when set to `True`（TypeScript 中为 `true`）, will include a reason for its evaluation score. Defaulted to `True`（TypeScript 中为 `true`）.
-- [Optional] `strict_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, enforces a binary metric score: 1 for perfection, 0 otherwise. It also overrides the current threshold and sets it to 1. Defaulted to `False`（TypeScript 中为 `false`）.
-[可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
+- [可选] `include_reason`：布尔值，设为 `True`（TypeScript 中为 `true`）时，会为评估分数附带理由。默认为 `True`（TypeScript 中为 `true`）。
+- [可选] `strict_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把指标分数强制为二元：完美为 1，否则为 0。它还会覆盖当前阈值并将其设为 1。默认为 `False`（TypeScript 中为 `false`）。
+- [可选] `async_mode`：布尔值，设为 `True` 时，启用[`measure()` 方法内的并发执行](/docs/metrics-introduction#measuring-a-metric-in-async)。默认为 `True`。
   
-- [Optional] `verbose_mode`: a boolean which when set to `True`（TypeScript 中为 `true`）, prints the intermediate steps used to calculate said metric to the console, as outlined in the [How Is It Calculated](#how-is-it-calculated) section. Defaulted to `False`（TypeScript 中为 `false`）.
-- [Optional] `flaky`: a boolean which when set to `True`（TypeScript 中为 `true`）, [marks the metric as flaky](/docs/metrics-introduction#flaky-metrics). Defaulted to `False`（TypeScript 中为 `false`）.
+- [可选] `verbose_mode`：布尔值，设为 `True`（TypeScript 中为 `true`）时，把计算该指标所用的中间步骤打印到控制台，具体见 [How Is It Calculated](#how-is-it-calculated) 一节。默认为 `False`（TypeScript 中为 `false`）。
+- [可选] `flaky`：布尔值，设为 `True`（TypeScript 中为 `true`）时，[把指标标记为 flaky](/docs/metrics-introduction#flaky-metrics)。默认为 `False`（TypeScript 中为 `false`）。
 
 <Info>
 Unlike other metrics, the `model` is used for generating reason instead of evaluation. It will only be used if the `actual_output` has the wrong schema, **AND** if `include_reason` is set to `True`（TypeScript 中为 `true`）.
