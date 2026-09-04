@@ -1,0 +1,40 @@
+.agents/skills/docs-translation/scripts/convert_fumadocs.py
+  h_04c00a69eeb820 507-508
+.agents/skills/docs-translation/scripts/translate_overlay.py
+  h_04c00a69eeb820 107-144
+.agents/skills/docs-translation/scripts/verify_structure.py
+  h_04c00a69eeb820 115-126
+.agents/skills/docs-translation/state/translation-memory.json
+  h_04c00a69eeb820 1731-1759
+docs/metrics-answer-relevancy.mdx
+  h_04c00a69eeb820 1-432
+docs/metrics-answer-relevancy.mdx.pending.tsv
+  h_04c00a69eeb820 1-108
+docs/metrics-contextual-precision.mdx
+  h_04c00a69eeb820 1-468
+docs/metrics-contextual-precision.mdx.pending.tsv
+  h_04c00a69eeb820 1-109
+docs/metrics-contextual-recall.mdx
+  h_04c00a69eeb820 1-452
+docs/metrics-contextual-recall.mdx.pending.tsv
+  h_04c00a69eeb820 1-105
+docs/metrics-contextual-relevancy.mdx
+  h_04c00a69eeb820 1-441
+docs/metrics-contextual-relevancy.mdx.pending.tsv
+  h_04c00a69eeb820 2,4-32,34-36,38-86,89-103
+docs/metrics-faithfulness.mdx
+  h_04c00a69eeb820 1-428
+docs/metrics-faithfulness.mdx.pending.tsv
+  h_04c00a69eeb820 1-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.6.24",
+  "base_commit_sha": "4cdafb8987c7ba9e4ceb1175bece2c7332772f2d",
+  "prompts": {},
+  "humans": {
+    "h_04c00a69eeb820": {
+      "author": "antik-x <jianyong.me@gmail.com>"
+    }
+  }
+}
